@@ -41,6 +41,6 @@ yarn-error.log*
 next-env.d.ts
 
 # project files
-prd.md
+#prd.md
 CLAUDE.md
 .history/
