@@ -8,6 +8,13 @@
       "when": 1755448219277,
       "tag": "0000_bitter_mimic",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1755495079770,
+      "tag": "0001_rich_expediter",
+      "breakpoints": true
     }
   ]
 }
