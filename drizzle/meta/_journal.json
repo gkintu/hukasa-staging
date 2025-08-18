@@ -15,6 +15,20 @@
       "when": 1755495079770,
       "tag": "0001_rich_expediter",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1755499546597,
+      "tag": "0002_kind_chameleon",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1755499801473,
+      "tag": "0003_chemical_nocturne",
+      "breakpoints": true
     }
   ]
 }

@@ -34,18 +34,25 @@ export const statusEnum = pgEnum('status', [
 
 // Users table
 export const users = pgTable('users', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: text('id').primaryKey(),
   email: text('email').unique().notNull(),
+  emailVerified: boolean('email_verified')
+    .$defaultFn(() => false)
+    .notNull(),
   name: text('name').notNull(),
   image: text('image'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  createdAt: timestamp('created_at')
+    .$defaultFn(() => new Date())
+    .notNull(),
+  updatedAt: timestamp('updated_at')
+    .$defaultFn(() => new Date())
+    .notNull()
 })
 
 // Generations table
 export const generations = pgTable('generations', {
   id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id').references(() => users.id).notNull(),
+  userId: text('user_id').references(() => users.id).notNull(),
   originalImagePath: text('original_image_path').notNull(), // Relative path: "uploads/uuid-filename.jpg"
   stagedImagePath: text('staged_image_path'), // Relative path: "uploads/staged-uuid-filename.jpg"
   roomType: roomTypeEnum('room_type').notNull(),
@@ -73,22 +80,26 @@ export const generationsRelations = relations(generations, ({ one }) => ({
 }))
 
 // Better Auth tables
-export const session = pgTable('session', {
+export const sessions = pgTable('sessions', {
   id: text('id').primaryKey(),
   expiresAt: timestamp('expires_at').notNull(),
   token: text('token').notNull().unique(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at')
+    .$defaultFn(() => new Date())
+    .notNull(),
+  updatedAt: timestamp('updated_at')
+    .$defaultFn(() => new Date())
+    .notNull(),
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
-  userId: uuid('user_id').references(() => users.id).notNull()
+  userId: text('user_id').references(() => users.id).notNull()
 })
 
-export const account = pgTable('account', {
+export const accounts = pgTable('accounts', {
   id: text('id').primaryKey(),
   accountId: text('account_id').notNull(),
   providerId: text('provider_id').notNull(),
-  userId: uuid('user_id').references(() => users.id).notNull(),
+  userId: text('user_id').references(() => users.id).notNull(),
   accessToken: text('access_token'),
   refreshToken: text('refresh_token'),
   idToken: text('id_token'),
@@ -96,17 +107,25 @@ export const account = pgTable('account', {
   refreshTokenExpiresAt: timestamp('refresh_token_expires_at'),
   scope: text('scope'),
   password: text('password'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  createdAt: timestamp('created_at')
+    .$defaultFn(() => new Date())
+    .notNull(),
+  updatedAt: timestamp('updated_at')
+    .$defaultFn(() => new Date())
+    .notNull()
 })
 
-export const verification = pgTable('verification', {
+export const verifications = pgTable('verifications', {
   id: text('id').primaryKey(),
   identifier: text('identifier').notNull(),
   value: text('value').notNull(),
   expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull()
+  createdAt: timestamp('created_at')
+    .$defaultFn(() => new Date())
+    .notNull(),
+  updatedAt: timestamp('updated_at')
+    .$defaultFn(() => new Date())
+    .notNull()
 })
 
 // Type exports for TypeScript
@@ -114,9 +133,9 @@ export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 export type Generation = typeof generations.$inferSelect
 export type NewGeneration = typeof generations.$inferInsert
-export type Session = typeof session.$inferSelect
-export type NewSession = typeof session.$inferInsert
-export type Account = typeof account.$inferSelect
-export type NewAccount = typeof account.$inferInsert
-export type Verification = typeof verification.$inferSelect
-export type NewVerification = typeof verification.$inferInsert
+export type Session = typeof sessions.$inferSelect
+export type NewSession = typeof sessions.$inferInsert
+export type Account = typeof accounts.$inferSelect
+export type NewAccount = typeof accounts.$inferInsert
+export type Verification = typeof verifications.$inferSelect
+export type NewVerification = typeof verifications.$inferInsert

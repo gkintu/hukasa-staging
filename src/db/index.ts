@@ -2,11 +2,7 @@ import { drizzle } from 'drizzle-orm/postgres-js'
 import postgres from 'postgres'
 import * as schema from './schema'
 
-// Load environment variables from .env.local
-import { config } from 'dotenv'
-config({ path: '.env.local' })
-
-// For single connection
+// Create connection pool - Next.js automatically loads env vars
 const queryClient = postgres(process.env.DATABASE_URL!)
 
 // Create drizzle instance with schema

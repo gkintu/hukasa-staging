@@ -1,3 +1,5 @@
+# Ignore question-implementation.md
+question-implementation.md
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
@@ -45,3 +47,4 @@ next-env.d.ts
 CLAUDE.md
 .history/
 prd.md
+tasklist-tracker.md
