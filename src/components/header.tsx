@@ -1,6 +1,7 @@
 "use client"
 
 import { UserMenu } from "@/components/user-menu"
+import { ModeToggle } from "@/components/mode-toggle"
 
 export function Header() {
   return (
@@ -10,7 +11,10 @@ export function Header() {
           <h1 className="text-xl font-semibold">Hukasa</h1>
           <span className="text-sm text-muted-foreground">AI Virtual Staging Platform</span>
         </div>
-        <UserMenu />
+        <div className="flex items-center space-x-2">
+          <ModeToggle />
+          <UserMenu />
+        </div>
       </div>
     </header>
   )
