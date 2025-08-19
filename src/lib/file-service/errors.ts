@@ -89,6 +89,9 @@ export interface SystemError extends FileServiceError {
     | FileServiceErrorCode.SERVICE_UNAVAILABLE
     | FileServiceErrorCode.CONFIGURATION_ERROR
     | FileServiceErrorCode.NETWORK_ERROR
+    | FileServiceErrorCode.DELETION_FAILED
+    | FileServiceErrorCode.URL_GENERATION_FAILED
+    | FileServiceErrorCode.METADATA_RETRIEVAL_FAILED
   readonly systemDetails?: {
     readonly component: string
     readonly recoverable: boolean
