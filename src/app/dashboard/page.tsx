@@ -1,13 +1,11 @@
-import { auth } from "@/lib/auth"
 import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Header } from "@/components/header"
+import { validateServerSession } from "@/lib/auth-utils"
 
 export default async function DashboardPage() {
-    const session = await auth.api.getSession({
-        headers: await headers()
-    })
+    const session = await validateServerSession(await headers())
 
     if (!session) {
         redirect("/login")

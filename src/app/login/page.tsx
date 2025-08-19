@@ -5,16 +5,19 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useState } from "react"
 import { Loader2 } from "lucide-react"
+import { useSearchParams } from "next/navigation"
 
 export default function LoginPage() {
     const [isSigningIn, setIsSigningIn] = useState(false)
+    const searchParams = useSearchParams()
+    const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
 
     const handleGoogleSignIn = async () => {
         setIsSigningIn(true)
         try {
             await signIn.social({
                 provider: "google",
-                callbackURL: "/dashboard"
+                callbackURL: callbackUrl
             })
         } catch (error) {
             console.error("Sign in failed:", error)

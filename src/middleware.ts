@@ -1,14 +1,22 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getSessionCookie } from "better-auth/cookies"
 
-export function middleware(request: NextRequest) {
-    // Check for Better Auth session cookie instead of database query
-    const sessionCookie = 
-        request.cookies.get("better-auth.session_token") ||
-        request.cookies.get("better-auth.session_token.localhost")
+export async function middleware(request: NextRequest) {
+    const { pathname } = request.nextUrl
 
-    if (!sessionCookie) {
+    // Use getSessionCookie for Edge Runtime compatibility
+    // This provides optimistic session checking for middleware
+    const sessionCookie = getSessionCookie(request)
+
+    // Redirect authenticated users away from auth pages
+    if (sessionCookie && ["/login", "/signup"].includes(pathname)) {
+        return NextResponse.redirect(new URL("/dashboard", request.url))
+    }
+
+    // Redirect unauthenticated users to login
+    if (!sessionCookie && pathname.startsWith("/dashboard")) {
         const loginUrl = new URL("/login", request.url)
-        loginUrl.searchParams.set("callbackUrl", request.nextUrl.pathname)
+        loginUrl.searchParams.set("callbackUrl", pathname)
         return NextResponse.redirect(loginUrl)
     }
 
@@ -16,5 +24,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-    matcher: ["/dashboard/:path*"]
+    matcher: ["/dashboard/:path*", "/login", "/signup"]
 }
