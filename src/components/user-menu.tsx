@@ -22,7 +22,12 @@ export function UserMenu() {
     setIsSigningOut(true)
     try {
       await signOut({
-        callbackURL: "/login"
+        fetchOptions: {
+          onSuccess: () => {
+            // Force a full page reload to ensure clean state
+            window.location.href = "/"
+          },
+        },
       })
     } catch (error) {
       console.error("Sign out failed:", error)
