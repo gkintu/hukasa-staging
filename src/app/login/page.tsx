@@ -26,13 +26,13 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background p-6">
-            <Card className="w-full max-w-md">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background to-muted/20 p-6">
+            <Card className="w-full max-w-md border border-border bg-card">
                 <CardHeader className="text-center space-y-2">
-                    <CardTitle className="text-2xl font-semibold">
+                    <CardTitle className="text-2xl font-bold text-foreground">
                         Welcome to Hukasa
                     </CardTitle>
-                    <CardDescription>
+                    <CardDescription className="text-muted-foreground">
                         AI Virtual Staging Platform
                     </CardDescription>
                 </CardHeader>
@@ -40,7 +40,7 @@ export default function LoginPage() {
                     <Button 
                         onClick={handleGoogleSignIn}
                         disabled={isSigningIn}
-                        className="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-medium disabled:opacity-50"
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium disabled:opacity-50"
                         size="lg"
                     >
                         {isSigningIn ? (
