@@ -282,15 +282,11 @@ export class LocalFileService extends BaseFileService {
 
   constructor(config: FileServiceConfig) {
     super(config)
-    
-    if (config.storageConfig.type !== 'local') {
-      throw FileServiceErrorFactory.createSystemError(
-        FileServiceErrorCode.CONFIGURATION_ERROR,
-        'LocalFileService requires local storage configuration'
-      )
-    }
 
-    this.localConfig = config.storageConfig
+    // The `validateConfiguration` method (called by the super constructor) now handles validation.
+    // We can safely cast here because the validation would have already thrown an error if the type was wrong.
+    this.localConfig = this.config.storageConfig as LocalStorageConfig
+    
     this.storageManager = new LocalStorageManager(this.localConfig)
     this.metadataRepository = new FileMetadataRepository()
     this.validator = new FileValidator({
@@ -303,7 +299,18 @@ export class LocalFileService extends BaseFileService {
   }
 
   protected validateConfiguration(): void {
-    if (!this.localConfig.uploadPath || !this.localConfig.publicPath) {
+    // This method is called from the BaseFileService constructor,
+    // so it runs before the LocalFileService constructor body.
+    // Therefore, we must use `this.config` instead of `this.localConfig`.
+    if (this.config.storageConfig.type !== 'local') {
+      throw FileServiceErrorFactory.createSystemError(
+        FileServiceErrorCode.CONFIGURATION_ERROR,
+        'LocalFileService requires local storage configuration'
+      )
+    }
+    
+    const localConfig = this.config.storageConfig as LocalStorageConfig;
+    if (!localConfig.uploadPath || !localConfig.publicPath) {
       throw FileServiceErrorFactory.createSystemError(
         FileServiceErrorCode.CONFIGURATION_ERROR,
         'Local storage requires uploadPath and publicPath'
@@ -382,20 +389,24 @@ export class LocalFileService extends BaseFileService {
       // Save metadata
       await this.metadataRepository.create(fileMetadata)
 
-      // Generate public URL
+      // Generate public URL and relative path
       const url = this.storageManager.getPublicUrl(userId, fileId, extension)
+      const relativePath = `${userId}/${fileId}${extension}`
 
       return {
         success: true,
         metadata: fileMetadata,
-        url
+        url,
+        relativePath
       }
 
     } catch (error) {
+      console.error('[LocalFileService] Caught error in uploadFile:', error);
+      const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during upload';
       return errorToOperationResult(
         FileServiceErrorFactory.createUploadError(
           FileServiceErrorCode.UPLOAD_FAILED,
-          `Upload failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          errorMessage
         )
       )
     }

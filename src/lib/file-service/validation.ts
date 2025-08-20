@@ -218,13 +218,13 @@ export class FileValidator {
    */
   private validateImageDimensions(width: number, height: number): { isValid: boolean; errors: string[] } {
     const errors: string[] = []
-    const { maxDimensions } = this.options.imageProcessing
-
-    if (width > maxDimensions.width || height > maxDimensions.height) {
-      errors.push(
-        ValidationErrorMessages.INVALID_DIMENSIONS(maxDimensions.width, maxDimensions.height)
-      )
-    }
+    // The ImageProcessor will handle resizing, so we only need to check for minimum dimensions here.
+    // const { maxDimensions } = this.options.imageProcessing
+    // if (width > maxDimensions.width || height > maxDimensions.height) {
+    //   errors.push(
+    //     ValidationErrorMessages.INVALID_DIMENSIONS(maxDimensions.width, maxDimensions.height)
+    //   )
+    // }
 
     // Check minimum dimensions (prevent 1x1 pixel images)
     if (width < 10 || height < 10) {
@@ -250,8 +250,8 @@ export class FileValidator {
         /<script[\s\S]*?>[\s\S]*?<\/script>/gi,
         // Check for PHP code patterns
         /<\?php[\s\S]*?\?>/gi,
-        // Check for suspicious binary patterns that might indicate malware
-        /\x00{4,}/, // Multiple null bytes
+        // This pattern is too aggressive for binary files and can cause false positives
+        // /\x00{4,}/, // Multiple null bytes
       ]
 
       const bufferString = buffer.toString('binary')

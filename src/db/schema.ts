@@ -54,6 +54,7 @@ export const generations = pgTable('generations', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: text('user_id').references(() => users.id).notNull(),
   originalImagePath: text('original_image_path').notNull(), // Relative path: "uploads/uuid-filename.jpg"
+  originalFileName: text('original_file_name').notNull(), // Original user filename: "vacation-photo.jpg"
   stagedImagePath: text('staged_image_path'), // Relative path: "uploads/staged-uuid-filename.jpg"
   roomType: roomTypeEnum('room_type').notNull(),
   stagingStyle: stagingStyleEnum('staging_style').notNull(),

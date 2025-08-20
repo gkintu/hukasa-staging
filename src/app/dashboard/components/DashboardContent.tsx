@@ -8,12 +8,12 @@ import {
   DropzoneCard, 
   UploadProgress, 
   UploadFeedback, 
-  FileManager,
   type UploadItem,
   type FeedbackMessage,
   type RejectedFile,
   type ManagedFile 
 } from '@/components/upload'
+import { MyFiles } from './MyFiles'
 import { Upload, FileImage, Settings, User } from 'lucide-react'
 import { nanoid } from 'nanoid'
 
@@ -87,21 +87,21 @@ export function DashboardContent({ user }: DashboardContentProps) {
         setFeedbackMessages(prev => [...prev, successMessage])
 
         // Add to managed files if available
-        if (result.files) {
-          const newManagedFiles: ManagedFile[] = result.files.map(file => ({
-            id: file.id,
-            fileName: file.fileName,
-            originalFileName: file.originalFileName,
-            fileSize: file.fileSize,
-            fileType: file.fileType,
-            status: 'uploaded',
-            uploadedAt: new Date(file.uploadedAt),
-            thumbnailUrl: `/api/files/${btoa(`${user.id}:${file.relativePath}`)}`,
-            downloadUrl: `/api/files/${btoa(`${user.id}:${file.relativePath}`)}/download`
-          }))
+        // if (result.files) {
+        //   const newManagedFiles: ManagedFile[] = result.files.map(file => ({
+        //     id: file.id,
+        //     fileName: file.fileName,
+        //     originalFileName: file.originalFileName,
+        //     fileSize: file.fileSize,
+        //     fileType: file.fileType,
+        //     status: 'uploaded',
+        //     uploadedAt: new Date(file.uploadedAt),
+        //     thumbnailUrl: `/api/files/${btoa(`${user.id}:${file.relativePath}`)}`,
+        //     downloadUrl: `/api/files/${btoa(`${user.id}:${file.relativePath}`)}/download`
+        //   }))
           
-          setManagedFiles(prev => [...prev, ...newManagedFiles])
-        }
+        //   setManagedFiles(prev => [...prev, ...newManagedFiles])
+        // }
 
       } else {
         // Handle partial or complete failure
@@ -242,7 +242,7 @@ export function DashboardContent({ user }: DashboardContentProps) {
           </TabsTrigger>
           <TabsTrigger value="files" className="flex items-center gap-2">
             <FileImage className="h-4 w-4" />
-            My Files ({managedFiles.length})
+            My Files
           </TabsTrigger>
           <TabsTrigger value="settings" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
@@ -296,20 +296,7 @@ export function DashboardContent({ user }: DashboardContentProps) {
 
         {/* Files Tab */}
         <TabsContent value="files" className="space-y-6">
-          <FileManager
-            files={managedFiles}
-            onDownload={handleFileDownload}
-            onDelete={handleFileDelete}
-            onBulkDownload={handleBulkDownload}
-            onPreview={(file) => {
-              // TODO: Implement preview modal
-              console.log('Preview file:', file)
-            }}
-            onRegenerate={(file) => {
-              // TODO: Implement regeneration
-              console.log('Regenerate file:', file)
-            }}
-          />
+          <MyFiles />
         </TabsContent>
 
         {/* Settings Tab */}

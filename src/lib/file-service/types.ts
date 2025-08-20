@@ -48,6 +48,7 @@ export interface FileUploadResult {
   readonly success: true
   readonly metadata: FileMetadata
   readonly url: string
+  readonly relativePath: string
 }
 
 // File validation result

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateApiSession } from '@/lib/auth-utils'
 import { quickStart } from '@/lib/file-service'
 import { createUserId, FileServiceErrorCode, isUploadError, isValidationError } from '@/lib/file-service'
+import { db } from '@/db'
+import { generations } from '@/db/schema'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
@@ -127,21 +129,29 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
       }
 
       try {
-        // Convert file to buffer
-        const buffer = Buffer.from(await file.arrayBuffer())
-        
-        // Upload file using FileService
-        const uploadResult = await fileService.uploadFile(buffer, file.name, userId)
+        // The FileService handles buffer conversion and processing internally.
+        const uploadResult = await fileService.uploadFile(file, userId)
 
-        if (uploadResult.success && uploadResult.data) {
+        if (uploadResult.success) {
           uploadResults.push({
-            id: uploadResult.data.fileId,
-            fileName: uploadResult.data.fileName,
+            id: uploadResult.metadata.id,
+            fileName: uploadResult.metadata.originalName, // Use original name for display
             originalFileName: file.name,
-            fileSize: file.size,
-            fileType: file.type,
-            relativePath: uploadResult.data.relativePath,
-            uploadedAt: new Date().toISOString()
+            fileSize: uploadResult.metadata.size,
+            fileType: uploadResult.metadata.mimeType,
+            relativePath: uploadResult.relativePath,
+            uploadedAt: uploadResult.metadata.uploadedAt.toISOString()
+          })
+
+          // Insert into generations table
+          await db.insert(generations).values({
+            userId: session.user.id,
+            originalImagePath: uploadResult.relativePath,
+            originalFileName: file.name, // Store the original user filename
+            roomType: 'living_room', // Default value
+            stagingStyle: 'modern', // Default value
+            operationType: 'stage_empty', // Default value
+            status: 'pending'
           })
         } else {
           // Handle FileService errors
