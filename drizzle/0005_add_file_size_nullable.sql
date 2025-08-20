@@ -1,0 +1,1 @@
+ALTER TABLE "generations" ADD COLUMN "file_size" integer;

@@ -129,12 +129,12 @@ export const GET = withAuth(async (request: NextRequest, user) => {
 export const PATCH = withAuth(async (request: NextRequest, user) => {
   const url = new URL(request.url)
   const pathSegments = url.pathname.split('/')
-  const fileId = pathSegments[pathSegments.length - 1]
+  const databaseId = pathSegments[pathSegments.length - 1]
   
-  // Validate fileId format
-  if (!fileId || fileId === '[fileId]') {
+  // Validate database ID format
+  if (!databaseId || databaseId === '[fileId]') {
     return NextResponse.json(
-      { error: 'Invalid file ID' },
+      { error: 'Invalid database ID' },
       { status: 400 }
     )
   }
@@ -154,25 +154,15 @@ export const PATCH = withAuth(async (request: NextRequest, user) => {
     const { generations } = await import('@/db/schema')
     const { eq, and } = await import('drizzle-orm')
     
-    // Find the file record in the database
-    const extensions = ['.jpg', '.jpeg', '.png', '.webp']
-    let foundRecord = null
+    // Find the file record by exact database ID match
+    const fileRecords = await db.select().from(generations)
+      .where(and(
+        eq(generations.userId, user.id),
+        eq(generations.id, databaseId)
+      ))
+      .limit(1)
     
-    for (const ext of extensions) {
-      const records = await db.select().from(generations)
-        .where(and(
-          eq(generations.userId, user.id),
-          eq(generations.originalImagePath, `uploads/${user.id}/${fileId}${ext}`)
-        ))
-        .limit(1)
-      
-      if (records.length > 0) {
-        foundRecord = records[0]
-        break
-      }
-    }
-    
-    if (!foundRecord) {
+    if (fileRecords.length === 0) {
       return NextResponse.json(
         { error: 'File not found' },
         { status: 404 }
@@ -184,7 +174,7 @@ export const PATCH = withAuth(async (request: NextRequest, user) => {
       .set({ originalFileName: originalFileName.trim() })
       .where(and(
         eq(generations.userId, user.id),
-        eq(generations.id, foundRecord.id)
+        eq(generations.id, databaseId)
       ))
 
     return NextResponse.json({
@@ -209,12 +199,12 @@ export const PATCH = withAuth(async (request: NextRequest, user) => {
 export const DELETE = withAuth(async (request: NextRequest, user) => {
   const url = new URL(request.url)
   const pathSegments = url.pathname.split('/')
-  const fileId = pathSegments[pathSegments.length - 1]
+  const databaseId = pathSegments[pathSegments.length - 1]
   
-  // Validate fileId format
-  if (!fileId || fileId === '[fileId]') {
+  // Validate database ID format
+  if (!databaseId || databaseId === '[fileId]') {
     return NextResponse.json(
-      { error: 'Invalid file ID' },
+      { error: 'Invalid database ID' },
       { status: 400 }
     )
   }
@@ -224,72 +214,43 @@ export const DELETE = withAuth(async (request: NextRequest, user) => {
     const { generations } = await import('@/db/schema')
     const { eq, and } = await import('drizzle-orm')
     
-    // Find the file record in the database
-    const fileRecord = await db.select().from(generations)
+    // Find the file record by exact database ID match
+    const fileRecords = await db.select().from(generations)
       .where(and(
         eq(generations.userId, user.id),
-        eq(generations.originalImagePath, `uploads/${user.id}/${fileId}.png`)
+        eq(generations.id, databaseId)
       ))
       .limit(1)
     
-    if (fileRecord.length === 0) {
-      // Try with different extensions
-      const extensions = ['.jpg', '.jpeg', '.png', '.webp']
-      let foundRecord = null
-      
-      for (const ext of extensions) {
-        const records = await db.select().from(generations)
-          .where(and(
-            eq(generations.userId, user.id),
-            eq(generations.originalImagePath, `uploads/${user.id}/${fileId}${ext}`)
-          ))
-          .limit(1)
-        
-        if (records.length > 0) {
-          foundRecord = records[0]
-          break
-        }
-      }
-      
-      if (!foundRecord) {
-        return NextResponse.json(
-          { error: 'File not found' },
-          { status: 404 }
-        )
-      }
-      
-      // Delete from database
-      await db.delete(generations)
-        .where(and(
-          eq(generations.userId, user.id),
-          eq(generations.id, foundRecord.id)
-        ))
-    } else {
-      // Delete from database
-      await db.delete(generations)
-        .where(and(
-          eq(generations.userId, user.id),
-          eq(generations.id, fileRecord[0].id)
-        ))
+    if (fileRecords.length === 0) {
+      return NextResponse.json(
+        { error: 'File not found' },
+        { status: 404 }
+      )
     }
+    
+    const foundRecord = fileRecords[0]
+    
+    // Delete from database
+    await db.delete(generations)
+      .where(and(
+        eq(generations.userId, user.id),
+        eq(generations.id, databaseId)
+      ))
 
-    // Delete physical file
+    // Delete physical file - extract filename from originalImagePath
     const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
+    const pathParts = foundRecord.originalImagePath.split('/')
+    const physicalFilename = pathParts[pathParts.length - 1] // Get actual filename
     const userDir = join(uploadPath, user.id)
+    const filePath = join(userDir, physicalFilename)
     
-    const extensions = ['.jpg', '.jpeg', '.png', '.webp']
-    let fileDeleted = false
-    
-    for (const ext of extensions) {
-      const filePath = join(userDir, `${fileId}${ext}`)
-      try {
-        await fs.access(filePath)
-        await fs.unlink(filePath)
-        fileDeleted = true
-        break
-      } catch {
-        // File doesn't exist with this extension, try next
-      }
+    try {
+      await fs.access(filePath)
+      await fs.unlink(filePath)
+    } catch (error) {
+      console.warn('Could not delete physical file:', filePath, error)
+      // Don't fail the request if physical file deletion fails
     }
 
     return NextResponse.json({

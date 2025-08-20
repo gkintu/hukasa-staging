@@ -36,6 +36,13 @@
       "when": 1755665786329,
       "tag": "0004_add_original_filename",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1755673843185,
+      "tag": "0005_add_file_size_nullable",
+      "breakpoints": true
     }
   ]
 }

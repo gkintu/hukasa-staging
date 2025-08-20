@@ -148,6 +148,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
             userId: session.user.id,
             originalImagePath: uploadResult.relativePath,
             originalFileName: file.name, // Store the original user filename
+            fileSize: file.size, // Store the file size
             roomType: 'living_room', // Default value
             stagingStyle: 'modern', // Default value
             operationType: 'stage_empty', // Default value

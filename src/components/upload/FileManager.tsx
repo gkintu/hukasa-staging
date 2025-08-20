@@ -233,7 +233,7 @@ export function FileManager({
                   <TableCell>
                     <div className="space-y-1">
                       <p className="font-medium text-sm text-foreground truncate max-w-xs">
-                        {file.originalFileName}
+                        {path.parse(file.originalFileName).name}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {file.fileType.split('/')[1]?.toUpperCase()}
