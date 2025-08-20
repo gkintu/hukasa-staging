@@ -55,5 +55,55 @@ export function MyFiles() {
   });
 
 
-  return <FileManager files={formattedFiles} />
+  const handleRename = async (file: ManagedFile, newName: string) => {
+    try {
+      const fileIdWithoutExt = file.thumbnailUrl?.split('/').pop() // Extract fileId from thumbnailUrl
+      if (!fileIdWithoutExt) return
+      
+      const response = await fetch(`/api/files/${fileIdWithoutExt}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ originalFileName: newName })
+      })
+      
+      if (response.ok) {
+        // Refresh files list
+        const filesResponse = await fetch('/api/files')
+        const data = await filesResponse.json()
+        if (data.success) {
+          setFiles(data.files)
+        }
+      } else {
+        console.error('Failed to rename file')
+      }
+    } catch (error) {
+      console.error('Error renaming file:', error)
+    }
+  }
+
+  const handleDelete = async (filesToDelete: ManagedFile[]) => {
+    try {
+      const deletePromises = filesToDelete.map(file => {
+        const fileIdWithoutExt = file.thumbnailUrl?.split('/').pop()
+        if (!fileIdWithoutExt) return Promise.resolve()
+        
+        return fetch(`/api/files/${fileIdWithoutExt}`, {
+          method: 'DELETE'
+        })
+      })
+      
+      await Promise.all(deletePromises)
+      
+      // Refresh files list
+      const filesResponse = await fetch('/api/files')
+      const data = await filesResponse.json()
+      if (data.success) {
+        setFiles(data.files)
+      }
+    } catch (error) {
+      console.error('Error deleting files:', error)
+    }
+  }
+
+  return <FileManager files={formattedFiles} onRename={handleRename} onDelete={handleDelete} />
 }

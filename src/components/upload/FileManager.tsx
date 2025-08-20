@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import path from 'path'
 import {
   Table,
   TableBody,
@@ -28,7 +29,8 @@ import {
   RotateCcw,
   FileImage,
   Calendar,
-  FolderOpen
+  FolderOpen,
+  Edit3
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -41,6 +43,7 @@ interface FileManagerProps {
   onPreview?: (file: ManagedFile) => void
   onRegenerate?: (file: ManagedFile) => void
   onBulkDownload?: (files: ManagedFile[]) => void
+  onRename?: (file: ManagedFile, newName: string) => void
   className?: string
 }
 
@@ -51,6 +54,7 @@ export function FileManager({
   onPreview,
   onRegenerate,
   onBulkDownload,
+  onRename,
   className
 }: FileManagerProps) {
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set())
@@ -192,7 +196,7 @@ export function FileManager({
                 <TableHead className="w-16"></TableHead>
                 <TableHead>File</TableHead>
                 <TableHead className="w-24">Size</TableHead>
-                <TableHead className="w-32">Status</TableHead>
+                <TableHead className="w-20">Type</TableHead>
                 <TableHead className="w-32">
                   <Calendar className="h-4 w-4 inline mr-1" />
                   Uploaded
@@ -241,21 +245,13 @@ export function FileManager({
                     {formatFileSize(file.fileSize)}
                   </TableCell>
                   
-                  <TableCell>
-                    {getStatusBadge(file.status)}
-                    {file.status === 'processing' && file.processingProgress && (
-                      <div className="mt-1 w-16 bg-muted rounded-full h-1">
-                        <div
-                          className="bg-primary h-1 rounded-full transition-all"
-                          style={{ width: `${file.processingProgress}%` }}
-                        />
-                      </div>
-                    )}
-                    {file.status === 'error' && file.error && (
-                      <p className="text-xs text-destructive mt-1">
-                        {file.error}
-                      </p>
-                    )}
+                  <TableCell className="text-sm font-medium text-muted-foreground">
+                    {(() => {
+                      const parsedPath = path.parse(file.originalFileName)
+                      const extension = parsedPath.ext
+                      if (!extension) return 'Unknown'
+                      return extension.slice(1).toUpperCase() // Remove dot and uppercase
+                    })()}
                   </TableCell>
                   
                   <TableCell className="text-sm text-muted-foreground">
@@ -288,6 +284,24 @@ export function FileManager({
                           <DropdownMenuItem onClick={() => onRegenerate(file)}>
                             <RotateCcw className="mr-2 h-4 w-4" />
                             Regenerate
+                          </DropdownMenuItem>
+                        )}
+                        
+                        {onRename && (
+                          <DropdownMenuItem onClick={() => {
+                            const parsedPath = path.parse(file.originalFileName)
+                            const currentNameWithoutExt = parsedPath.name
+                            const currentExt = parsedPath.ext
+                            
+                            const newName = prompt('Enter new filename:', currentNameWithoutExt)
+                            if (newName && newName.trim() && newName.trim() !== currentNameWithoutExt) {
+                              // Combine new name with original extension
+                              const finalFileName = newName.trim() + currentExt
+                              onRename(file, finalFileName)
+                            }
+                          }}>
+                            <Edit3 className="mr-2 h-4 w-4" />
+                            Rename
                           </DropdownMenuItem>
                         )}
                         
