@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState } from 'react'
+import Image from 'next/image'
 import path from 'path'
 import {
   Table,
@@ -11,7 +12,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -98,18 +98,6 @@ export function FileManager({
     }).format(date)
   }
 
-  const getStatusBadge = (status: FileStatus) => {
-    switch (status) {
-      case 'uploaded':
-        return <Badge variant="secondary">Uploaded</Badge>
-      case 'processing':
-        return <Badge variant="default" className="bg-primary">Processing</Badge>
-      case 'completed':
-        return <Badge variant="default" className="bg-green-600">Ready</Badge>
-      case 'error':
-        return <Badge variant="destructive">Error</Badge>
-    }
-  }
 
   const canDownload = (file: ManagedFile) => {
     return file.status === 'completed' && file.downloadUrl
@@ -188,8 +176,11 @@ export function FileManager({
                   <Checkbox
                     checked={allSelected}
                     onCheckedChange={handleSelectAll}
-                    ref={(el) => {
-                      if (el) el.indeterminate = someSelected && !allSelected
+                    ref={(el: HTMLButtonElement | null) => {
+                      if (el) {
+                        const checkbox = el as HTMLInputElement & { indeterminate: boolean }
+                        checkbox.indeterminate = someSelected && !allSelected
+                      }
                     }}
                   />
                 </TableHead>
@@ -218,9 +209,11 @@ export function FileManager({
                   
                   <TableCell>
                     {file.thumbnailUrl ? (
-                      <img
+                      <Image
                         src={file.thumbnailUrl}
                         alt={file.fileName}
+                        width={40}
+                        height={40}
                         className="h-10 w-10 object-cover rounded border"
                       />
                     ) : (

@@ -1,6 +1,7 @@
 'use client'
 
 import React from 'react'
+import Image from 'next/image'
 import { AspectRatio } from '@/components/ui/aspect-ratio'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
@@ -52,10 +53,11 @@ export function ImagePreview({
       <CardContent className="p-0">
         <div className="relative">
           <AspectRatio ratio={16 / 10} className="bg-muted">
-            <img
+            <Image
               src={src}
               alt={alt}
-              className="object-cover w-full h-full rounded-t-lg"
+              fill
+              className="object-cover rounded-t-lg"
               loading="lazy"
             />
             

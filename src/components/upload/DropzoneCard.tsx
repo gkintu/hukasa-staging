@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useCallback, useState } from 'react'
-import { useDropzone } from 'react-dropzone'
+import Image from 'next/image'
+import { useDropzone, type FileRejection } from 'react-dropzone'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -37,7 +38,7 @@ export function DropzoneCard({
 }: DropzoneCardProps) {
   const [files, setFiles] = useState<DroppedFile[]>([])
 
-  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: RejectedFile[]) => {
+  const onDrop = useCallback((acceptedFiles: File[], fileRejections: FileRejection[]) => {
     // Add preview URLs to accepted files
     const filesWithPreview = acceptedFiles.map(file => 
       Object.assign(file, {
@@ -48,7 +49,15 @@ export function DropzoneCard({
     setFiles(prev => [...prev, ...filesWithPreview])
     onFilesAccepted?.(acceptedFiles)
     
-    if (rejectedFiles.length > 0) {
+    if (fileRejections.length > 0) {
+      // Convert FileRejection[] to RejectedFile[]
+      const rejectedFiles: RejectedFile[] = fileRejections.map((rejection: FileRejection) => ({
+        file: rejection.file,
+        errors: rejection.errors.map((error) => ({
+          code: error.code,
+          message: error.message
+        }))
+      }))
       onFilesRejected?.(rejectedFiles)
     }
   }, [onFilesAccepted, onFilesRejected])
@@ -173,9 +182,11 @@ export function DropzoneCard({
                 >
                   {file.preview && (
                     <div className="flex-shrink-0">
-                      <img
+                      <Image
                         src={file.preview}
                         alt={file.name}
+                        width={48}
+                        height={48}
                         className="h-12 w-12 object-cover rounded border"
                         onLoad={() => {
                           // Revoke URL after image loads to free memory

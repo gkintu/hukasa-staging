@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils'
 
 type UploadStatus = 'pending' | 'uploading' | 'processing' | 'completed' | 'error'
 
-interface UploadItem {
+export interface UploadItem {
   id: string
   fileName: string
   fileSize: number

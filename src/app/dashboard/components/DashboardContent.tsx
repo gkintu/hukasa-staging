@@ -10,8 +10,7 @@ import {
   UploadFeedback, 
   type UploadItem,
   type FeedbackMessage,
-  type RejectedFile,
-  type ManagedFile 
+  type RejectedFile
 } from '@/components/upload'
 import { MyFiles } from './MyFiles'
 import { Upload, FileImage, Settings, User } from 'lucide-react'
@@ -32,7 +31,6 @@ export function DashboardContent({ user }: DashboardContentProps) {
   const [uploads, setUploads] = useState<UploadItem[]>([])
   const [feedbackMessages, setFeedbackMessages] = useState<FeedbackMessage[]>([])
   const [rejectedFiles, setRejectedFiles] = useState<RejectedFile[]>([])
-  const [managedFiles, setManagedFiles] = useState<ManagedFile[]>([])
   const [isUploading, setIsUploading] = useState(false)
 
   const handleFilesAccepted = useCallback(async (files: File[]) => {
@@ -120,7 +118,7 @@ export function DashboardContent({ user }: DashboardContentProps) {
           type: 'error',
           title: 'Upload Failed',
           message: result.message || 'Some files could not be uploaded.',
-          details: result.errors?.map(e => `${e.fileName}: ${e.error}`),
+          details: result.errors?.map((e: { fileName: string; error: string }) => `${e.fileName}: ${e.error}`),
           dismissible: true
         }
         setFeedbackMessages(prev => [...prev, errorMessage])
@@ -128,13 +126,13 @@ export function DashboardContent({ user }: DashboardContentProps) {
 
       // Handle file rejections from server
       if (result.errors && result.errors.length > 0) {
-        const serverRejections: RejectedFile[] = result.errors.map(error => ({
+        const serverRejections: RejectedFile[] = result.errors.map((error: { fileName: string; error: string; code?: string }) => ({
           file: files.find(f => f.name === error.fileName)!,
           errors: [{
             code: error.code || 'server-error',
             message: error.error
           }]
-        })).filter(rejection => rejection.file)
+        })).filter((rejection: RejectedFile) => rejection.file)
 
         setRejectedFiles(prev => [...prev, ...serverRejections])
       }
@@ -164,7 +162,7 @@ export function DashboardContent({ user }: DashboardContentProps) {
     } finally {
       setIsUploading(false)
     }
-  }, [user.id])
+  }, [])
 
   const handleFilesRejected = useCallback((rejectedFiles: RejectedFile[]) => {
     setRejectedFiles(prev => [...prev, ...rejectedFiles])
@@ -180,44 +178,8 @@ export function DashboardContent({ user }: DashboardContentProps) {
     handleFilesAccepted(files)
   }, [handleFilesAccepted])
 
-  const handleFileDownload = useCallback((file: ManagedFile) => {
-    if (file.downloadUrl) {
-      const link = document.createElement('a')
-      link.href = file.downloadUrl
-      link.download = file.originalFileName
-      document.body.appendChild(link)
-      link.click()
-      document.body.removeChild(link)
-    }
-  }, [])
 
-  const handleFileDelete = useCallback((files: ManagedFile[]) => {
-    // Remove from managed files list
-    const fileIds = new Set(files.map(f => f.id))
-    setManagedFiles(prev => prev.filter(f => !fileIds.has(f.id)))
-    
-    // Add confirmation message
-    const message: FeedbackMessage = {
-      id: nanoid(),
-      type: 'info',
-      message: `Deleted ${files.length} file${files.length === 1 ? '' : 's'}.`,
-      dismissible: true
-    }
-    setFeedbackMessages(prev => [...prev, message])
-  }, [])
 
-  const handleBulkDownload = useCallback((files: ManagedFile[]) => {
-    files.forEach(file => {
-      if (file.downloadUrl) {
-        const link = document.createElement('a')
-        link.href = file.downloadUrl
-        link.download = file.originalFileName
-        document.body.appendChild(link)
-        link.click()
-        document.body.removeChild(link)
-      }
-    })
-  }, [])
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">

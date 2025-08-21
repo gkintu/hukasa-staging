@@ -47,7 +47,7 @@ export function MyFiles() {
       fileName: file.originalFileName, // Use the stored original filename
       originalFileName: file.originalFileName,
       fileSize: file.fileSize || 0, // Use the stored file size or 0 if not available
-      status: file.status === 'pending' ? 'uploaded' : file.status === 'failed' ? 'error' : file.status as any,
+      status: file.status === 'pending' ? 'uploaded' : file.status === 'failed' ? 'error' : (file.status as 'uploaded' | 'processing' | 'completed' | 'error'),
       uploadedAt: new Date(file.createdAt),
       fileType: file.originalFileName.split('.').pop() || 'unknown',
       thumbnailUrl: `/api/files/${fileIdWithoutExt}` // Use the file serving API

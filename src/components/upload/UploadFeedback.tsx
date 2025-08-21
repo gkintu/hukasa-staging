@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils'
 
 type FeedbackType = 'success' | 'error' | 'warning' | 'info'
 
-interface FeedbackMessage {
+export interface FeedbackMessage {
   id: string
   type: FeedbackType
   title?: string
@@ -29,7 +29,7 @@ interface FeedbackMessage {
   }
 }
 
-interface RejectedFile {
+export interface RejectedFile {
   file: File
   errors: Array<{
     code: string

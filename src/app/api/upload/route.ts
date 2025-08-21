@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateApiSession } from '@/lib/auth-utils'
 import { quickStart } from '@/lib/file-service'
-import { createUserId, FileServiceErrorCode, isUploadError, isValidationError } from '@/lib/file-service'
+import { createUserId, FileServiceErrorCode, isUploadError, isValidationError, type FileServiceErrorType } from '@/lib/file-service'
 import { db } from '@/db'
 import { generations } from '@/db/schema'
 
@@ -170,12 +170,12 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
         let errorMessage = 'Upload failed'
         let errorCode: string | undefined
 
-        if (isValidationError(error)) {
-          errorMessage = error.message
-          errorCode = FileServiceErrorCode.VALIDATION_ERROR
-        } else if (isUploadError(error)) {
-          errorMessage = error.message
-          errorCode = FileServiceErrorCode.UPLOAD_ERROR
+        if (isValidationError(error as FileServiceErrorType)) {
+          errorMessage = (error as FileServiceErrorType).message
+          errorCode = FileServiceErrorCode.INVALID_FILE_TYPE
+        } else if (isUploadError(error as FileServiceErrorType)) {
+          errorMessage = (error as FileServiceErrorType).message
+          errorCode = FileServiceErrorCode.UPLOAD_FAILED
         } else if (error instanceof Error) {
           errorMessage = error.message
         }
