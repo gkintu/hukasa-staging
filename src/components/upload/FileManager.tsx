@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState } from 'react'
-import Image from 'next/image'
 import path from 'path'
 import {
   Table,
@@ -209,13 +208,14 @@ export function FileManager({
                   
                   <TableCell>
                     {file.thumbnailUrl ? (
-                      <Image
-                        src={file.thumbnailUrl}
-                        alt={file.fileName}
-                        width={40}
-                        height={40}
-                        className="h-10 w-10 object-cover rounded border"
-                      />
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={file.thumbnailUrl}
+                          alt={file.fileName}
+                          className="h-10 w-10 object-cover rounded border"
+                        />
+                      </>
                     ) : (
                       <div className="h-10 w-10 bg-muted rounded border flex items-center justify-center">
                         <FileImage className="h-4 w-4 text-muted-foreground" />
