@@ -1,9 +1,8 @@
-'use client'
+"use client"
 
 import React, { useState, useCallback } from 'react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 import { 
   DropzoneCard, 
   UploadProgress, 
@@ -12,8 +11,7 @@ import {
   type FeedbackMessage,
   type RejectedFile
 } from '@/components/upload'
-import { MyFiles } from './MyFiles'
-import { Upload, FileImage, Settings, User } from 'lucide-react'
+import { X, Upload, FileImage } from "lucide-react"
 import { nanoid } from 'nanoid'
 
 interface User {
@@ -23,11 +21,13 @@ interface User {
   image?: string | null
 }
 
-interface DashboardContentProps {
-  user: User
+interface UploadModalProps {
+  isOpen: boolean
+  onClose: () => void
+  user?: User
 }
 
-export function DashboardContent({ user }: DashboardContentProps) {
+export function UploadModal({ isOpen, onClose, user }: UploadModalProps) {
   const [uploads, setUploads] = useState<UploadItem[]>([])
   const [feedbackMessages, setFeedbackMessages] = useState<FeedbackMessage[]>([])
   const [rejectedFiles, setRejectedFiles] = useState<RejectedFile[]>([])
@@ -83,23 +83,6 @@ export function DashboardContent({ user }: DashboardContentProps) {
           dismissible: true
         }
         setFeedbackMessages(prev => [...prev, successMessage])
-
-        // Add to managed files if available
-        // if (result.files) {
-        //   const newManagedFiles: ManagedFile[] = result.files.map(file => ({
-        //     id: file.id,
-        //     fileName: file.fileName,
-        //     originalFileName: file.originalFileName,
-        //     fileSize: file.fileSize,
-        //     fileType: file.fileType,
-        //     status: 'uploaded',
-        //     uploadedAt: new Date(file.uploadedAt),
-        //     thumbnailUrl: `/api/files/${btoa(`${user.id}:${file.relativePath}`)}`,
-        //     downloadUrl: `/api/files/${btoa(`${user.id}:${file.relativePath}`)}/download`
-        //   }))
-          
-        //   setManagedFiles(prev => [...prev, ...newManagedFiles])
-        // }
 
       } else {
         // Handle partial or complete failure
@@ -178,42 +161,37 @@ export function DashboardContent({ user }: DashboardContentProps) {
     handleFilesAccepted(files)
   }, [handleFilesAccepted])
 
-
-
+  const handleClose = () => {
+    if (!isUploading) {
+      // Reset state when closing
+      setUploads([])
+      setFeedbackMessages([])
+      setRejectedFiles([])
+      onClose()
+    }
+  }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Welcome Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">
-            Welcome back, {user.name || 'User'}
-          </CardTitle>
-          <CardDescription>
-            Transform empty rooms into beautifully staged spaces with AI virtual staging
-          </CardDescription>
-        </CardHeader>
-      </Card>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-center justify-between">
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5" />
+              Upload Files
+            </DialogTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClose}
+              disabled={isUploading}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogHeader>
 
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="upload" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="upload" className="flex items-center gap-2">
-            <Upload className="h-4 w-4" />
-            Upload
-          </TabsTrigger>
-          <TabsTrigger value="files" className="flex items-center gap-2">
-            <FileImage className="h-4 w-4" />
-            My Files
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Settings
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Upload Tab */}
-        <TabsContent value="upload" className="space-y-6">
+        <div className="space-y-6 py-4">
           {/* Feedback Messages */}
           <UploadFeedback
             messages={feedbackMessages}
@@ -235,72 +213,33 @@ export function DashboardContent({ user }: DashboardContentProps) {
             maxSize={10 * 1024 * 1024}
           />
 
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Quick Actions</CardTitle>
-              <CardDescription>
-                Common tasks for virtual staging workflow
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex gap-4">
-              <Button variant="outline" disabled={isUploading}>
-                <FileImage className="h-4 w-4 mr-2" />
-                Browse Templates
-              </Button>
-              <Button variant="outline" disabled={isUploading}>
-                <Settings className="h-4 w-4 mr-2" />
-                Staging Presets
-              </Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
+          {/* Tips */}
+          <div className="bg-muted/50 rounded-lg p-4">
+            <h4 className="font-semibold mb-2 flex items-center gap-2">
+              <FileImage className="h-4 w-4" />
+              Upload Tips
+            </h4>
+            <ul className="text-sm text-muted-foreground space-y-1">
+              <li>• Use high-resolution images (minimum 1200x800px) for best results</li>
+              <li>• Supported formats: JPG, PNG, WEBP</li>
+              <li>• Maximum file size: 10MB per image</li>
+              <li>• Upload up to 5 images at once</li>
+              <li>• Empty or minimally furnished rooms work best</li>
+            </ul>
+          </div>
 
-        {/* Files Tab */}
-        <TabsContent value="files" className="space-y-6">
-          <MyFiles />
-        </TabsContent>
-
-        {/* Settings Tab */}
-        <TabsContent value="settings" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Account Settings
-              </CardTitle>
-              <CardDescription>
-                Manage your account and preferences
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Name</p>
-                  <p className="text-lg font-medium">{user.name}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Email</p>
-                  <p className="text-lg font-medium">{user.email}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">User ID</p>
-                  <p className="text-sm text-muted-foreground font-mono">{user.id}</p>
-                </div>
-              </div>
-              
-              <div className="pt-4 border-t space-y-4">
-                <h3 className="text-sm font-medium">Preferences</h3>
-                <div className="text-sm text-muted-foreground">
-                  <p>• Default staging style: Modern</p>
-                  <p>• File format: High-resolution JPEG</p>
-                  <p>• Auto-download: Enabled</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-2">
+            <Button
+              variant="outline"
+              onClick={handleClose}
+              disabled={isUploading}
+            >
+              {uploads.some(u => u.status === 'completed') ? 'Done' : 'Cancel'}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   )
 }

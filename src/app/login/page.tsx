@@ -10,7 +10,7 @@ import { useSearchParams } from "next/navigation"
 function LoginForm() {
     const [isSigningIn, setIsSigningIn] = useState(false)
     const searchParams = useSearchParams()
-    const callbackUrl = searchParams.get("callbackUrl") || "/dashboard"
+    const callbackUrl = searchParams.get("callbackUrl") || "/"
 
     const handleGoogleSignIn = async () => {
         setIsSigningIn(true)

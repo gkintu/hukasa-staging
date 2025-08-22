@@ -10,19 +10,12 @@ export async function middleware(request: NextRequest) {
 
     // Redirect authenticated users away from auth pages
     if (sessionCookie && ["/login", "/signup"].includes(pathname)) {
-        return NextResponse.redirect(new URL("/dashboard", request.url))
-    }
-
-    // Redirect unauthenticated users to login
-    if (!sessionCookie && pathname.startsWith("/dashboard")) {
-        const loginUrl = new URL("/login", request.url)
-        loginUrl.searchParams.set("callbackUrl", pathname)
-        return NextResponse.redirect(loginUrl)
+        return NextResponse.redirect(new URL("/", request.url))
     }
 
     return NextResponse.next()
 }
 
 export const config = {
-    matcher: ["/dashboard/:path*", "/login", "/signup"]
+    matcher: ["/login", "/signup"]
 }
