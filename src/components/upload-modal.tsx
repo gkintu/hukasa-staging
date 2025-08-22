@@ -27,7 +27,7 @@ interface UploadModalProps {
   user?: User
 }
 
-export function UploadModal({ isOpen, onClose, user }: UploadModalProps) {
+export function UploadModal({ isOpen, onClose }: UploadModalProps) {
   const [uploads, setUploads] = useState<UploadItem[]>([])
   const [feedbackMessages, setFeedbackMessages] = useState<FeedbackMessage[]>([])
   const [rejectedFiles, setRejectedFiles] = useState<RejectedFile[]>([])

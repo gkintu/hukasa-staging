@@ -3,7 +3,7 @@ import { validateApiSession } from '@/lib/auth-utils'
 import { quickStart } from '@/lib/file-service'
 import { createUserId, FileServiceErrorCode, isUploadError, isValidationError, type FileServiceErrorType } from '@/lib/file-service'
 import { db } from '@/db'
-import { generations } from '@/db/schema'
+import { generations, projects } from '@/db/schema'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
@@ -42,6 +42,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
     // Parse form data
     const formData = await request.formData()
     const files = formData.getAll('files') as File[]
+    const projectIdParam = formData.get('projectId') as string | null
+    const projectName = formData.get('projectName') as string | null
 
     // Validate request
     if (!files || files.length === 0) {
@@ -107,6 +109,29 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
       )
     }
 
+    // Handle project creation/selection
+    let projectId: string
+    if (projectIdParam) {
+      // Use existing project
+      projectId = projectIdParam
+    } else {
+      // Create new project with provided name or default name
+      const defaultProjectName = projectName || `Project ${new Date().toLocaleDateString()}`
+      const newProject = await db.insert(projects).values({
+        userId: session.user.id,
+        name: defaultProjectName,
+      }).returning()
+      
+      if (newProject.length === 0) {
+        return NextResponse.json(
+          { success: false, message: 'Failed to create project' },
+          { status: 500 }
+        )
+      }
+      
+      projectId = newProject[0].id
+    }
+
     // Process valid files
     const fileService = quickStart()
     const userId = createUserId(session.user.id)
@@ -146,13 +171,15 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
           // Insert into generations table
           await db.insert(generations).values({
             userId: session.user.id,
+            projectId: projectId,
             originalImagePath: uploadResult.relativePath,
             originalFileName: file.name, // Store the original user filename
             fileSize: file.size, // Store the file size
             roomType: 'living_room', // Default value
             stagingStyle: 'modern', // Default value
             operationType: 'stage_empty', // Default value
-            status: 'pending'
+            status: 'pending',
+            variationIndex: 1 // First variation for this source image
           })
         } else {
           // Handle FileService errors

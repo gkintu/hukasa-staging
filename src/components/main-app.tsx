@@ -1,14 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Settings, Upload } from "lucide-react"
 import { Sidebar } from "@/components/sidebar"
 import { Dashboard } from "@/components/dashboard"
 import { Projects } from "@/components/projects"
+import { ProjectDetail } from "@/components/project-detail"
 import { SettingsPage } from "@/components/settings-page"
 import { Help } from "@/components/help"
 import { UploadModal } from "@/components/upload-modal"
+import { ImageDetailModal } from "@/components/image-detail-modal"
 
 interface User {
   id: string
@@ -21,12 +24,103 @@ interface MainAppProps {
   user: User
 }
 
+// Define types for the image detail modal
+interface GeneratedVariant {
+  id: string
+  stagedImagePath: string | null
+  variationIndex: number
+  status: string
+  completedAt: Date | null
+  errorMessage: string | null
+}
+
+interface SourceImage {
+  id: string
+  originalImagePath: string
+  originalFileName: string
+  fileSize: number | null
+  roomType: string
+  stagingStyle: string
+  operationType: string
+  createdAt: Date
+  variants: GeneratedVariant[]
+}
+
 export function MainApp({ user }: MainAppProps) {
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  
   const [activeView, setActiveView] = useState<"dashboard" | "projects" | "settings" | "help">("dashboard")
   const [showUploadModal, setShowUploadModal] = useState(false)
+  const [selectedImageForModal, setSelectedImageForModal] = useState<SourceImage | null>(null)
+  
+  // Get URL parameters
+  const projectParam = searchParams.get('project')
+  const imageParam = searchParams.get('image')
+  
+  useEffect(() => {
+    // If there's an image parameter, we should be showing the modal
+    if (imageParam && !selectedImageForModal && projectParam) {
+      // Fetch the image data from the project
+      const fetchImageData = async () => {
+        try {
+          const response = await fetch(`/api/projects/${projectParam}`)
+          const data = await response.json()
+          if (data.success) {
+            const sourceImage = data.sourceImages.find((img: SourceImage) => img.id === imageParam)
+            if (sourceImage) {
+              setSelectedImageForModal(sourceImage)
+            }
+          }
+        } catch (error) {
+          console.error('Error fetching image data:', error)
+        }
+      }
+      fetchImageData()
+    } else if (!imageParam && selectedImageForModal) {
+      // Close modal if no image parameter
+      setSelectedImageForModal(null)
+    }
+  }, [imageParam, selectedImageForModal, projectParam])
 
   const handleSidebarNavigation = (view: "dashboard" | "projects" | "help") => {
     setActiveView(view)
+    // Clear any URL parameters when navigating via sidebar
+    router.push('/')
+  }
+
+  const handleProjectSelect = (projectId: string) => {
+    // Navigate to project detail view
+    router.push(`/?project=${projectId}`)
+  }
+
+  const handleBackToProjects = () => {
+    // Navigate back to projects list
+    setActiveView("projects")
+    router.push('/')
+  }
+
+  const handleImageSelect = (imageId: string, sourceImage: SourceImage) => {
+    // Open image detail modal
+    setSelectedImageForModal(sourceImage)
+    const currentProject = searchParams.get('project')
+    if (currentProject) {
+      router.push(`/?project=${currentProject}&image=${imageId}`)
+    }
+  }
+
+  const handleCloseImageModal = () => {
+    setSelectedImageForModal(null)
+    const currentProject = searchParams.get('project')
+    if (currentProject) {
+      router.push(`/?project=${currentProject}`)
+    } else {
+      router.push('/')
+    }
+  }
+
+  const handleUploadClick = () => {
+    setShowUploadModal(true)
   }
 
   return (
@@ -55,17 +149,40 @@ export function MainApp({ user }: MainAppProps) {
         </div>
 
         <div className="p-6">
-          {activeView === "dashboard" && <Dashboard user={user} />}
-          {activeView === "projects" && <Projects user={user} />}
-          {activeView === "settings" && <SettingsPage user={user} />}
-          {activeView === "help" && <Help />}
+          {/* Show ProjectDetail if there's a project parameter, otherwise show view based on activeView */}
+          {projectParam ? (
+            <ProjectDetail 
+              projectId={projectParam}
+              onBack={handleBackToProjects}
+              onImageSelect={handleImageSelect}
+              onUploadMore={handleUploadClick}
+            />
+          ) : (
+            <>
+              {activeView === "dashboard" && <Dashboard user={user} />}
+              {activeView === "projects" && (
+                <Projects 
+                  user={user} 
+                  onProjectSelect={handleProjectSelect}
+                  onUploadClick={handleUploadClick}
+                />
+              )}
+              {activeView === "settings" && <SettingsPage user={user} />}
+              {activeView === "help" && <Help />}
+            </>
+          )}
         </div>
       </main>
       
       <UploadModal 
         isOpen={showUploadModal} 
         onClose={() => setShowUploadModal(false)}
-        user={user}
+      />
+      
+      <ImageDetailModal
+        isOpen={!!selectedImageForModal}
+        onClose={handleCloseImageModal}
+        sourceImage={selectedImageForModal}
       />
     </div>
   )

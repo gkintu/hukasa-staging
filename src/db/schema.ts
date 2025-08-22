@@ -49,14 +49,25 @@ export const users = pgTable('users', {
     .notNull()
 })
 
+// Projects table
+export const projects = pgTable('projects', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: text('user_id').references(() => users.id).notNull(),
+  name: text('name').notNull(), // User-defined project name
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+})
+
 // Generations table
 export const generations = pgTable('generations', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: text('user_id').references(() => users.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
   originalImagePath: text('original_image_path').notNull(), // Relative path: "uploads/uuid-filename.jpg"
   originalFileName: text('original_file_name').notNull(), // Original user filename: "vacation-photo.jpg"
   fileSize: integer('file_size'), // File size in bytes (nullable for migration)
   stagedImagePath: text('staged_image_path'), // Relative path: "uploads/staged-uuid-filename.jpg"
+  variationIndex: integer('variation_index').default(1).notNull(), // 1, 2, 3 for multiple AI generations
   roomType: roomTypeEnum('room_type').notNull(),
   stagingStyle: stagingStyleEnum('staging_style').notNull(),
   operationType: operationTypeEnum('operation_type').notNull(),
@@ -71,6 +82,15 @@ export const generations = pgTable('generations', {
 
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
+  projects: many(projects),
+  generations: many(generations)
+}))
+
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  user: one(users, {
+    fields: [projects.userId],
+    references: [users.id]
+  }),
   generations: many(generations)
 }))
 
@@ -78,6 +98,10 @@ export const generationsRelations = relations(generations, ({ one }) => ({
   user: one(users, {
     fields: [generations.userId],
     references: [users.id]
+  }),
+  project: one(projects, {
+    fields: [generations.projectId],
+    references: [projects.id]
   })
 }))
 
@@ -133,6 +157,8 @@ export const verifications = pgTable('verifications', {
 // Type exports for TypeScript
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
+export type Project = typeof projects.$inferSelect
+export type NewProject = typeof projects.$inferInsert
 export type Generation = typeof generations.$inferSelect
 export type NewGeneration = typeof generations.$inferInsert
 export type Session = typeof sessions.$inferSelect
