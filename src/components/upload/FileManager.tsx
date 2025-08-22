@@ -1,7 +1,17 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useMemo } from 'react'
 import path from 'path'
+import {
+  useReactTable,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  flexRender,
+  type ColumnDef,
+  type SortingState,
+  type RowSelectionState,
+} from '@tanstack/react-table'
 import {
   Table,
   TableBody,
@@ -29,7 +39,10 @@ import {
   FileImage,
   Calendar,
   FolderOpen,
-  Edit3
+  Edit3,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -56,29 +69,8 @@ export function FileManager({
   onRename,
   className
 }: FileManagerProps) {
-  const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set())
-
-  const handleSelectAll = (checked: boolean) => {
-    if (checked) {
-      setSelectedFiles(new Set(files.map(f => f.id)))
-    } else {
-      setSelectedFiles(new Set())
-    }
-  }
-
-  const handleSelectFile = (fileId: string, checked: boolean) => {
-    const newSelection = new Set(selectedFiles)
-    if (checked) {
-      newSelection.add(fileId)
-    } else {
-      newSelection.delete(fileId)
-    }
-    setSelectedFiles(newSelection)
-  }
-
-  const getSelectedFiles = (): ManagedFile[] => {
-    return files.filter(f => selectedFiles.has(f.id))
-  }
+  const [sorting, setSorting] = useState<SortingState>([])
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 B'
@@ -97,9 +89,253 @@ export function FileManager({
     }).format(date)
   }
 
-
   const canDownload = (file: ManagedFile) => {
     return file.status === 'completed' && file.downloadUrl
+  }
+
+  const columns = useMemo<ColumnDef<ManagedFile>[]>(
+    () => [
+      {
+        id: 'select',
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && 'indeterminate')
+            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+            aria-label="Select all"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+          />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        id: 'thumbnail',
+        header: '',
+        cell: ({ row }) => {
+          const file = row.original
+          return file.thumbnailUrl ? (
+            <img
+              src={file.thumbnailUrl}
+              alt={file.fileName}
+              className="h-10 w-10 object-cover rounded border"
+            />
+          ) : (
+            <div className="h-10 w-10 bg-muted rounded border flex items-center justify-center">
+              <FileImage className="h-4 w-4 text-muted-foreground" />
+            </div>
+          )
+        },
+        enableSorting: false,
+        enableHiding: false,
+      },
+      {
+        accessorKey: 'originalFileName',
+        id: 'fileName',
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="h-auto p-0 font-medium"
+          >
+            File
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            )}
+          </Button>
+        ),
+        cell: ({ row }) => {
+          const file = row.original
+          const parsedPath = path.parse(file.originalFileName)
+          return (
+            <div className="space-y-1">
+              <p className="font-medium text-sm text-foreground truncate max-w-xs">
+                {parsedPath.name}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {file.fileType.split('/')[1]?.toUpperCase()}
+              </p>
+            </div>
+          )
+        },
+      },
+      {
+        accessorKey: 'fileSize',
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="h-auto p-0 font-medium"
+          >
+            Size
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            )}
+          </Button>
+        ),
+        cell: ({ getValue }) => formatFileSize(getValue() as number),
+        sortingFn: 'basic',
+      },
+      {
+        id: 'type',
+        accessorFn: (row) => {
+          const parsedPath = path.parse(row.originalFileName)
+          const extension = parsedPath.ext
+          return extension ? extension.slice(1).toUpperCase() : 'Unknown'
+        },
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="h-auto p-0 font-medium"
+          >
+            Type
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            )}
+          </Button>
+        ),
+        cell: ({ getValue }) => (
+          <span className="text-sm font-medium text-muted-foreground">
+            {getValue() as string}
+          </span>
+        ),
+      },
+      {
+        accessorKey: 'uploadedAt',
+        header: ({ column }) => (
+          <Button
+            variant="ghost"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            className="h-auto p-0 font-medium"
+          >
+            <Calendar className="h-4 w-4 mr-1" />
+            Uploaded
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp className="ml-2 h-4 w-4" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown className="ml-2 h-4 w-4" />
+            ) : (
+              <ArrowUpDown className="ml-2 h-4 w-4" />
+            )}
+          </Button>
+        ),
+        cell: ({ getValue }) => (
+          <span className="text-sm text-muted-foreground">
+            {formatDate(getValue() as Date)}
+          </span>
+        ),
+        sortingFn: 'datetime',
+      },
+      {
+        id: 'actions',
+        cell: ({ row }) => {
+          const file = row.original
+          return (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="h-8 w-8 p-0">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {onPreview && file.thumbnailUrl && (
+                  <DropdownMenuItem onClick={() => onPreview(file)}>
+                    <Eye className="mr-2 h-4 w-4" />
+                    Preview
+                  </DropdownMenuItem>
+                )}
+                
+                {onDownload && canDownload(file) && (
+                  <DropdownMenuItem onClick={() => onDownload(file)}>
+                    <Download className="mr-2 h-4 w-4" />
+                    Download
+                  </DropdownMenuItem>
+                )}
+                
+                {onRegenerate && file.status === 'completed' && (
+                  <DropdownMenuItem onClick={() => onRegenerate(file)}>
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    Regenerate
+                  </DropdownMenuItem>
+                )}
+                
+                {onRename && (
+                  <DropdownMenuItem onClick={() => {
+                    const parsedPath = path.parse(file.originalFileName)
+                    const currentNameWithoutExt = parsedPath.name
+                    const currentExt = parsedPath.ext
+                    
+                    const newName = prompt('Enter new filename:', currentNameWithoutExt)
+                    if (newName && newName.trim() && newName.trim() !== currentNameWithoutExt) {
+                      const finalFileName = newName.trim() + currentExt
+                      onRename(file, finalFileName)
+                    }
+                  }}>
+                    <Edit3 className="mr-2 h-4 w-4" />
+                    Rename
+                  </DropdownMenuItem>
+                )}
+                
+                {onDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem 
+                      onClick={() => onDelete([file])}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )
+        },
+        enableSorting: false,
+        enableHiding: false,
+      },
+    ],
+    [onDelete, onDownload, onPreview, onRegenerate, onRename]
+  )
+
+  const table = useReactTable({
+    data: files,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onSortingChange: setSorting,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      sorting,
+      rowSelection,
+    },
+  })
+
+  const getSelectedFiles = (): ManagedFile[] => {
+    return table.getSelectedRowModel().rows.map(row => row.original)
   }
 
   if (files.length === 0) {
@@ -116,9 +352,7 @@ export function FileManager({
     )
   }
 
-  const selectedCount = selectedFiles.size
-  const allSelected = selectedCount === files.length && files.length > 0
-  const someSelected = selectedCount > 0 && selectedCount < files.length
+  const selectedCount = Object.keys(rowSelection).length
 
   return (
     <Card className={cn("w-full", className)}>
@@ -170,149 +404,29 @@ export function FileManager({
         <div className="rounded-md border overflow-hidden">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead className="w-12">
-                  <Checkbox
-                    checked={allSelected}
-                    onCheckedChange={handleSelectAll}
-                    ref={(el: HTMLButtonElement | null) => {
-                      if (el) {
-                        const checkbox = el as HTMLInputElement & { indeterminate: boolean }
-                        checkbox.indeterminate = someSelected && !allSelected
-                      }
-                    }}
-                  />
-                </TableHead>
-                <TableHead className="w-16"></TableHead>
-                <TableHead>File</TableHead>
-                <TableHead className="w-24">Size</TableHead>
-                <TableHead className="w-20">Type</TableHead>
-                <TableHead className="w-32">
-                  <Calendar className="h-4 w-4 inline mr-1" />
-                  Uploaded
-                </TableHead>
-                <TableHead className="w-16"></TableHead>
-              </TableRow>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id} className={header.id === 'select' ? 'w-12' : header.id === 'thumbnail' ? 'w-16' : header.id === 'fileSize' ? 'w-24' : header.id === 'type' ? 'w-20' : header.id === 'uploadedAt' ? 'w-32' : header.id === 'actions' ? 'w-16' : undefined}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              ))}
             </TableHeader>
             <TableBody>
-              {files.map((file) => (
-                <TableRow key={file.id}>
-                  <TableCell>
-                    <Checkbox
-                      checked={selectedFiles.has(file.id)}
-                      onCheckedChange={(checked) => 
-                        handleSelectFile(file.id, checked as boolean)
-                      }
-                    />
-                  </TableCell>
-                  
-                  <TableCell>
-                    {file.thumbnailUrl ? (
-                      <>
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={file.thumbnailUrl}
-                          alt={file.fileName}
-                          className="h-10 w-10 object-cover rounded border"
-                        />
-                      </>
-                    ) : (
-                      <div className="h-10 w-10 bg-muted rounded border flex items-center justify-center">
-                        <FileImage className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                    )}
-                  </TableCell>
-                  
-                  <TableCell>
-                    <div className="space-y-1">
-                      <p className="font-medium text-sm text-foreground truncate max-w-xs">
-                        {path.parse(file.originalFileName).name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {file.fileType.split('/')[1]?.toUpperCase()}
-                      </p>
-                    </div>
-                  </TableCell>
-                  
-                  <TableCell className="text-sm text-muted-foreground">
-                    {formatFileSize(file.fileSize)}
-                  </TableCell>
-                  
-                  <TableCell className="text-sm font-medium text-muted-foreground">
-                    {(() => {
-                      const parsedPath = path.parse(file.originalFileName)
-                      const extension = parsedPath.ext
-                      if (!extension) return 'Unknown'
-                      return extension.slice(1).toUpperCase() // Remove dot and uppercase
-                    })()}
-                  </TableCell>
-                  
-                  <TableCell className="text-sm text-muted-foreground">
-                    {formatDate(file.uploadedAt)}
-                  </TableCell>
-                  
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        {onPreview && file.thumbnailUrl && (
-                          <DropdownMenuItem onClick={() => onPreview(file)}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            Preview
-                          </DropdownMenuItem>
-                        )}
-                        
-                        {onDownload && canDownload(file) && (
-                          <DropdownMenuItem onClick={() => onDownload(file)}>
-                            <Download className="mr-2 h-4 w-4" />
-                            Download
-                          </DropdownMenuItem>
-                        )}
-                        
-                        {onRegenerate && file.status === 'completed' && (
-                          <DropdownMenuItem onClick={() => onRegenerate(file)}>
-                            <RotateCcw className="mr-2 h-4 w-4" />
-                            Regenerate
-                          </DropdownMenuItem>
-                        )}
-                        
-                        {onRename && (
-                          <DropdownMenuItem onClick={() => {
-                            const parsedPath = path.parse(file.originalFileName)
-                            const currentNameWithoutExt = parsedPath.name
-                            const currentExt = parsedPath.ext
-                            
-                            const newName = prompt('Enter new filename:', currentNameWithoutExt)
-                            if (newName && newName.trim() && newName.trim() !== currentNameWithoutExt) {
-                              // Combine new name with original extension
-                              const finalFileName = newName.trim() + currentExt
-                              onRename(file, finalFileName)
-                            }
-                          }}>
-                            <Edit3 className="mr-2 h-4 w-4" />
-                            Rename
-                          </DropdownMenuItem>
-                        )}
-                        
-                        {onDelete && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={() => onDelete([file])}
-                              className="text-destructive focus:text-destructive"
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Delete
-                            </DropdownMenuItem>
-                          </>
-                        )}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
+              {table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
                 </TableRow>
               ))}
             </TableBody>
