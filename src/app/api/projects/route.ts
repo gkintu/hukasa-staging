@@ -13,14 +13,15 @@ export async function GET(request: NextRequest) {
 
     const userId = session.user.id
 
-    // Get all projects with their generation counts and thumbnail
+    // Get all projects with their source image and staged version counts
     const userProjects = await db
       .select({
         id: projects.id,
         name: projects.name,
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
-        imageCount: sql<number>`count(${generations.id})::int`,
+        sourceImageCount: sql<number>`count(distinct ${generations.originalImagePath})::int`,
+        stagedVersionCount: sql<number>`count(case when ${generations.stagedImagePath} is not null then 1 end)::int`,
         thumbnailUrl: sql<string>`min(${generations.originalImagePath})`
       })
       .from(projects)

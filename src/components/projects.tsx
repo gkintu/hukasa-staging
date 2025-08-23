@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { FolderOpen, Plus, Calendar, Image as ImageIcon } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
+import { FolderOpen, Plus, Image as ImageIcon, MoreHorizontal, Edit3, Trash2 } from "lucide-react"
 
 interface User {
   id: string
@@ -24,13 +26,19 @@ interface Project {
   name: string
   createdAt: string
   updatedAt: string
-  imageCount: number
+  sourceImageCount: number
+  stagedVersionCount: number
   thumbnailUrl: string | null
 }
 
 export function Projects({ onProjectSelect, onUploadClick }: ProjectsProps) {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [renameDialogOpen, setRenameDialogOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null)
+  const [newProjectName, setNewProjectName] = useState("")
+  const [isUpdating, setIsUpdating] = useState(false)
 
   useEffect(() => {
     async function fetchProjects() {
@@ -50,13 +58,6 @@ export function Projects({ onProjectSelect, onUploadClick }: ProjectsProps) {
     fetchProjects()
   }, [])
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    })
-  }
 
   const handleProjectClick = (projectId: string) => {
     onProjectSelect?.(projectId)
@@ -64,6 +65,80 @@ export function Projects({ onProjectSelect, onUploadClick }: ProjectsProps) {
 
   const handleCreateProject = () => {
     onUploadClick?.()
+  }
+
+  const handleRenameProject = (project: Project, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setSelectedProject(project)
+    setNewProjectName(project.name)
+    setRenameDialogOpen(true)
+  }
+
+  const handleDeleteProject = (project: Project, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setSelectedProject(project)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmRename = async () => {
+    if (!selectedProject || !newProjectName.trim()) return
+    
+    setIsUpdating(true)
+    try {
+      const response = await fetch(`/api/projects/${selectedProject.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: newProjectName.trim()
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setProjects(projects.map(p => 
+          p.id === selectedProject.id 
+            ? { ...p, name: data.project.name, updatedAt: data.project.updatedAt }
+            : p
+        ))
+        setRenameDialogOpen(false)
+        setSelectedProject(null)
+        setNewProjectName("")
+      } else {
+        console.error('Failed to rename project:', data.message)
+      }
+    } catch (error) {
+      console.error('Error renaming project:', error)
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const confirmDelete = async () => {
+    if (!selectedProject) return
+    
+    setIsUpdating(true)
+    try {
+      const response = await fetch(`/api/projects/${selectedProject.id}`, {
+        method: 'DELETE'
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setProjects(projects.filter(p => p.id !== selectedProject.id))
+        setDeleteDialogOpen(false)
+        setSelectedProject(null)
+      } else {
+        console.error('Failed to delete project:', data.message)
+      }
+    } catch (error) {
+      console.error('Error deleting project:', error)
+    } finally {
+      setIsUpdating(false)
+    }
   }
 
   if (loading) {
@@ -143,13 +218,13 @@ export function Projects({ onProjectSelect, onUploadClick }: ProjectsProps) {
         {projects.map((project, index) => (
           <Card
             key={project.id}
-            className="group cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] animate-fade-in"
+            className="group cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] animate-fade-in pt-0"
             style={{ animationDelay: `${index * 100}ms` }}
             onClick={() => handleProjectClick(project.id)}
           >
             <CardContent className="p-0">
               <div className="relative">
-                <div className="aspect-video overflow-hidden rounded-t-lg bg-muted">
+                <div className="aspect-video overflow-hidden rounded-t-sm bg-muted">
                   {project.thumbnailUrl ? (
                     <img
                       src={`/api/files/${project.thumbnailUrl.split('/').pop()?.split('.')[0]}`}
@@ -166,29 +241,125 @@ export function Projects({ onProjectSelect, onUploadClick }: ProjectsProps) {
                     </div>
                   )}
                 </div>
-                <Badge
-                  variant="secondary"
-                  className="absolute top-2 right-2 bg-background/90 text-foreground"
-                >
-                  {project.imageCount} {project.imageCount === 1 ? 'image' : 'images'}
-                </Badge>
+                
+                {/* Source Images and Staged Versions count - bottom left */}
+                <div className="absolute bottom-2 left-2 text-foreground text-xs space-y-2">
+                  <div className="bg-background/90 rounded-sm px-1.5 py-0.5">Source Images: {project.sourceImageCount}</div>
+                  <div className="bg-background/90 rounded-sm px-1.5 py-0.5">Staged Versions: {project.stagedVersionCount}</div>
+                </div>
+
+                {/* 3-dots menu in top right */}
+                <div className="absolute top-2 right-2">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 bg-background/90 hover:bg-background/100"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                        }}
+                      >
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem 
+                        onClick={(e) => handleRenameProject(project, e)}
+                        className="cursor-pointer"
+                      >
+                        <Edit3 className="h-4 w-4 mr-2" />
+                        Rename Project
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={(e) => handleDeleteProject(project, e)}
+                        className="cursor-pointer text-destructive focus:text-destructive"
+                        variant="destructive"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete Project
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
 
-              <div className="p-4">
-                <h3 className="font-semibold text-lg mb-2 truncate" title={project.name}>
+              <div className="px-3 py-2">
+                <h3 className="font-semibold text-lg truncate" title={project.name}>
                   {project.name}
                 </h3>
-                <div className="flex items-center text-sm text-muted-foreground space-x-4">
-                  <div className="flex items-center space-x-1">
-                    <Calendar className="h-3 w-3" />
-                    <span>{formatDate(project.updatedAt)}</span>
-                  </div>
-                </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Rename Dialog */}
+      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename Project</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <Input
+              value={newProjectName}
+              onChange={(e) => setNewProjectName(e.target.value)}
+              placeholder="Enter project name"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  confirmRename()
+                }
+              }}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setRenameDialogOpen(false)}
+              disabled={isUpdating}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmRename}
+              disabled={isUpdating || !newProjectName.trim()}
+            >
+              {isUpdating ? "Renaming..." : "Rename"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Project</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete &quot;{selectedProject?.name}&quot;? This action cannot be undone and will permanently delete all images and AI variations in this project.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={isUpdating}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDelete}
+              disabled={isUpdating}
+            >
+              {isUpdating ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
