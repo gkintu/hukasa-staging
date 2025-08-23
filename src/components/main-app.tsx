@@ -177,6 +177,7 @@ export function MainApp({ user }: MainAppProps) {
       <UploadModal 
         isOpen={showUploadModal} 
         onClose={() => setShowUploadModal(false)}
+        projectId={searchParams.get('project') || undefined}
       />
       
       <ImageDetailModal

@@ -25,9 +25,10 @@ interface UploadModalProps {
   isOpen: boolean
   onClose: () => void
   user?: User
+  projectId?: string
 }
 
-export function UploadModal({ isOpen, onClose }: UploadModalProps) {
+export function UploadModal({ isOpen, onClose, projectId }: UploadModalProps) {
   const [uploads, setUploads] = useState<UploadItem[]>([])
   const [feedbackMessages, setFeedbackMessages] = useState<FeedbackMessage[]>([])
   const [rejectedFiles, setRejectedFiles] = useState<RejectedFile[]>([])
@@ -54,6 +55,11 @@ export function UploadModal({ isOpen, onClose }: UploadModalProps) {
       files.forEach(file => {
         formData.append('files', file)
       })
+      
+      // Add project ID if provided
+      if (projectId) {
+        formData.append('projectId', projectId)
+      }
 
       // Upload files
       const response = await fetch('/api/upload', {
