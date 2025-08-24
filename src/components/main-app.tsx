@@ -64,6 +64,7 @@ export function MainApp({ user }: MainAppProps) {
   const projectParam = searchParams.get('project')
   const imageParam = searchParams.get('image')
   const allImagesParam = searchParams.get('allImages')
+  const unassignedParam = searchParams.get('unassigned')
   
   useEffect(() => {
     // If there's an image parameter, we should be showing the modal
@@ -80,7 +81,7 @@ export function MainApp({ user }: MainAppProps) {
                 setSelectedImageForModal(sourceImage)
               }
             }
-          } else if (allImagesParam) {
+          } else if (allImagesParam || unassignedParam) {
             // Fetch from all images
             const response = await fetch('/api/images')
             const data = await response.json()
@@ -100,7 +101,7 @@ export function MainApp({ user }: MainAppProps) {
       // Close modal if no image parameter
       setSelectedImageForModal(null)
     }
-  }, [imageParam, selectedImageForModal, projectParam, allImagesParam])
+  }, [imageParam, selectedImageForModal, projectParam, allImagesParam, unassignedParam])
 
   const handleSidebarNavigation = (view: "dashboard" | "allImages" | "projects" | "help") => {
     setActiveView(view)
@@ -112,9 +113,13 @@ export function MainApp({ user }: MainAppProps) {
     }
   }
 
-  const handleProjectSelect = (projectId: string) => {
-    // Navigate to project detail view
-    router.push(`/?project=${projectId}`)
+  const handleProjectSelect = (projectId: string, isUnassigned?: boolean) => {
+    // Navigate to unassigned view or project detail view
+    if (isUnassigned) {
+      router.push('/?unassigned=true')
+    } else {
+      router.push(`/?project=${projectId}`)
+    }
   }
 
   const handleBackToProjects = () => {
@@ -128,11 +133,14 @@ export function MainApp({ user }: MainAppProps) {
     setSelectedImageForModal(sourceImage)
     const currentProject = searchParams.get('project')
     const currentAllImages = searchParams.get('allImages')
+    const currentUnassigned = searchParams.get('unassigned')
     
     if (currentProject) {
       router.push(`/?project=${currentProject}&image=${imageId}`)
     } else if (currentAllImages) {
       router.push(`/?allImages=true&image=${imageId}`)
+    } else if (currentUnassigned) {
+      router.push(`/?unassigned=true&image=${imageId}`)
     }
   }
 
@@ -140,11 +148,14 @@ export function MainApp({ user }: MainAppProps) {
     setSelectedImageForModal(null)
     const currentProject = searchParams.get('project')
     const currentAllImages = searchParams.get('allImages')
+    const currentUnassigned = searchParams.get('unassigned')
     
     if (currentProject) {
       router.push(`/?project=${currentProject}`)
     } else if (currentAllImages) {
       router.push('/?allImages=true')
+    } else if (currentUnassigned) {
+      router.push('/?unassigned=true')
     } else {
       router.push('/')
     }
@@ -180,13 +191,18 @@ export function MainApp({ user }: MainAppProps) {
         </div>
 
         <div className="p-6">
-          {/* Show ProjectDetail if there's a project parameter, otherwise show view based on activeView */}
+          {/* Show specific views based on URL parameters, otherwise show view based on activeView */}
           {projectParam ? (
             <ProjectDetail 
               projectId={projectParam}
               onBack={handleBackToProjects}
               onImageSelect={handleImageSelect}
               onUploadMore={handleUploadClick}
+            />
+          ) : unassignedParam ? (
+            <AllImages 
+              onImageSelect={handleImageSelect}
+              unassignedOnly={true}
             />
           ) : (
             <>

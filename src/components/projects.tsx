@@ -21,7 +21,7 @@ interface User {
 
 interface ProjectsProps {
   user?: User
-  onProjectSelect?: (projectId: string) => void
+  onProjectSelect?: (projectId: string, isUnassigned?: boolean) => void
   onUploadClick?: () => void
 }
 
@@ -65,8 +65,9 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
   }, [])
 
 
-  const handleProjectClick = (projectId: string) => {
-    onProjectSelect?.(projectId)
+  const handleProjectClick = (project: Project) => {
+    const isUnassigned = isUnassignedProject(project.name)
+    onProjectSelect?.(project.id, isUnassigned)
   }
 
   const handleCreateProject = () => {
@@ -241,7 +242,7 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
                   : ''
               }`}
               style={{ animationDelay: `${index * 100}ms` }}
-              onClick={() => handleProjectClick(project.id)}
+              onClick={() => handleProjectClick(project)}
             >
               <CardContent className="p-0">
                 <div className="relative">
