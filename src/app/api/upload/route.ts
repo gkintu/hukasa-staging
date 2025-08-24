@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateApiSession } from '@/lib/auth-utils'
 import { quickStart } from '@/lib/file-service'
 import { createUserId, FileServiceErrorCode, isUploadError, isValidationError, type FileServiceErrorType } from '@/lib/file-service'
+import { getOrCreateUnassignedProject } from '@/lib/unassigned-project'
 import { db } from '@/db'
 import { generations, projects } from '@/db/schema'
 
@@ -114,12 +115,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
     if (projectIdParam) {
       // Use existing project
       projectId = projectIdParam
-    } else {
-      // Create new project with provided name or default name
-      const defaultProjectName = projectName || `Project ${new Date().toLocaleDateString()}`
+    } else if (projectName && projectName.trim()) {
+      // Create new project with provided name
       const newProject = await db.insert(projects).values({
         userId: session.user.id,
-        name: defaultProjectName,
+        name: projectName.trim(),
       }).returning()
       
       if (newProject.length === 0) {
@@ -130,6 +130,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
       }
       
       projectId = newProject[0].id
+    } else {
+      // No project specified - use unassigned project
+      projectId = await getOrCreateUnassignedProject(session.user.id)
     }
 
     // Process valid files

@@ -7,7 +7,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { CreateProjectDialog } from "@/components/create-project-dialog"
-import { FolderOpen, Plus, Image as ImageIcon, MoreHorizontal, Edit3, Trash2 } from "lucide-react"
+import { FolderOpen, Plus, Image as ImageIcon, MoreHorizontal, Edit3, Trash2, Inbox } from "lucide-react"
+
+// Helper function to check if project is unassigned (client-side only)
+const isUnassignedProject = (projectName: string) => projectName === "📥 Unassigned Images"
 
 interface User {
   id: string
@@ -226,32 +229,43 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {projects.map((project, index) => (
-          <Card
-            key={project.id}
-            className="group cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] animate-fade-in pt-0"
-            style={{ animationDelay: `${index * 100}ms` }}
-            onClick={() => handleProjectClick(project.id)}
-          >
-            <CardContent className="p-0">
-              <div className="relative">
-                <div className="aspect-video overflow-hidden rounded-t-sm bg-muted">
-                  {project.thumbnailUrl ? (
-                    <img
-                      src={`/api/files/${project.thumbnailUrl.split('/').pop()?.split('.')[0]}`}
-                      alt={`${project.name} thumbnail`}
-                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement
-                        target.style.display = 'none'
-                      }}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <ImageIcon className="h-12 w-12 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
+        {projects.map((project, index) => {
+          const isUnassigned = isUnassignedProject(project.name)
+          
+          return (
+            <Card
+              key={project.id}
+              className={`group cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] animate-fade-in pt-0 ${
+                isUnassigned 
+                  ? 'border-2 border-dashed border-muted-foreground/30 bg-muted/30' 
+                  : ''
+              }`}
+              style={{ animationDelay: `${index * 100}ms` }}
+              onClick={() => handleProjectClick(project.id)}
+            >
+              <CardContent className="p-0">
+                <div className="relative">
+                  <div className="aspect-video overflow-hidden rounded-t-sm bg-muted">
+                    {project.thumbnailUrl ? (
+                      <img
+                        src={`/api/files/${project.thumbnailUrl.split('/').pop()?.split('.')[0]}`}
+                        alt={`${project.name} thumbnail`}
+                        className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement
+                          target.style.display = 'none'
+                        }}
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        {isUnassigned ? (
+                          <Inbox className="h-12 w-12 text-muted-foreground" />
+                        ) : (
+                          <ImageIcon className="h-12 w-12 text-muted-foreground" />
+                        )}
+                      </div>
+                    )}
+                  </div>
                 
                 {/* Source Images and Staged Versions count - bottom left */}
                 <div className="absolute bottom-2 left-2 text-foreground text-xs space-y-2">
@@ -259,41 +273,43 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
                   <div className="bg-background/90 rounded-sm px-1.5 py-0.5">Staged Versions: {project.stagedVersionCount}</div>
                 </div>
 
-                {/* 3-dots menu in top right */}
-                <div className="absolute top-2 right-2">
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 w-8 p-0 bg-background/90 hover:bg-background/100"
-                        onClick={(e) => {
-                          e.preventDefault()
-                          e.stopPropagation()
-                        }}
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuItem 
-                        onClick={(e) => handleRenameProject(project, e)}
-                        className="cursor-pointer"
-                      >
-                        <Edit3 className="h-4 w-4 mr-2" />
-                        Rename Project
-                      </DropdownMenuItem>
-                      <DropdownMenuItem 
-                        onClick={(e) => handleDeleteProject(project, e)}
-                        className="cursor-pointer text-destructive focus:text-destructive"
-                        variant="destructive"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete Project
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                {/* 3-dots menu in top right - hide for unassigned project */}
+                {!isUnassigned && (
+                  <div className="absolute top-2 right-2">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 bg-background/90 hover:bg-background/100"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                          }}
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem 
+                          onClick={(e) => handleRenameProject(project, e)}
+                          className="cursor-pointer"
+                        >
+                          <Edit3 className="h-4 w-4 mr-2" />
+                          Rename Project
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={(e) => handleDeleteProject(project, e)}
+                          className="cursor-pointer text-destructive focus:text-destructive"
+                          variant="destructive"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete Project
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
               </div>
 
               <div className="px-3 py-2">
@@ -303,7 +319,8 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
               </div>
             </CardContent>
           </Card>
-        ))}
+          )
+        })}
       </div>
 
       {/* Create Project Dialog */}

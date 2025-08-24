@@ -1,8 +1,12 @@
 "use client"
 
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import { 
   DropzoneCard, 
   UploadProgress, 
@@ -11,7 +15,7 @@ import {
   type FeedbackMessage,
   type RejectedFile
 } from '@/components/upload'
-import { X, Upload, FileImage } from "lucide-react"
+import { X, Upload, FileImage, FolderPlus, Folder } from "lucide-react"
 import { nanoid } from 'nanoid'
 
 interface User {
@@ -19,6 +23,16 @@ interface User {
   name?: string | null
   email?: string | null
   image?: string | null
+}
+
+interface Project {
+  id: string
+  name: string
+  createdAt: string
+  updatedAt: string
+  sourceImageCount: number
+  stagedVersionCount: number
+  thumbnailUrl: string | null
 }
 
 interface UploadModalProps {
@@ -33,6 +47,38 @@ export function UploadModal({ isOpen, onClose, projectId }: UploadModalProps) {
   const [feedbackMessages, setFeedbackMessages] = useState<FeedbackMessage[]>([])
   const [rejectedFiles, setRejectedFiles] = useState<RejectedFile[]>([])
   const [isUploading, setIsUploading] = useState(false)
+  
+  // Project selection state
+  const [projects, setProjects] = useState<Project[]>([])
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(projectId || '')
+  const [createNewProject, setCreateNewProject] = useState(false)
+  const [newProjectName, setNewProjectName] = useState('')
+  const [loadingProjects, setLoadingProjects] = useState(false)
+
+  // Load projects when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setLoadingProjects(true)
+      fetch('/api/projects')
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            setProjects(data.projects)
+          }
+        })
+        .catch(error => {
+          console.error('Error loading projects:', error)
+        })
+        .finally(() => {
+          setLoadingProjects(false)
+        })
+    }
+  }, [isOpen])
+
+  // Update selectedProjectId when projectId prop changes
+  useEffect(() => {
+    setSelectedProjectId(projectId || '')
+  }, [projectId])
 
   const handleFilesAccepted = useCallback(async (files: File[]) => {
     setIsUploading(true)
@@ -56,10 +102,13 @@ export function UploadModal({ isOpen, onClose, projectId }: UploadModalProps) {
         formData.append('files', file)
       })
       
-      // Add project ID if provided
-      if (projectId) {
-        formData.append('projectId', projectId)
+      // Add project information based on user selection
+      if (createNewProject && newProjectName.trim()) {
+        formData.append('projectName', newProjectName.trim())
+      } else if (selectedProjectId) {
+        formData.append('projectId', selectedProjectId)
       }
+      // If neither is provided, it will go to unassigned project
 
       // Upload files
       const response = await fetch('/api/upload', {
@@ -151,7 +200,7 @@ export function UploadModal({ isOpen, onClose, projectId }: UploadModalProps) {
     } finally {
       setIsUploading(false)
     }
-  }, [])
+  }, [createNewProject, newProjectName, selectedProjectId])
 
   const handleFilesRejected = useCallback((rejectedFiles: RejectedFile[]) => {
     setRejectedFiles(prev => [...prev, ...rejectedFiles])
@@ -173,6 +222,9 @@ export function UploadModal({ isOpen, onClose, projectId }: UploadModalProps) {
       setUploads([])
       setFeedbackMessages([])
       setRejectedFiles([])
+      setCreateNewProject(false)
+      setNewProjectName('')
+      setSelectedProjectId(projectId || '')
       onClose()
     }
   }
@@ -198,6 +250,89 @@ export function UploadModal({ isOpen, onClose, projectId }: UploadModalProps) {
         </DialogHeader>
 
         <div className="space-y-6 py-4">
+          {/* Project Selection - Only show if no projectId was provided */}
+          {!projectId && (
+            <div className="bg-muted/50 rounded-lg p-4 space-y-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Folder className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Project Destination</Label>
+              </div>
+              
+              <div className="space-y-3">
+                {/* Create New Project Option */}
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="create-new-project"
+                    checked={createNewProject}
+                    onCheckedChange={(checked) => {
+                      setCreateNewProject(checked === true)
+                      if (checked) {
+                        setSelectedProjectId('')
+                      }
+                    }}
+                    disabled={isUploading}
+                  />
+                  <Label 
+                    htmlFor="create-new-project" 
+                    className="text-sm font-medium cursor-pointer flex items-center gap-2"
+                  >
+                    <FolderPlus className="h-4 w-4" />
+                    Create new project
+                  </Label>
+                </div>
+
+                {/* New Project Name Input */}
+                {createNewProject && (
+                  <div className="ml-6 space-y-2">
+                    <Input
+                      placeholder="Enter project name (e.g., Johnson House Staging)"
+                      value={newProjectName}
+                      onChange={(e) => setNewProjectName(e.target.value)}
+                      disabled={isUploading}
+                      maxLength={100}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      A new project will be created with this name
+                    </p>
+                  </div>
+                )}
+
+                {/* Existing Project Selection */}
+                {!createNewProject && (
+                  <div className="space-y-2">
+                    <Select
+                      value={selectedProjectId}
+                      onValueChange={setSelectedProjectId}
+                      disabled={isUploading || loadingProjects}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={loadingProjects ? "Loading projects..." : "Select existing project or skip to use Unassigned"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {projects.map((project) => (
+                          <SelectItem key={project.id} value={project.id}>
+                            <div className="flex items-center gap-2">
+                              <span>{project.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                ({project.sourceImageCount} images)
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {selectedProjectId 
+                        ? "Images will be added to the selected project" 
+                        : "Skip selection to add images to Unassigned folder for organizing later"
+                      }
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Feedback Messages */}
           <UploadFeedback
             messages={feedbackMessages}
