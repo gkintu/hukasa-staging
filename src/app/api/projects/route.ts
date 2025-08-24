@@ -30,7 +30,17 @@ export async function GET(request: NextRequest) {
       .groupBy(projects.id, projects.name, projects.createdAt, projects.updatedAt)
       .orderBy(desc(projects.updatedAt))
 
-    return NextResponse.json({ success: true, projects: userProjects })
+    // Sort to ensure "Unassigned Images" project always appears first
+    const sortedProjects = userProjects.sort((a, b) => {
+      const isAUnassigned = a.name === '📥 Unassigned Images'
+      const isBUnassigned = b.name === '📥 Unassigned Images'
+      
+      if (isAUnassigned && !isBUnassigned) return -1
+      if (!isAUnassigned && isBUnassigned) return 1
+      return 0 // Maintains existing updatedAt DESC order for other projects
+    })
+
+    return NextResponse.json({ success: true, projects: sortedProjects })
   } catch (error) {
     console.error('Error fetching projects:', error)
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })

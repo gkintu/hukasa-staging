@@ -270,8 +270,16 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
                 
                 {/* Source Images and Staged Versions count - bottom left */}
                 <div className="absolute bottom-2 left-2 text-foreground text-xs space-y-2">
-                  <div className="bg-background/90 rounded-sm px-1.5 py-0.5">Source Images: {project.sourceImageCount}</div>
-                  <div className="bg-background/90 rounded-sm px-1.5 py-0.5">Staged Versions: {project.stagedVersionCount}</div>
+                  {isUnassigned ? (
+                    <div className="bg-background/90 rounded-sm px-1.5 py-0.5">
+                      Unorganized Images: {project.sourceImageCount}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="bg-background/90 rounded-sm px-1.5 py-0.5">Source Images: {project.sourceImageCount}</div>
+                      <div className="bg-background/90 rounded-sm px-1.5 py-0.5">Staged Versions: {project.stagedVersionCount}</div>
+                    </>
+                  )}
                 </div>
 
                 {/* 3-dots menu in top right - hide for unassigned project */}
