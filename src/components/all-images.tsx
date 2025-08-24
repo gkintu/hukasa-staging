@@ -3,13 +3,12 @@
 import { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Image as ImageIcon, Upload, Settings2, Inbox, FolderOpen, FolderPlus, ArrowRight, CheckSquare, Square } from "lucide-react"
+import { Image as ImageIcon, Upload, Inbox, FolderOpen, FolderPlus, ArrowRight, CheckSquare, Square } from "lucide-react"
+import { SourceImageCard } from "@/components/source-image-card"
 
 interface AllImagesProps {
   onImageSelect: (imageId: string, sourceImage: SourceImageWithProject) => void
@@ -26,10 +25,8 @@ interface GeneratedVariant {
   errorMessage: string | null
 }
 
-interface SourceImageWithProject {
+interface BaseSourceImage {
   id: string
-  projectId: string
-  projectName: string
   originalImagePath: string
   originalFileName: string
   fileSize: number | null
@@ -38,6 +35,11 @@ interface SourceImageWithProject {
   operationType: string
   createdAt: Date
   variants: GeneratedVariant[]
+}
+
+interface SourceImageWithProject extends BaseSourceImage {
+  projectId: string
+  projectName: string
 }
 
 interface Project {
@@ -107,26 +109,6 @@ export function AllImages({ onImageSelect, onUploadClick, unassignedOnly = false
     }
   }
 
-  const getStatusBadge = (variants: GeneratedVariant[]) => {
-    const completedCount = variants.filter(v => v.status === 'completed').length
-    const processingCount = variants.filter(v => v.status === 'processing').length
-    const pendingCount = variants.filter(v => v.status === 'pending').length
-    const failedCount = variants.filter(v => v.status === 'failed').length
-
-    if (failedCount > 0) {
-      return <Badge variant="destructive">Failed</Badge>
-    }
-    if (processingCount > 0) {
-      return <Badge variant="secondary">Processing</Badge>
-    }
-    if (pendingCount > 0) {
-      return <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">Ready to Stage</Badge>
-    }
-    if (completedCount > 0) {
-      return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Completed</Badge>
-    }
-    return <Badge variant="outline">No variants</Badge>
-  }
 
   // Selection handlers
   const toggleImageSelection = (imageId: string) => {
@@ -232,18 +214,10 @@ export function AllImages({ onImageSelect, onUploadClick, unassignedOnly = false
     }
   }
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
 
-  const handleImageClick = (sourceImage: SourceImageWithProject) => {
-    onImageSelect(sourceImage.id, sourceImage)
+  const handleImageClick = (sourceImage: SourceImageWithProject | BaseSourceImage) => {
+    // Since this is only called from the detailed view, we know it's SourceImageWithProject
+    onImageSelect(sourceImage.id, sourceImage as SourceImageWithProject)
   }
 
   if (loading) {
@@ -422,93 +396,18 @@ export function AllImages({ onImageSelect, onUploadClick, unassignedOnly = false
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {sourceImages.map((sourceImage, index) => (
-          <Card
+          <SourceImageCard
             key={sourceImage.id}
-            className={`group cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] animate-fade-in ${
-              unassignedOnly && selectedImages.has(sourceImage.id) 
-                ? 'ring-2 ring-primary border-primary' 
-                : ''
-            }`}
-            style={{ animationDelay: `${index * 100}ms` }}
-            onClick={(e) => {
-              if (unassignedOnly) {
-                // In unassigned mode, clicking toggles selection
-                e.preventDefault()
-                toggleImageSelection(sourceImage.id)
-              } else {
-                // In all images mode, clicking opens modal
-                handleImageClick(sourceImage)
-              }
-            }}
-          >
-            <CardContent className="p-0">
-              <div className="relative">
-                {/* Selection checkbox for unassigned view */}
-                {unassignedOnly && (
-                  <div className="absolute top-2 left-2 z-10">
-                    <Checkbox
-                      checked={selectedImages.has(sourceImage.id)}
-                      onCheckedChange={() => toggleImageSelection(sourceImage.id)}
-                      className="bg-background/90 border-2"
-                    />
-                  </div>
-                )}
-                
-                <div className="aspect-video overflow-hidden rounded-t-lg bg-muted">
-                  <img
-                    src={`/api/files/${sourceImage.originalImagePath.split('/').pop()?.split('.')[0]}`}
-                    alt={sourceImage.originalFileName}
-                    className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement
-                      target.style.display = 'none'
-                    }}
-                  />
-                </div>
-                
-                <div className="absolute top-2 right-2 flex gap-2">
-                  {getStatusBadge(sourceImage.variants)}
-                </div>
-
-                {!unassignedOnly && (
-                  <div className="absolute top-2 left-2">
-                    <Badge variant="secondary" className="bg-background/90 text-foreground">
-                      {sourceImage.variants.length} {sourceImage.variants.length === 1 ? 'variant' : 'variants'}
-                    </Badge>
-                  </div>
-                )}
-              </div>
-
-              <div className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-semibold text-lg truncate flex-1 mr-2" title={sourceImage.originalFileName}>
-                    {sourceImage.originalFileName}
-                  </h3>
-                </div>
-                
-                <div className="space-y-2">
-                  <div className="text-sm font-medium text-primary truncate" title={sourceImage.projectName}>
-                    📁 {sourceImage.projectName}
-                  </div>
-                  
-                  <div className="flex items-center text-sm text-muted-foreground space-x-4">
-                    <div className="flex items-center space-x-1">
-                      <Settings2 className="h-3 w-3" />
-                      <span className="capitalize">{sourceImage.roomType.replace('_', ' ')}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="text-sm text-muted-foreground">
-                    {sourceImage.stagingStyle.charAt(0).toUpperCase() + sourceImage.stagingStyle.slice(1)} style
-                  </div>
-                  
-                  <div className="text-xs text-muted-foreground">
-                    {formatDate(sourceImage.createdAt)}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            image={sourceImage}
+            variant={unassignedOnly ? 'selectable' : 'detailed'}
+            isSelected={selectedImages.has(sourceImage.id)}
+            showProjectName={true}
+            showCreationDate={true}
+            showVariantCount={!unassignedOnly}
+            onSelect={unassignedOnly ? toggleImageSelection : undefined}
+            onClick={unassignedOnly ? undefined : handleImageClick}
+            index={index}
+          />
         ))}
       </div>
 

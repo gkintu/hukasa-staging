@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, Image as ImageIcon, Upload, Settings2 } from "lucide-react"
+import { ChevronLeft, Image as ImageIcon, Upload } from "lucide-react"
+import { SourceImageCard } from "@/components/source-image-card"
 
 interface ProjectDetailProps {
   projectId: string
@@ -70,26 +70,6 @@ export function ProjectDetail({ projectId, onBack, onImageSelect, onUploadMore }
     }
   }, [projectId])
 
-  const getStatusBadge = (variants: GeneratedVariant[]) => {
-    const completedCount = variants.filter(v => v.status === 'completed').length
-    const processingCount = variants.filter(v => v.status === 'processing').length
-    const pendingCount = variants.filter(v => v.status === 'pending').length
-    const failedCount = variants.filter(v => v.status === 'failed').length
-
-    if (failedCount > 0) {
-      return <Badge variant="destructive">Failed</Badge>
-    }
-    if (processingCount > 0) {
-      return <Badge variant="secondary">Processing</Badge>
-    }
-    if (pendingCount > 0) {
-      return <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">Ready to Stage</Badge>
-    }
-    if (completedCount > 0) {
-      return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Completed</Badge>
-    }
-    return <Badge variant="outline">No variants</Badge>
-  }
 
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -217,55 +197,14 @@ export function ProjectDetail({ projectId, onBack, onImageSelect, onUploadMore }
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {sourceImages.map((sourceImage, index) => (
-          <Card
+          <SourceImageCard
             key={sourceImage.id}
-            className="group cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] animate-fade-in"
-            style={{ animationDelay: `${index * 100}ms` }}
-            onClick={() => handleImageClick(sourceImage)}
-          >
-            <CardContent className="p-0">
-              <div className="relative">
-                <div className="aspect-video overflow-hidden rounded-t-lg bg-muted">
-                  <img
-                    src={`/api/files/${sourceImage.originalImagePath.split('/').pop()?.split('.')[0]}`}
-                    alt={sourceImage.originalFileName}
-                    className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement
-                      target.style.display = 'none'
-                    }}
-                  />
-                </div>
-                
-                <div className="absolute top-2 right-2 flex gap-2">
-                  {getStatusBadge(sourceImage.variants)}
-                </div>
-
-                <div className="absolute top-2 left-2">
-                  <Badge variant="secondary" className="bg-background/90 text-foreground">
-                    {sourceImage.variants.length} {sourceImage.variants.length === 1 ? 'variant' : 'variants'}
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="p-4">
-                <h3 className="font-semibold text-lg mb-2 truncate" title={sourceImage.originalFileName}>
-                  {sourceImage.originalFileName}
-                </h3>
-                <div className="space-y-2">
-                  <div className="flex items-center text-sm text-muted-foreground space-x-4">
-                    <div className="flex items-center space-x-1">
-                      <Settings2 className="h-3 w-3" />
-                      <span className="capitalize">{sourceImage.roomType.replace('_', ' ')}</span>
-                    </div>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    {sourceImage.stagingStyle.charAt(0).toUpperCase() + sourceImage.stagingStyle.slice(1)} style
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            image={sourceImage}
+            variant="default"
+            showVariantCount={true}
+            onClick={handleImageClick}
+            index={index}
+          />
         ))}
       </div>
     </div>
