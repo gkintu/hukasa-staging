@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
+import { CreateProjectDialog } from "@/components/create-project-dialog"
 import { FolderOpen, Plus, Image as ImageIcon, MoreHorizontal, Edit3, Trash2 } from "lucide-react"
 
 interface User {
@@ -31,30 +32,32 @@ interface Project {
   thumbnailUrl: string | null
 }
 
-export function Projects({ onProjectSelect, onUploadClick }: ProjectsProps) {
+export function Projects({ onProjectSelect }: ProjectsProps) {
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
+  const [createProjectDialogOpen, setCreateProjectDialogOpen] = useState(false)
   const [renameDialogOpen, setRenameDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [newProjectName, setNewProjectName] = useState("")
   const [isUpdating, setIsUpdating] = useState(false)
 
-  useEffect(() => {
-    async function fetchProjects() {
-      try {
-        const response = await fetch('/api/projects')
-        const data = await response.json()
-        if (data.success) {
-          setProjects(data.projects)
-        }
-      } catch (error) {
-        console.error('Error fetching projects:', error)
-      } finally {
-        setLoading(false)
+  // Move fetchProjects function here so it can be used in useEffect and elsewhere
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('/api/projects')
+      const data = await response.json()
+      if (data.success) {
+        setProjects(data.projects)
       }
+    } catch (error) {
+      console.error('Error fetching projects:', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     fetchProjects()
   }, [])
 
@@ -64,8 +67,16 @@ export function Projects({ onProjectSelect, onUploadClick }: ProjectsProps) {
   }
 
   const handleCreateProject = () => {
-    onUploadClick?.()
+    setCreateProjectDialogOpen(true)
   }
+
+  const handleProjectCreated = (projectId: string) => {
+    // Refresh the projects list
+    fetchProjects()
+    // Navigate to the newly created project
+    onProjectSelect?.(projectId)
+  }
+
 
   const handleRenameProject = (project: Project, e: React.MouseEvent) => {
     e.preventDefault()
@@ -294,6 +305,13 @@ export function Projects({ onProjectSelect, onUploadClick }: ProjectsProps) {
           </Card>
         ))}
       </div>
+
+      {/* Create Project Dialog */}
+      <CreateProjectDialog
+        isOpen={createProjectDialogOpen}
+        onClose={() => setCreateProjectDialogOpen(false)}
+        onProjectCreated={handleProjectCreated}
+      />
 
       {/* Rename Dialog */}
       <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>

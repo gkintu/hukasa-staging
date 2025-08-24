@@ -201,7 +201,6 @@ export function MainApp({ user }: MainAppProps) {
                 <Projects 
                   user={user} 
                   onProjectSelect={handleProjectSelect}
-                  onUploadClick={handleUploadClick}
                 />
               )}
               {activeView === "settings" && <SettingsPage user={user} />}
