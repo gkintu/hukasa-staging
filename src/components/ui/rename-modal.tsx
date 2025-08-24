@@ -67,7 +67,10 @@ export function RenameModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent 
+        className="sm:max-w-md"
+        onClick={(e) => e.stopPropagation()}
+      >
         <DialogHeader>
           <DialogTitle>
             {title || `Rename ${itemType.charAt(0).toUpperCase() + itemType.slice(1)}`}

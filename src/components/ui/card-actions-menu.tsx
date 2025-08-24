@@ -32,7 +32,7 @@ export function CardActionsMenu({
   }
 
   return (
-    <div className={className}>
+    <div className={className} onClick={handleMenuClick} onMouseDown={handleMenuClick}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
