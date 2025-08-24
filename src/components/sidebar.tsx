@@ -2,11 +2,11 @@
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, FolderOpen, HelpCircle, Palette } from "lucide-react"
+import { LayoutDashboard, FolderOpen, HelpCircle, Palette, Images } from "lucide-react"
 
 interface SidebarProps {
   activeView: string
-  onViewChange: (view: "dashboard" | "projects" | "help") => void
+  onViewChange: (view: "dashboard" | "allImages" | "projects" | "help") => void
 }
 
 export function Sidebar({ activeView, onViewChange }: SidebarProps) {
@@ -15,6 +15,11 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
       id: "dashboard",
       label: "Dashboard",
       icon: LayoutDashboard,
+    },
+    {
+      id: "allImages",
+      label: "All Images",
+      icon: Images,
     },
     {
       id: "projects",
@@ -55,7 +60,7 @@ export function Sidebar({ activeView, onViewChange }: SidebarProps) {
                     ? "bg-sidebar-primary text-sidebar-primary-foreground hover:bg-sidebar-primary/90"
                     : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 )}
-                onClick={() => onViewChange(item.id as "dashboard" | "projects" | "help")}
+                onClick={() => onViewChange(item.id as "dashboard" | "allImages" | "projects" | "help")}
                 aria-current={isActive ? "page" : undefined}
                 role="listitem"
               >
