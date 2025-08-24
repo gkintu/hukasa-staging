@@ -72,7 +72,8 @@ export function ProjectDetail({ projectId, onBack, onImageSelect, onUploadMore }
 
   const getStatusBadge = (variants: GeneratedVariant[]) => {
     const completedCount = variants.filter(v => v.status === 'completed').length
-    const processingCount = variants.filter(v => v.status === 'processing' || v.status === 'pending').length
+    const processingCount = variants.filter(v => v.status === 'processing').length
+    const pendingCount = variants.filter(v => v.status === 'pending').length
     const failedCount = variants.filter(v => v.status === 'failed').length
 
     if (failedCount > 0) {
@@ -80,6 +81,9 @@ export function ProjectDetail({ projectId, onBack, onImageSelect, onUploadMore }
     }
     if (processingCount > 0) {
       return <Badge variant="secondary">Processing</Badge>
+    }
+    if (pendingCount > 0) {
+      return <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">Ready to Stage</Badge>
     }
     if (completedCount > 0) {
       return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Completed</Badge>
