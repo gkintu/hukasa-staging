@@ -3,7 +3,6 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Settings2 } from "lucide-react"
 
 interface GeneratedVariant {
   id: string
@@ -37,7 +36,6 @@ interface SourceImageCardProps {
   isSelected?: boolean
   showProjectName?: boolean
   showCreationDate?: boolean
-  showVariantCount?: boolean
   onSelect?: (id: string) => void
   onClick?: (image: SourceImageWithProject | BaseSourceImage) => void
   index?: number
@@ -49,7 +47,6 @@ export function SourceImageCard({
   isSelected = false,
   showProjectName = false,
   showCreationDate = false,
-  showVariantCount = false,
   onSelect,
   onClick,
   index = 0
@@ -135,14 +132,6 @@ export function SourceImageCard({
             {getStatusBadge(image.variants)}
           </div>
 
-          {/* Show variant count when not in selectable mode and when showVariantCount is true */}
-          {!isSelectable && showVariantCount && (
-            <div className="absolute top-2 left-2">
-              <Badge variant="secondary" className="bg-background/90 text-foreground">
-                {image.variants.length} {image.variants.length === 1 ? 'variant' : 'variants'}
-              </Badge>
-            </div>
-          )}
         </div>
 
         <div className="p-4">
@@ -159,17 +148,6 @@ export function SourceImageCard({
                 📁 {(image as SourceImageWithProject).projectName}
               </div>
             )}
-            
-            <div className="flex items-center text-sm text-muted-foreground space-x-4">
-              <div className="flex items-center space-x-1">
-                <Settings2 className="h-3 w-3" />
-                <span className="capitalize">{image.roomType.replace('_', ' ')}</span>
-              </div>
-            </div>
-            
-            <div className="text-sm text-muted-foreground">
-              {image.stagingStyle.charAt(0).toUpperCase() + image.stagingStyle.slice(1)} style
-            </div>
             
             {/* Creation date for detailed view */}
             {isDetailed && showCreationDate && (
