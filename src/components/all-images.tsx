@@ -29,6 +29,7 @@ interface BaseSourceImage {
   id: string
   originalImagePath: string
   originalFileName: string
+  displayName: string | null
   fileSize: number | null
   roomType: string
   stagingStyle: string
@@ -59,6 +60,58 @@ export function AllImages({ onImageSelect, onUploadClick, unassignedOnly = false
   const [targetProjectId, setTargetProjectId] = useState('')
   const [newProjectName, setNewProjectName] = useState('')
   const [isMoving, setIsMoving] = useState(false)
+
+  // Handle image deletion
+  const handleImageDelete = async (imageId: string) => {
+    if (!confirm('Are you sure you want to delete this image? This action cannot be undone.')) {
+      return
+    }
+
+    try {
+      const response = await fetch(`/api/images/${imageId}/delete`, {
+        method: 'DELETE'
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        // Remove the image from local state
+        setSourceImages(prev => prev.filter(img => img.id !== imageId))
+      } else {
+        throw new Error(data.message || 'Failed to delete image')
+      }
+    } catch (error) {
+      console.error('Error deleting image:', error)
+      alert('Failed to delete image. Please try again.')
+    }
+  }
+
+  // Handle image renaming
+  const handleImageRename = async (imageId: string, newDisplayName: string) => {
+    try {
+      const response = await fetch(`/api/images/${imageId}/rename`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ displayName: newDisplayName })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        // Update the local state to reflect the change
+        setSourceImages(prev => prev.map(img => 
+          img.id === imageId 
+            ? { ...img, displayName: newDisplayName }
+            : img
+        ))
+      } else {
+        throw new Error(data.message || 'Failed to rename image')
+      }
+    } catch (error) {
+      console.error('Error renaming image:', error)
+      throw error // Re-throw so the component can handle the error
+    }
+  }
 
   // Helper to check if project is unassigned
   const isUnassignedProject = (projectName: string) => projectName === "📥 Unassigned Images"
@@ -403,9 +456,10 @@ export function AllImages({ onImageSelect, onUploadClick, unassignedOnly = false
             isSelected={selectedImages.has(sourceImage.id)}
             showProjectName={true}
             showCreationDate={true}
-            showVariantCount={!unassignedOnly}
             onSelect={unassignedOnly ? toggleImageSelection : undefined}
             onClick={unassignedOnly ? undefined : handleImageClick}
+            onRename={handleImageRename}
+            onDelete={handleImageDelete}
             index={index}
           />
         ))}

@@ -4,10 +4,11 @@ import { useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { CardActionsMenu } from "@/components/ui/card-actions-menu"
+import { RenameModal } from "@/components/ui/rename-modal"
 import { Input } from "@/components/ui/input"
 import { CreateProjectDialog } from "@/components/create-project-dialog"
-import { FolderOpen, Plus, Image as ImageIcon, MoreHorizontal, Edit3, Trash2, Inbox } from "lucide-react"
+import { FolderOpen, Plus, Image as ImageIcon, Inbox } from "lucide-react"
 
 // Helper function to check if project is unassigned (client-side only)
 const isUnassignedProject = (projectName: string) => projectName === "📥 Unassigned Images"
@@ -42,8 +43,12 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
   const [renameDialogOpen, setRenameDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
-  const [newProjectName, setNewProjectName] = useState("")
   const [isUpdating, setIsUpdating] = useState(false)
+  
+  // Inline editing state
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
 
   // Move fetchProjects function here so it can be used in useEffect and elsewhere
   const fetchProjects = async () => {
@@ -82,25 +87,14 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
   }
 
 
-  const handleRenameProject = (project: Project, e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
+  const handleRenameProject = (project: Project) => {
     setSelectedProject(project)
-    setNewProjectName(project.name)
     setRenameDialogOpen(true)
   }
 
-  const handleDeleteProject = (project: Project, e: React.MouseEvent) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setSelectedProject(project)
-    setDeleteDialogOpen(true)
-  }
-
-  const confirmRename = async () => {
-    if (!selectedProject || !newProjectName.trim()) return
+  const handleModalRename = async (newProjectName: string) => {
+    if (!selectedProject) return
     
-    setIsUpdating(true)
     try {
       const response = await fetch(`/api/projects/${selectedProject.id}`, {
         method: 'PATCH',
@@ -119,16 +113,78 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
             ? { ...p, name: data.project.name, updatedAt: data.project.updatedAt }
             : p
         ))
-        setRenameDialogOpen(false)
-        setSelectedProject(null)
-        setNewProjectName("")
       } else {
-        console.error('Failed to rename project:', data.message)
+        throw new Error(data.message || 'Failed to rename project')
       }
     } catch (error) {
       console.error('Error renaming project:', error)
+      throw error // Re-throw so RenameModal can handle it
+    }
+  }
+
+  const handleDeleteProject = (project: Project) => {
+    setSelectedProject(project)
+    setDeleteDialogOpen(true)
+  }
+
+
+  // Inline editing functions
+  const startInlineEdit = (project: Project, e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setEditingProjectId(project.id)
+    setEditValue(project.name)
+  }
+
+  const saveInlineEdit = async () => {
+    if (!editingProjectId || !editValue.trim() || isSaving) return
+    
+    setIsSaving(true)
+    try {
+      const response = await fetch(`/api/projects/${editingProjectId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: editValue.trim()
+        })
+      })
+
+      const data = await response.json()
+      if (data.success) {
+        setProjects(projects.map(p => 
+          p.id === editingProjectId 
+            ? { ...p, name: data.project.name, updatedAt: data.project.updatedAt }
+            : p
+        ))
+        setEditingProjectId(null)
+        setEditValue("")
+      } else {
+        throw new Error(data.message || 'Failed to rename project')
+      }
+    } catch (error) {
+      console.error('Error renaming project:', error)
+      // Reset edit value on error
+      const originalProject = projects.find(p => p.id === editingProjectId)
+      if (originalProject) {
+        setEditValue(originalProject.name)
+      }
     } finally {
-      setIsUpdating(false)
+      setIsSaving(false)
+    }
+  }
+
+  const cancelInlineEdit = () => {
+    setEditingProjectId(null)
+    setEditValue("")
+  }
+
+  const handleInlineKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      saveInlineEdit()
+    } else if (e.key === 'Escape') {
+      cancelInlineEdit()
     }
   }
 
@@ -282,49 +338,42 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
                   )}
                 </div>
 
-                {/* 3-dots menu in top right - hide for unassigned project */}
+                {/* Actions menu in top right - hide for unassigned project */}
                 {!isUnassigned && (
-                  <div className="absolute top-2 right-2">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 bg-background/90 hover:bg-background/100"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            e.stopPropagation()
-                          }}
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-48">
-                        <DropdownMenuItem 
-                          onClick={(e) => handleRenameProject(project, e)}
-                          className="cursor-pointer"
-                        >
-                          <Edit3 className="h-4 w-4 mr-2" />
-                          Rename Project
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={(e) => handleDeleteProject(project, e)}
-                          className="cursor-pointer text-destructive focus:text-destructive"
-                          variant="destructive"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete Project
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+                  <CardActionsMenu
+                    className="absolute top-2 right-2"
+                    onRename={() => handleRenameProject(project)}
+                    onDelete={() => handleDeleteProject(project)}
+                    renameLabel="Rename Project"
+                    deleteLabel="Delete Project"
+                  />
                 )}
               </div>
 
               <div className="px-3 py-2">
-                <h3 className="font-semibold text-lg truncate" title={project.name}>
-                  {project.name}
-                </h3>
+                {editingProjectId === project.id ? (
+                  <Input
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    onBlur={saveInlineEdit}
+                    onKeyDown={handleInlineKeyDown}
+                    className="font-semibold text-lg -mx-2 -my-1"
+                    disabled={isSaving}
+                    autoFocus
+                  />
+                ) : (
+                  <h3 
+                    className="font-semibold text-lg truncate cursor-pointer hover:text-primary transition-colors" 
+                    title={project.name}
+                    onClick={(e) => {
+                      if (!isUnassigned) {
+                        startInlineEdit(project, e)
+                      }
+                    }}
+                  >
+                    {project.name}
+                  </h3>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -339,41 +388,17 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
         onProjectCreated={handleProjectCreated}
       />
 
-      {/* Rename Dialog */}
-      <Dialog open={renameDialogOpen} onOpenChange={setRenameDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Rename Project</DialogTitle>
-          </DialogHeader>
-          <div className="py-4">
-            <Input
-              value={newProjectName}
-              onChange={(e) => setNewProjectName(e.target.value)}
-              placeholder="Enter project name"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  confirmRename()
-                }
-              }}
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setRenameDialogOpen(false)}
-              disabled={isUpdating}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={confirmRename}
-              disabled={isUpdating || !newProjectName.trim()}
-            >
-              {isUpdating ? "Renaming..." : "Rename"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Rename Modal */}
+      <RenameModal
+        isOpen={renameDialogOpen}
+        onClose={() => {
+          setRenameDialogOpen(false)
+          setSelectedProject(null)
+        }}
+        onRename={handleModalRename}
+        currentName={selectedProject?.name || ""}
+        itemType="project"
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

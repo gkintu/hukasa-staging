@@ -21,6 +21,7 @@ export async function GET(request: NextRequest) {
         projectName: projects.name,
         originalImagePath: generations.originalImagePath,
         originalFileName: generations.originalFileName,
+        displayName: generations.displayName,
         fileSize: generations.fileSize,
         stagedImagePath: generations.stagedImagePath,
         variationIndex: generations.variationIndex,
@@ -44,6 +45,7 @@ export async function GET(request: NextRequest) {
       projectName: string
       originalImagePath: string
       originalFileName: string
+      displayName: string | null
       fileSize: number | null
       roomType: string
       stagingStyle: string
@@ -69,6 +71,7 @@ export async function GET(request: NextRequest) {
           projectName: gen.projectName,
           originalImagePath: gen.originalImagePath,
           originalFileName: gen.originalFileName,
+          displayName: gen.displayName,
           fileSize: gen.fileSize,
           roomType: gen.roomType,
           stagingStyle: gen.stagingStyle,

@@ -3,6 +3,10 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
+import { CardActionsMenu } from "@/components/ui/card-actions-menu"
+import { RenameModal } from "@/components/ui/rename-modal"
+import { useState } from "react"
 
 interface GeneratedVariant {
   id: string
@@ -17,6 +21,7 @@ interface BaseSourceImage {
   id: string
   originalImagePath: string
   originalFileName: string
+  displayName: string | null
   fileSize: number | null
   roomType: string
   stagingStyle: string
@@ -38,6 +43,8 @@ interface SourceImageCardProps {
   showCreationDate?: boolean
   onSelect?: (id: string) => void
   onClick?: (image: SourceImageWithProject | BaseSourceImage) => void
+  onRename?: (id: string, newDisplayName: string) => void
+  onDelete?: (id: string) => void
   index?: number
 }
 
@@ -49,8 +56,62 @@ export function SourceImageCard({
   showCreationDate = false,
   onSelect,
   onClick,
+  onRename,
+  onDelete,
   index = 0
 }: SourceImageCardProps) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editValue, setEditValue] = useState(image.displayName || image.originalFileName)
+  const [isSaving, setIsSaving] = useState(false)
+  const [showRenameModal, setShowRenameModal] = useState(false)
+  
+  const handleSaveRename = async () => {
+    if (!onRename || !editValue.trim() || editValue === (image.displayName || image.originalFileName)) {
+      setIsEditing(false)
+      return
+    }
+    
+    setIsSaving(true)
+    try {
+      await onRename(image.id, editValue.trim())
+      setIsEditing(false)
+    } catch (error) {
+      console.error('Failed to rename:', error)
+      setEditValue(image.displayName || image.originalFileName)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+  
+  const handleCancelEdit = () => {
+    setEditValue(image.displayName || image.originalFileName)
+    setIsEditing(false)
+  }
+  
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSaveRename()
+    } else if (e.key === 'Escape') {
+      handleCancelEdit()
+    }
+  }
+
+  const handleMenuRename = () => {
+    setShowRenameModal(true)
+  }
+
+  const handleModalRename = async (newDisplayName: string) => {
+    if (onRename) {
+      await onRename(image.id, newDisplayName)
+    }
+  }
+
+  const handleMenuDelete = () => {
+    if (onDelete) {
+      onDelete(image.id)
+    }
+  }
+
   const getStatusBadge = (variants: GeneratedVariant[]) => {
     const completedCount = variants.filter(v => v.status === 'completed').length
     const processingCount = variants.filter(v => v.status === 'processing').length
@@ -119,7 +180,7 @@ export function SourceImageCard({
           <div className="aspect-video overflow-hidden rounded-t-lg bg-muted">
             <img
               src={`/api/files/${image.originalImagePath.split('/').pop()?.split('.')[0]}`}
-              alt={image.originalFileName}
+              alt={image.displayName || image.originalFileName}
               className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
               onError={(e) => {
                 const target = e.target as HTMLImageElement
@@ -130,15 +191,44 @@ export function SourceImageCard({
           
           <div className="absolute top-2 right-2 flex gap-2">
             {getStatusBadge(image.variants)}
+            {!isSelectable && (onRename || onDelete) && (
+              <CardActionsMenu
+                onRename={onRename ? handleMenuRename : undefined}
+                onDelete={onDelete ? handleMenuDelete : undefined}
+                renameLabel="Rename Image"
+                deleteLabel="Delete Image"
+              />
+            )}
           </div>
 
         </div>
 
         <div className="p-4">
           <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold text-lg truncate flex-1 mr-2" title={image.originalFileName}>
-              {image.originalFileName}
-            </h3>
+            {isEditing && onRename ? (
+              <Input
+                value={editValue}
+                onChange={(e) => setEditValue(e.target.value)}
+                onBlur={handleSaveRename}
+                onKeyDown={handleKeyDown}
+                className="font-semibold text-lg flex-1 mr-2"
+                disabled={isSaving}
+                autoFocus
+              />
+            ) : (
+              <h3 
+                className="font-semibold text-lg truncate flex-1 mr-2 cursor-pointer hover:text-primary transition-colors" 
+                title={image.displayName || image.originalFileName}
+                onClick={(e) => {
+                  if (onRename) {
+                    e.stopPropagation()
+                    setIsEditing(true)
+                  }
+                }}
+              >
+                {image.displayName || image.originalFileName}
+              </h3>
+            )}
           </div>
           
           <div className="space-y-2">
@@ -158,6 +248,15 @@ export function SourceImageCard({
           </div>
         </div>
       </CardContent>
+      
+      {/* Rename Modal */}
+      <RenameModal
+        isOpen={showRenameModal}
+        onClose={() => setShowRenameModal(false)}
+        onRename={handleModalRename}
+        currentName={image.displayName || image.originalFileName}
+        itemType="image"
+      />
     </Card>
   )
 }

@@ -39,6 +39,7 @@ interface SourceImage {
   id: string
   originalImagePath: string
   originalFileName: string
+  displayName: string | null
   fileSize: number | null
   roomType: string
   stagingStyle: string

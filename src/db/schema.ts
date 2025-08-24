@@ -65,6 +65,7 @@ export const generations = pgTable('generations', {
   projectId: uuid('project_id').references(() => projects.id).notNull(),
   originalImagePath: text('original_image_path').notNull(), // Relative path: "uploads/uuid-filename.jpg"
   originalFileName: text('original_file_name').notNull(), // Original user filename: "vacation-photo.jpg"
+  displayName: text('display_name'), // User-customizable display name, falls back to originalFileName if null
   fileSize: integer('file_size'), // File size in bytes (nullable for migration)
   stagedImagePath: text('staged_image_path'), // Relative path: "uploads/staged-uuid-filename.jpg"
   variationIndex: integer('variation_index').default(1).notNull(), // 1, 2, 3 for multiple AI generations

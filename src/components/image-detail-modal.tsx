@@ -26,6 +26,7 @@ interface SourceImage {
   id: string
   originalImagePath: string
   originalFileName: string
+  displayName: string | null
   fileSize: number | null
   roomType: string
   stagingStyle: string
@@ -106,7 +107,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
         <DialogHeader className="p-6 pb-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-xl font-semibold truncate pr-4">
-              {sourceImage.originalFileName}
+              {sourceImage.displayName || sourceImage.originalFileName}
             </DialogTitle>
             <Button
               variant="ghost"
@@ -141,7 +142,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
                   <div className="aspect-video overflow-hidden rounded-lg bg-muted">
                     <img
                       src={`/api/files/${sourceImage.originalImagePath.split('/').pop()?.split('.')[0]}`}
-                      alt={sourceImage.originalFileName}
+                      alt={sourceImage.displayName || sourceImage.originalFileName}
                       className="w-full h-full object-contain"
                       onError={(e) => {
                         const target = e.target as HTMLImageElement
