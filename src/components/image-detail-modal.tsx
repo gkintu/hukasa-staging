@@ -1,11 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Card, CardContent } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { X, Download, Image as ImageIcon, Loader2, AlertCircle, Settings2, Palette, Calendar } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
+import { Slider } from "@/components/ui/slider"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { X, Sparkles, Wand2, ChevronDown } from "lucide-react"
 
 interface ImageDetailModalProps {
   isOpen: boolean
@@ -35,264 +37,188 @@ interface SourceImage {
   variants: GeneratedVariant[]
 }
 
+const roomTypes = [
+  "Living Room",
+  "Bedroom",
+  "Kitchen",
+  "Dining Room",
+  "Bathroom",
+  "Home Office",
+  "Kids Room",
+  "Master Bedroom",
+]
+
+const interiorStyles = [
+  "Modern",
+  "Midcentury",
+  "Scandinavian",
+  "Luxury",
+  "Coastal",
+  "Farmhouse",
+  "Industrial",
+  "Bohemian",
+  "Minimalist",
+]
+
 export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailModalProps) {
+  const [selectedRoomType, setSelectedRoomType] = useState<string>("")
+  const [selectedStyle, setSelectedStyle] = useState<string>("")
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
+  const [imageCount, setImageCount] = useState([4])
+
   if (!sourceImage) return null
 
-  const formatFileSize = (bytes: number | null) => {
-    if (!bytes) return 'Unknown size'
-    const mb = bytes / (1024 * 1024)
-    return `${mb.toFixed(1)} MB`
-  }
-
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short', 
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+  const handleGenerate = () => {
+    // Placeholder for generation logic
+    console.log("Generating staging variants:", {
+      roomType: selectedRoomType,
+      style: selectedStyle,
+      imageUrl: sourceImage.originalImagePath,
+      count: imageCount[0],
     })
+    // Here you would trigger the actual staging generation
   }
 
-  const getStatusBadge = (variant: GeneratedVariant) => {
-    switch (variant.status) {
-      case 'completed':
-        return <Badge className="bg-green-500 hover:bg-green-600">Completed</Badge>
-      case 'processing':
-      case 'pending':
-        return <Badge variant="secondary">Processing</Badge>
-      case 'failed':
-        return <Badge variant="destructive">Failed</Badge>
-      default:
-        return <Badge variant="outline">Unknown</Badge>
-    }
-  }
-
-  const handleDownload = async (imagePath: string, fileName: string) => {
-    try {
-      const fileId = imagePath.split('/').pop()?.split('.')[0]
-      if (!fileId) return
-      
-      const response = await fetch(`/api/files/${fileId}/download`)
-      if (response.ok) {
-        const blob = await response.blob()
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement('a')
-        a.href = url
-        a.download = fileName
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      }
-    } catch (error) {
-      console.error('Download failed:', error)
-    }
-  }
-
-  const handleDownloadSource = () => {
-    handleDownload(sourceImage.originalImagePath, sourceImage.originalFileName)
-  }
-
-  const handleDownloadVariant = (variant: GeneratedVariant) => {
-    if (variant.stagedImagePath) {
-      const fileName = `staged_${sourceImage.originalFileName.split('.')[0]}_v${variant.variationIndex}.${sourceImage.originalFileName.split('.').pop()}`
-      handleDownload(variant.stagedImagePath, fileName)
-    }
-  }
+  const isGenerateDisabled = !selectedRoomType || !selectedStyle
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-7xl max-h-[95vh] overflow-hidden p-0">
-        <DialogHeader className="p-6 pb-0">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold truncate pr-4">
-              {sourceImage.displayName || sourceImage.originalFileName}
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="shrink-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </DialogHeader>
-
-        <div className="flex flex-1 overflow-hidden">
-          {/* Source Image Section - Left Side */}
-          <div className="w-1/2 p-6 pr-3 border-r overflow-y-auto">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Original Image</h3>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDownloadSource}
-                  className="gap-2"
-                >
-                  <Download className="h-4 w-4" />
-                  Download
-                </Button>
-              </div>
-
-              <Card>
-                <CardContent className="p-0">
-                  <div className="aspect-video overflow-hidden rounded-lg bg-muted">
-                    <img
-                      src={`/api/files/${sourceImage.originalImagePath.split('/').pop()?.split('.')[0]}`}
-                      alt={sourceImage.displayName || sourceImage.originalFileName}
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        const target = e.target as HTMLImageElement
-                        target.src = '/placeholder.svg'
-                      }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Image Metadata */}
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground">File Size</span>
-                    <p className="font-medium">{formatFileSize(sourceImage.fileSize)}</p>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Uploaded</span>
-                    <p className="font-medium">{formatDate(sourceImage.createdAt)}</p>
-                  </div>
+      <DialogContent className="max-w-3xl max-h-[95vh] overflow-hidden bg-background border-border p-0">
+        <div className="relative">
+          <div className="bg-muted/30 px-8 py-6 border-b border-border">
+            <DialogHeader className="flex flex-row items-center justify-between space-y-0">
+              <div className="flex items-center gap-3">
+                <div className="bg-accent/20 p-2 rounded-lg">
+                  <Wand2 className="w-5 h-5 text-accent" />
                 </div>
-
-                <Separator />
-
-                <div className="space-y-3">
-                  <div className="flex items-center space-x-2">
-                    <Settings2 className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Room Type</span>
-                    <Badge variant="outline" className="capitalize">
-                      {sourceImage.roomType.replace('_', ' ')}
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <Palette className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Staging Style</span>
-                    <Badge variant="outline" className="capitalize">
-                      {sourceImage.stagingStyle}
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">Operation</span>
-                    <Badge variant="outline" className="capitalize">
-                      {sourceImage.operationType.replace('_', ' ')}
-                    </Badge>
-                  </div>
+                <div>
+                  <DialogTitle className="text-2xl font-bold text-foreground">
+                    Generate Staging Variants
+                  </DialogTitle>
+                  <p className="text-sm text-muted-foreground mt-1">Transform your space with AI-powered staging</p>
                 </div>
               </div>
-            </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogHeader>
           </div>
 
-          {/* AI Variants Section - Right Side */}
-          <div className="w-1/2 p-6 pl-3 overflow-y-auto">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">
-                  AI Generated Variants ({sourceImage.variants.length})
-                </h3>
+          <div className="px-8 py-6 space-y-8 max-h-[calc(95vh-120px)] overflow-y-auto">
+            {/* Enhanced Image Preview */}
+            <div className="relative group">
+              <div className="relative overflow-hidden rounded-xl shadow-lg border border-border">
+                <img
+                  src={`/api/files/${sourceImage.originalImagePath.split('/').pop()?.split('.')[0]}`}
+                  alt={sourceImage.displayName || sourceImage.originalFileName}
+                  className="w-full h-72 object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
               </div>
-
-              {sourceImage.variants.length === 0 ? (
-                <div className="text-center py-12">
-                  <ImageIcon className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No variants generated yet</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {sourceImage.variants.map((variant) => (
-                    <Card key={variant.id} className="overflow-hidden">
-                      <CardContent className="p-0">
-                        <div className="relative">
-                          {/* Variant Image */}
-                          <div className="aspect-video overflow-hidden bg-muted">
-                            {variant.status === 'completed' && variant.stagedImagePath ? (
-                              <img
-                                src={`/api/files/${variant.stagedImagePath.split('/').pop()?.split('.')[0]}`}
-                                alt={`Variant ${variant.variationIndex}`}
-                                className="w-full h-full object-contain"
-                                onError={(e) => {
-                                  const target = e.target as HTMLImageElement
-                                  target.src = '/placeholder.svg'
-                                }}
-                              />
-                            ) : variant.status === 'processing' || variant.status === 'pending' ? (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <div className="text-center">
-                                  <Loader2 className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
-                                  <p className="text-sm text-muted-foreground">Processing...</p>
-                                </div>
-                              </div>
-                            ) : variant.status === 'failed' ? (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <div className="text-center">
-                                  <AlertCircle className="h-8 w-8 text-destructive mx-auto mb-2" />
-                                  <p className="text-sm text-destructive">Generation Failed</p>
-                                  {variant.errorMessage && (
-                                    <p className="text-xs text-muted-foreground mt-1">
-                                      {variant.errorMessage}
-                                    </p>
-                                  )}
-                                </div>
-                              </div>
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center">
-                                <ImageIcon className="h-12 w-12 text-muted-foreground" />
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Variant Header */}
-                          <div className="absolute top-2 left-2 right-2 flex justify-between items-center">
-                            <Badge variant="secondary" className="bg-background/90 text-foreground">
-                              Variant {variant.variationIndex}
-                            </Badge>
-                            {getStatusBadge(variant)}
-                          </div>
-
-                          {/* Download Button for Completed Variants */}
-                          {variant.status === 'completed' && variant.stagedImagePath && (
-                            <div className="absolute bottom-2 right-2">
-                              <Button
-                                size="sm"
-                                variant="secondary"
-                                onClick={() => handleDownloadVariant(variant)}
-                                className="bg-background/90 hover:bg-background gap-2"
-                              >
-                                <Download className="h-3 w-3" />
-                                Download
-                              </Button>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Variant Info */}
-                        {variant.completedAt && (
-                          <div className="p-3 bg-muted/30">
-                            <div className="flex items-center space-x-2 text-xs text-muted-foreground">
-                              <Calendar className="h-3 w-3" />
-                              <span>Completed {formatDate(variant.completedAt)}</span>
-                            </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  ))}
+              {(sourceImage.displayName || sourceImage.originalFileName) && (
+                <div className="flex items-center gap-2 mt-3">
+                  <div className="w-2 h-2 bg-accent rounded-full" />
+                  <p className="text-sm font-medium text-foreground">{sourceImage.displayName || sourceImage.originalFileName}</p>
                 </div>
               )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Room Type Selection */}
+              <div className="space-y-3">
+                <Label htmlFor="room-type" className="text-sm font-semibold text-foreground flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 bg-accent rounded-full" />
+                  Room Type
+                </Label>
+                <Select value={selectedRoomType} onValueChange={setSelectedRoomType}>
+                  <SelectTrigger
+                    id="room-type"
+                    className="h-12 bg-background border-border hover:border-accent/50 transition-colors"
+                  >
+                    <SelectValue placeholder="Select room type" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border-border">
+                    {roomTypes.map((type) => (
+                      <SelectItem key={type} value={type} className="hover:bg-accent/10">
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Interior Style Selection */}
+              <div className="space-y-3">
+                <Label
+                  htmlFor="interior-style"
+                  className="text-sm font-semibold text-foreground flex items-center gap-2"
+                >
+                  <div className="w-1.5 h-1.5 bg-secondary rounded-full" />
+                  Interior Style
+                </Label>
+                <Select value={selectedStyle} onValueChange={setSelectedStyle}>
+                  <SelectTrigger
+                    id="interior-style"
+                    className="h-12 bg-background border-border hover:border-accent/50 transition-colors"
+                  >
+                    <SelectValue placeholder="Select interior style" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background border-border">
+                    {interiorStyles.map((style) => (
+                      <SelectItem key={style} value={style} className="hover:bg-accent/10">
+                        {style}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
+              <CollapsibleTrigger className="flex items-center justify-between w-full py-3 text-left">
+                <span className="text-sm font-semibold text-foreground">Advanced Options</span>
+                <ChevronDown className={`h-4 w-4 transition-transform ${isAdvancedOpen ? "rotate-180" : ""}`} />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-4 pt-2">
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium text-foreground">Number of variants</Label>
+                  <Slider
+                    value={imageCount}
+                    onValueChange={setImageCount}
+                    max={4}
+                    min={1}
+                    step={1}
+                    className="w-full"
+                  />
+                  <div className="text-center text-sm text-muted-foreground">
+                    {imageCount[0]} variant{imageCount[0] !== 1 ? "s" : ""} selected
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            <div className="flex items-center justify-between pt-4 border-t border-border/20">
+              <span className="text-sm text-muted-foreground">
+                {imageCount[0]} variant{imageCount[0] !== 1 ? "s" : ""} will be generated
+              </span>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={onClose} className="px-6 bg-transparent">
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleGenerate}
+                  disabled={isGenerateDisabled}
+                  className="px-6 bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate
+                </Button>
+              </div>
             </div>
           </div>
         </div>
