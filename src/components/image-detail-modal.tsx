@@ -207,13 +207,13 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
                 {imageCount[0]} variant{imageCount[0] !== 1 ? "s" : ""} will be generated
               </span>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={onClose} className="px-6 bg-transparent">
+                <Button variant="outline" onClick={onClose} className="px-6 hover:bg-muted/70 hover:text-foreground cursor-pointer">
                   Cancel
                 </Button>
                 <Button
                   onClick={handleGenerate}
                   disabled={isGenerateDisabled}
-                  className="px-6 bg-green-600 hover:bg-green-700 text-white"
+                  className="px-6 cursor-pointer"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   Generate
