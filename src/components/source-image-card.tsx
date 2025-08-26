@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { CardActionsMenu } from "@/components/ui/card-actions-menu"
 import { RenameModal } from "@/components/ui/rename-modal"
 import { useState } from "react"
+import Link from "next/link"
+import { Folder } from "lucide-react"
 
 interface GeneratedVariant {
   id: string
@@ -189,8 +191,7 @@ export function SourceImageCard({
             />
           </div>
           
-          <div className="absolute top-2 right-2 flex gap-2">
-            {getStatusBadge(image.variants)}
+          <div className="absolute top-2 right-2">
             {!isSelectable && (onRename || onDelete) && (
               <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                 <CardActionsMenu
@@ -203,9 +204,13 @@ export function SourceImageCard({
             )}
           </div>
 
+          <div className="absolute bottom-2 left-2">
+            {getStatusBadge(image.variants)}
+          </div>
+
         </div>
 
-        <div className="p-4">
+        <div className="p-4 pb-0.5">
           <div className="flex items-center justify-between mb-2">
             {isEditing && onRename ? (
               <Input
@@ -236,9 +241,12 @@ export function SourceImageCard({
           <div className="space-y-2">
             {/* Project name for detailed view */}
             {isDetailed && hasProjectName && (
-              <div className="text-sm font-medium text-primary truncate" title={(image as SourceImageWithProject).projectName}>
-                📁 {(image as SourceImageWithProject).projectName}
-              </div>
+               <Link href={`/?project=${(image as SourceImageWithProject).projectId}`} onClick={(e) => e.stopPropagation()}>
+               <div className="text-sm font-medium text-primary truncate flex items-center" title={(image as SourceImageWithProject).projectName}>
+                 <Folder className="w-4 h-4 mr-2" />
+                 {(image as SourceImageWithProject).projectName}
+               </div>
+             </Link>
             )}
             
           </div>
