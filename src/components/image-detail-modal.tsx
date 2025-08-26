@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label"
 import { Slider } from "@/components/ui/slider"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { X, Sparkles, Wand2, ChevronDown } from "lucide-react"
+import { Sparkles, ChevronDown, Home, Palette } from "lucide-react"
 
 interface ImageDetailModalProps {
   isOpen: boolean
@@ -64,7 +64,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
   const [selectedRoomType, setSelectedRoomType] = useState<string>("")
   const [selectedStyle, setSelectedStyle] = useState<string>("")
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
-  const [imageCount, setImageCount] = useState([4])
+  const [imageCount, setImageCount] = useState([3])
 
   if (!sourceImage) return null
 
@@ -86,26 +86,8 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
       <DialogContent className="max-w-3xl max-h-[95vh] overflow-hidden bg-background border-border p-0">
         <div className="relative">
           <div className="bg-muted/30 px-8 py-6 border-b border-border">
-            <DialogHeader className="flex flex-row items-center justify-between space-y-0">
-              <div className="flex items-center gap-3">
-                <div className="bg-accent/20 p-2 rounded-lg">
-                  <Wand2 className="w-5 h-5 text-accent" />
-                </div>
-                <div>
-                  <DialogTitle className="text-2xl font-bold text-foreground">
-                    Generate Staging Variants
-                  </DialogTitle>
-                  <p className="text-sm text-muted-foreground mt-1">Transform your space with AI-powered staging</p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                className="h-8 w-8 rounded-full hover:bg-destructive/10 hover:text-destructive"
-              >
-                <X className="h-4 w-4" />
-              </Button>
+            <DialogHeader className="space-y-0">
+              <DialogTitle className="sr-only">Modal</DialogTitle>
             </DialogHeader>
           </div>
 
@@ -120,19 +102,13 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
               </div>
-              {(sourceImage.displayName || sourceImage.originalFileName) && (
-                <div className="flex items-center gap-2 mt-3">
-                  <div className="w-2 h-2 bg-accent rounded-full" />
-                  <p className="text-sm font-medium text-foreground">{sourceImage.displayName || sourceImage.originalFileName}</p>
-                </div>
-              )}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Room Type Selection */}
               <div className="space-y-3">
                 <Label htmlFor="room-type" className="text-sm font-semibold text-foreground flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 bg-accent rounded-full" />
+                  <Home className="w-4 h-4 text-accent" />
                   Room Type
                 </Label>
                 <Select value={selectedRoomType} onValueChange={setSelectedRoomType}>
@@ -158,7 +134,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
                   htmlFor="interior-style"
                   className="text-sm font-semibold text-foreground flex items-center gap-2"
                 >
-                  <div className="w-1.5 h-1.5 bg-secondary rounded-full" />
+                  <Palette className="w-4 h-4 text-accent" />
                   Interior Style
                 </Label>
                 <Select value={selectedStyle} onValueChange={setSelectedStyle}>
