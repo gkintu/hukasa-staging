@@ -158,7 +158,7 @@ export function SourceImageCard({
 
   return (
     <Card
-      className={`group cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] animate-fade-in ${
+      className={`group cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] animate-fade-in pt-0 ${
         isSelected ? 'ring-2 ring-primary border-primary' : ''
       }`}
       style={{ animationDelay: `${index * 100}ms` }}
@@ -192,12 +192,14 @@ export function SourceImageCard({
           <div className="absolute top-2 right-2 flex gap-2">
             {getStatusBadge(image.variants)}
             {!isSelectable && (onRename || onDelete) && (
-              <CardActionsMenu
-                onRename={onRename ? handleMenuRename : undefined}
-                onDelete={onDelete ? handleMenuDelete : undefined}
-                renameLabel="Rename Image"
-                deleteLabel="Delete Image"
-              />
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <CardActionsMenu
+                  onRename={onRename ? handleMenuRename : undefined}
+                  onDelete={onDelete ? handleMenuDelete : undefined}
+                  renameLabel="Rename Image"
+                  deleteLabel="Delete Image"
+                />
+              </div>
             )}
           </div>
 
@@ -239,12 +241,6 @@ export function SourceImageCard({
               </div>
             )}
             
-            {/* Creation date for detailed view */}
-            {isDetailed && showCreationDate && (
-              <div className="text-xs text-muted-foreground">
-                {formatDate(image.createdAt)}
-              </div>
-            )}
           </div>
         </div>
       </CardContent>

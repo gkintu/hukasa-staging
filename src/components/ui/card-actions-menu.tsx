@@ -38,7 +38,7 @@ export function CardActionsMenu({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 bg-background/90 hover:bg-background/100"
+            className="h-8 w-8 p-0 bg-background/90 hover:bg-muted hover:text-foreground cursor-pointer"
             onClick={handleMenuClick}
             disabled={disabled}
           >
