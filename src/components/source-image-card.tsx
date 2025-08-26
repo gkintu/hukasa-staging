@@ -242,7 +242,7 @@ export function SourceImageCard({
             {/* Project name for detailed view */}
             {isDetailed && hasProjectName && (
                <Link href={`/?project=${(image as SourceImageWithProject).projectId}`} onClick={(e) => e.stopPropagation()}>
-               <div className="text-sm font-medium text-primary truncate flex items-center" title={(image as SourceImageWithProject).projectName}>
+               <div className="text-sm font-medium truncate flex items-center hover:text-primary transition-colors" title={(image as SourceImageWithProject).projectName}>
                  <Folder className="w-4 h-4 mr-2" />
                  {(image as SourceImageWithProject).projectName}
                </div>
