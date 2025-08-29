@@ -188,10 +188,6 @@ export function DropzoneCard({
                         width={48}
                         height={48}
                         className="h-12 w-12 object-cover rounded border"
-                        onLoad={() => {
-                          // Revoke URL after image loads to free memory
-                          URL.revokeObjectURL(file.preview!)
-                        }}
                       />
                     </div>
                   )}

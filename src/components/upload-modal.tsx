@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useCallback, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -251,6 +251,9 @@ export function UploadModal({ isOpen, onClose, projectId, onUploadSuccess }: Upl
               <X className="h-4 w-4" />
             </Button>
           </div>
+          <DialogDescription>
+            Upload room images for virtual staging. Choose a project or create a new one to organize your images.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
