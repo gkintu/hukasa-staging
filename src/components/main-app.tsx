@@ -1,14 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Settings, Upload } from "lucide-react"
 import { Sidebar } from "@/components/sidebar"
 import { Dashboard } from "@/components/dashboard"
 import { Projects } from "@/components/projects"
-import { AllImages } from "@/components/all-images"
-import { ProjectDetail } from "@/components/project-detail"
+import { AllImages, AllImagesRef } from "@/components/all-images"
+import { ProjectDetail, ProjectDetailRef } from "@/components/project-detail"
 import { SettingsPage } from "@/components/settings-page"
 import { Help } from "@/components/help"
 import { UploadModal } from "@/components/upload-modal"
@@ -60,6 +60,11 @@ export function MainApp({ user }: MainAppProps) {
   const [activeView, setActiveView] = useState<"dashboard" | "allImages" | "projects" | "settings" | "help">("dashboard")
   const [showUploadModal, setShowUploadModal] = useState(false)
   const [selectedImageForModal, setSelectedImageForModal] = useState<SourceImage | SourceImageWithProject | null>(null)
+  
+  // Refs for refreshing components
+  const allImagesRef = useRef<AllImagesRef>(null)
+  const unassignedImagesRef = useRef<AllImagesRef>(null)
+  const projectDetailRef = useRef<ProjectDetailRef>(null)
   
   // Get URL parameters
   const projectParam = searchParams.get('project')
@@ -166,6 +171,17 @@ export function MainApp({ user }: MainAppProps) {
     setShowUploadModal(true)
   }
 
+  const handleUploadSuccess = useCallback(() => {
+    // Refresh the appropriate view based on current state
+    if (projectParam) {
+      projectDetailRef.current?.refreshProject()
+    } else if (unassignedParam) {
+      unassignedImagesRef.current?.refreshImages()
+    } else if (allImagesParam || activeView === "allImages") {
+      allImagesRef.current?.refreshImages()
+    }
+  }, [projectParam, unassignedParam, allImagesParam, activeView])
+
   return (
     <div className="flex h-screen bg-background">
       <Sidebar activeView={activeView} onViewChange={handleSidebarNavigation} />
@@ -195,6 +211,7 @@ export function MainApp({ user }: MainAppProps) {
           {/* Show specific views based on URL parameters, otherwise show view based on activeView */}
           {projectParam ? (
             <ProjectDetail 
+              ref={projectDetailRef}
               projectId={projectParam}
               onBack={handleBackToProjects}
               onImageSelect={handleImageSelect}
@@ -202,6 +219,7 @@ export function MainApp({ user }: MainAppProps) {
             />
           ) : unassignedParam ? (
             <AllImages 
+              ref={unassignedImagesRef}
               onImageSelect={handleImageSelect}
               unassignedOnly={true}
             />
@@ -210,6 +228,7 @@ export function MainApp({ user }: MainAppProps) {
               {activeView === "dashboard" && <Dashboard user={user} />}
               {activeView === "allImages" && (
                 <AllImages 
+                  ref={allImagesRef}
                   onImageSelect={handleImageSelect}
                   onUploadClick={handleUploadClick}
                 />
@@ -231,6 +250,7 @@ export function MainApp({ user }: MainAppProps) {
         isOpen={showUploadModal} 
         onClose={() => setShowUploadModal(false)}
         projectId={searchParams.get('project') || undefined}
+        onUploadSuccess={handleUploadSuccess}
       />
       
       <ImageDetailModal

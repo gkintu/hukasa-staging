@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, forwardRef, useImperativeHandle, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronLeft, Image as ImageIcon, Upload } from "lucide-react"
@@ -11,6 +11,10 @@ interface ProjectDetailProps {
   onBack: () => void
   onImageSelect: (imageId: string, sourceImage: SourceImage) => void
   onUploadMore?: () => void
+}
+
+export interface ProjectDetailRef {
+  refreshProject: () => Promise<void>
 }
 
 interface Project {
@@ -42,34 +46,41 @@ interface SourceImage {
   variants: GeneratedVariant[]
 }
 
-export function ProjectDetail({ projectId, onBack, onImageSelect, onUploadMore }: ProjectDetailProps) {
+export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(function ProjectDetail({ projectId, onBack, onImageSelect, onUploadMore }, ref) {
   const [project, setProject] = useState<Project | null>(null)
   const [sourceImages, setSourceImages] = useState<SourceImage[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    async function fetchProjectDetail() {
-      try {
-        const response = await fetch(`/api/projects/${projectId}`)
-        const data = await response.json()
-        
-        if (data.success) {
-          setProject(data.project)
-          setSourceImages(data.sourceImages || [])
-        } else {
-          console.error('Failed to fetch project details:', data.message)
-        }
-      } catch (error) {
-        console.error('Error fetching project details:', error)
-      } finally {
-        setLoading(false)
+  // Reusable fetch function
+  const fetchProjectDetail = useCallback(async () => {
+    if (!projectId) return
+    
+    setLoading(true)
+    try {
+      const response = await fetch(`/api/projects/${projectId}`)
+      const data = await response.json()
+      
+      if (data.success) {
+        setProject(data.project)
+        setSourceImages(data.sourceImages || [])
+      } else {
+        console.error('Failed to fetch project details:', data.message)
       }
-    }
-
-    if (projectId) {
-      fetchProjectDetail()
+    } catch (error) {
+      console.error('Error fetching project details:', error)
+    } finally {
+      setLoading(false)
     }
   }, [projectId])
+
+  // Expose refresh function via ref
+  useImperativeHandle(ref, () => ({
+    refreshProject: fetchProjectDetail
+  }))
+
+  useEffect(() => {
+    fetchProjectDetail()
+  }, [fetchProjectDetail])
 
 
   const formatDate = (date: Date) => {
@@ -263,4 +274,4 @@ export function ProjectDetail({ projectId, onBack, onImageSelect, onUploadMore }
       </div>
     </div>
   )
-}
+})

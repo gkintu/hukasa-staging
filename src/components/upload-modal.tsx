@@ -40,9 +40,10 @@ interface UploadModalProps {
   onClose: () => void
   user?: User
   projectId?: string
+  onUploadSuccess?: () => void
 }
 
-export function UploadModal({ isOpen, onClose, projectId }: UploadModalProps) {
+export function UploadModal({ isOpen, onClose, projectId, onUploadSuccess }: UploadModalProps) {
   const [uploads, setUploads] = useState<UploadItem[]>([])
   const [feedbackMessages, setFeedbackMessages] = useState<FeedbackMessage[]>([])
   const [rejectedFiles, setRejectedFiles] = useState<RejectedFile[]>([])
@@ -139,6 +140,9 @@ export function UploadModal({ isOpen, onClose, projectId }: UploadModalProps) {
         }
         setFeedbackMessages(prev => [...prev, successMessage])
 
+        // Notify parent component of successful upload
+        onUploadSuccess?.()
+
       } else {
         // Handle partial or complete failure
         setUploads(prev => 
@@ -200,7 +204,7 @@ export function UploadModal({ isOpen, onClose, projectId }: UploadModalProps) {
     } finally {
       setIsUploading(false)
     }
-  }, [createNewProject, newProjectName, selectedProjectId])
+  }, [createNewProject, newProjectName, selectedProjectId, onUploadSuccess])
 
   const handleFilesRejected = useCallback((rejectedFiles: RejectedFile[]) => {
     setRejectedFiles(prev => [...prev, ...rejectedFiles])

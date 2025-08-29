@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, forwardRef, useImperativeHandle, useCallback } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -14,6 +14,10 @@ interface AllImagesProps {
   onImageSelect: (imageId: string, sourceImage: SourceImageWithProject) => void
   onUploadClick?: () => void
   unassignedOnly?: boolean
+}
+
+export interface AllImagesRef {
+  refreshImages: () => Promise<void>
 }
 
 interface GeneratedVariant {
@@ -49,7 +53,7 @@ interface Project {
   sourceImageCount: number
 }
 
-export function AllImages({ onImageSelect, onUploadClick, unassignedOnly = false }: AllImagesProps) {
+export const AllImages = forwardRef<AllImagesRef, AllImagesProps>(function AllImages({ onImageSelect, onUploadClick, unassignedOnly = false }, ref) {
   const [sourceImages, setSourceImages] = useState<SourceImageWithProject[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set())
@@ -116,33 +120,40 @@ export function AllImages({ onImageSelect, onUploadClick, unassignedOnly = false
   // Helper to check if project is unassigned
   const isUnassignedProject = (projectName: string) => projectName === "📥 Unassigned Images"
 
-  useEffect(() => {
-    async function fetchAllImages() {
-      try {
-        const response = await fetch('/api/images')
-        const data = await response.json()
+  // Reusable fetch function
+  const fetchAllImages = useCallback(async () => {
+    setLoading(true)
+    try {
+      const response = await fetch('/api/images')
+      const data = await response.json()
+      
+      if (data.success) {
+        let images = data.sourceImages || []
         
-        if (data.success) {
-          let images = data.sourceImages || []
-          
-          // Filter for unassigned images only if unassignedOnly prop is true
-          if (unassignedOnly) {
-            images = images.filter((img: SourceImageWithProject) => isUnassignedProject(img.projectName))
-          }
-          
-          setSourceImages(images)
-        } else {
-          console.error('Failed to fetch all images:', data.message)
+        // Filter for unassigned images only if unassignedOnly prop is true
+        if (unassignedOnly) {
+          images = images.filter((img: SourceImageWithProject) => isUnassignedProject(img.projectName))
         }
-      } catch (error) {
-        console.error('Error fetching all images:', error)
-      } finally {
-        setLoading(false)
+        
+        setSourceImages(images)
+      } else {
+        console.error('Failed to fetch all images:', data.message)
       }
+    } catch (error) {
+      console.error('Error fetching all images:', error)
+    } finally {
+      setLoading(false)
     }
-
-    fetchAllImages()
   }, [unassignedOnly])
+
+  // Expose refresh function via ref
+  useImperativeHandle(ref, () => ({
+    refreshImages: fetchAllImages
+  }))
+
+  useEffect(() => {
+    fetchAllImages()
+  }, [unassignedOnly, fetchAllImages])
 
   // Load projects for move functionality
   const loadProjects = async () => {
@@ -602,4 +613,4 @@ export function AllImages({ onImageSelect, onUploadClick, unassignedOnly = false
       </Dialog>
     </div>
   )
-}
+})
