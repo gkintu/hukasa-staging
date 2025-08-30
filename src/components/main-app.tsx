@@ -2,18 +2,12 @@
 
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Settings, Upload } from "lucide-react"
 import { MainAppSidebar } from "@/components/main-app-sidebar"
+import { MainAppHeader } from "@/components/main-app-header"
 import {
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
   SidebarInset,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { Separator } from "@/components/ui/separator"
 import { Dashboard } from "@/components/dashboard"
 import { Projects } from "@/components/projects"
 import { AllImages, AllImagesRef } from "@/components/all-images"
@@ -136,6 +130,13 @@ export function MainApp({ user }: MainAppProps) {
       router.push('/')
     }
   }
+  
+  const handleHeaderNavigation = (view: string) => {
+    // Handle navigation from header (string type to match MainAppHeader interface)
+    if (view === "dashboard" || view === "allImages" || view === "projects" || view === "help") {
+      handleSidebarNavigation(view)
+    }
+  }
 
   const handleProjectSelect = (projectId: string, isUnassigned?: boolean) => {
     // Navigate to unassigned view or project detail view
@@ -210,31 +211,19 @@ export function MainApp({ user }: MainAppProps) {
       />
       
       <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
-            <div className="flex items-center gap-2 px-4">
-              <SidebarTrigger className="-ml-1" />
-              <Separator orientation="vertical" className="mr-2 h-4" />
-            </div>
-            
-            <div className="ml-auto flex items-center gap-2 px-4">
-              <Button
-                onClick={() => setShowUploadModal(true)}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-              >
-                <Upload className="h-4 w-4" />
-                Upload Files
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setActiveView("settings")}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <Settings className="h-4 w-4" />
-              </Button>
-            </div>
-          </header>
+          <MainAppHeader 
+          activeView={
+            projectParam ? "project" : 
+            unassignedParam ? "unassigned" :
+            allImagesParam ? "allImages" :
+            activeView
+          }
+          projectName={projectParam ? `Project ${projectParam}` : undefined}
+          imageName={selectedImageForModal?.displayName || selectedImageForModal?.originalFileName || undefined}
+          onNavigate={handleHeaderNavigation}
+          onUploadClick={() => setShowUploadModal(true)}
+          onSettingsClick={() => setActiveView("settings")}
+        />
 
           <main className="flex-1 overflow-auto p-4" role="main">
           {/* Show specific views based on URL parameters, otherwise show view based on activeView */}

@@ -14,19 +14,27 @@ import { ThemeToggle } from "@/components/theme-toggle"
 import { SearchCommand } from "@/components/search-command"
 import { useScrollHidden } from "@/hooks/use-scroll-effects"
 import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button"
+import { Upload, Settings } from "lucide-react"
 
 interface MainAppHeaderProps {
   activeView: string
   projectName?: string
   imageName?: string
   onNavigate: (view: string) => void
+  showSearch?: boolean
+  onUploadClick?: () => void
+  onSettingsClick?: () => void
 }
 
 export function MainAppHeader({ 
   activeView, 
   projectName, 
   imageName, 
-  onNavigate 
+  onNavigate,
+  showSearch = false,
+  onUploadClick,
+  onSettingsClick
 }: MainAppHeaderProps) {
   // Generate dynamic breadcrumbs based on current view and context
   const generateBreadcrumbs = () => {
@@ -122,9 +130,33 @@ export function MainAppHeader({
       
       <div className="ml-auto flex items-center gap-2 px-4">
         {/* Global search */}
-        <div className="relative hidden md:block">
-          <SearchCommand variant="main" />
-        </div>
+        {showSearch && (
+          <div className="relative hidden md:block">
+            <SearchCommand variant="main" />
+          </div>
+        )}
+        
+        {/* Action buttons */}
+        {onUploadClick && (
+          <Button
+            onClick={onUploadClick}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Upload Files
+          </Button>
+        )}
+        
+        {onSettingsClick && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onSettingsClick}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            <Settings className="h-4 w-4" />
+          </Button>
+        )}
         
         {/* Theme toggle */}
         <ThemeToggle />
