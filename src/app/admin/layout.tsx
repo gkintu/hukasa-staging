@@ -1,8 +1,6 @@
-"use client"
-
 import { AdminLayout } from "@/components/admin/admin-layout"
 
-export default function AdminRootLayout({
+export default async function AdminRootLayout({
   children,
 }: {
   children: React.ReactNode

@@ -1,8 +1,9 @@
-"use client"
-
 import * as React from "react"
 import { Shield } from "lucide-react"
+import { redirect } from "next/navigation"
+import { headers } from "next/headers"
 import { cn } from "@/lib/utils"
+import { auth } from "@/lib/auth"
 import {
   Sidebar,
   SidebarContent,
@@ -23,7 +24,19 @@ interface AdminLayoutProps {
   children: React.ReactNode
 }
 
-export function AdminLayout({ children }: AdminLayoutProps) {
+export async function AdminLayout({ children }: AdminLayoutProps) {
+  // Get admin emails from environment variable
+  const ADMIN_EMAILS = process.env.ADMIN_EMAILS?.split(',').map(email => email.trim()) || ['georgekavumax@gmail.com']
+  
+  // Full session validation - this is the actual security check
+  const session = await auth.api.getSession({ 
+    headers: await headers() 
+  })
+  
+  // Block unauthorized access
+  if (!session?.user || !ADMIN_EMAILS.includes(session.user.email)) {
+    redirect('/')
+  }
   // Always start with false for SSR consistency
   // The SidebarProvider will handle cookie-based state after hydration
   const defaultOpen = false
