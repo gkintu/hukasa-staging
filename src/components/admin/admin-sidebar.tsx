@@ -13,7 +13,6 @@ import {
 } from "lucide-react"
 
 import {
-  Sidebar,
   SidebarGroup,
   SidebarGroupContent,
   SidebarMenu,
@@ -28,10 +27,19 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible"
-import { useLayout } from "@/lib/layout-provider"
+
+type AdminNavItem = {
+  title: string
+  url: string
+  icon: React.ComponentType
+  items?: {
+    title: string
+    url: string
+  }[]
+}
 
 // Admin navigation data
-const adminNavItems = [
+const adminNavItems: AdminNavItem[] = [
   {
     title: "Dashboard",
     url: "/admin",
@@ -41,16 +49,6 @@ const adminNavItems = [
     title: "Users",
     url: "/admin/users",
     icon: Users,
-    items: [
-      {
-        title: "All Users",
-        url: "/admin/users",
-      },
-      {
-        title: "Search Users",
-        url: "/admin/users/search",
-      },
-    ],
   },
   {
     title: "Images",
@@ -69,17 +67,15 @@ const adminNavItems = [
   },
 ]
 
-type AdminSidebarProps = React.ComponentProps<typeof Sidebar>
+type AdminSidebarProps = React.ComponentProps<typeof SidebarGroup>
 
 export function AdminSidebar({ ...props }: AdminSidebarProps) {
   const pathname = usePathname()
-  const { collapsible, variant } = useLayout()
 
   return (
-    <Sidebar collapsible={collapsible} variant={variant} {...props}>
-      <SidebarGroup>
-        <SidebarGroupContent>
-          <SidebarMenu>
+    <SidebarGroup {...props}>
+      <SidebarGroupContent>
+        <SidebarMenu>
             {adminNavItems.map((item) => {
               const isActive = pathname === item.url || pathname.startsWith(item.url + "/")
               
@@ -95,7 +91,7 @@ export function AdminSidebar({ ...props }: AdminSidebarProps) {
                       // Menu item with submenu
                       <>
                         <CollapsibleTrigger asChild>
-                          <SidebarMenuButton tooltip={item.title} isActive={isActive}>
+                          <SidebarMenuButton tooltip={item.title} isActive={isActive} size="lg">
                             {item.icon && <item.icon />}
                             <span>{item.title}</span>
                             <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
@@ -124,6 +120,7 @@ export function AdminSidebar({ ...props }: AdminSidebarProps) {
                         tooltip={item.title} 
                         asChild
                         isActive={isActive}
+                        size="lg"
                       >
                         <Link href={item.url}>
                           {item.icon && <item.icon />}
@@ -135,9 +132,8 @@ export function AdminSidebar({ ...props }: AdminSidebarProps) {
                 </Collapsible>
               )
             })}
-          </SidebarMenu>
-        </SidebarGroupContent>
-      </SidebarGroup>
-    </Sidebar>
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
   )
 }

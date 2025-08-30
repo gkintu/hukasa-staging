@@ -1,8 +1,10 @@
 "use client"
 
 import * as React from "react"
+import { Shield } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
+  Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
@@ -21,17 +23,10 @@ interface AdminLayoutProps {
   children: React.ReactNode
 }
 
-function getCookie(name: string): string | null {
-  if (typeof document === "undefined") return null
-  
-  const value = `; ${document.cookie}`
-  const parts = value.split(`; ${name}=`)
-  if (parts.length === 2) return parts.pop()?.split(";").shift() || null
-  return null
-}
-
 export function AdminLayout({ children }: AdminLayoutProps) {
-  const defaultOpen = getCookie("sidebar_state") !== "false"
+  // Always start with false for SSR consistency
+  // The SidebarProvider will handle cookie-based state after hydration
+  const defaultOpen = false
 
   // Sample searchable data for admin - in real app this would come from API
   const adminSearchData = [
@@ -46,31 +41,31 @@ export function AdminLayout({ children }: AdminLayoutProps) {
       <ConfigProvider>
         <SearchProvider searchableData={adminSearchData}>
           <SidebarProvider defaultOpen={defaultOpen}>
-            <AdminSidebar>
-                <SidebarHeader>
-                  <div className="flex items-center gap-2 px-2 py-1">
-                    <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                      <span className="text-sm font-semibold">A</span>
-                    </div>
-                    <div className="grid flex-1 text-left text-sm leading-tight">
-                      <span className="truncate font-semibold">Admin Panel</span>
-                      <span className="truncate text-xs text-sidebar-foreground/70">
-                        Virtual Staging Platform
-                      </span>
-                    </div>
+            <Sidebar collapsible="icon" variant="inset">
+              <SidebarHeader>
+                <div className="flex items-center gap-2 px-2 py-1 group-data-[collapsible=icon]:px-1 group-data-[collapsible=icon]:justify-center">
+                  <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
+                    <Shield className="h-4 w-4" />
                   </div>
-                </SidebarHeader>
-                
-                <SidebarContent>
-                  {/* Admin navigation will be rendered by AdminSidebar */}
-                </SidebarContent>
-                
-                <SidebarFooter>
-                  <AdminNavUser />
-                </SidebarFooter>
-                
-                <SidebarRail />
-              </AdminSidebar>
+                  <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:sr-only">
+                    <span className="truncate font-semibold">Admin Panel</span>
+                    <span className="truncate text-xs text-sidebar-foreground/70">
+                      Virtual Staging Platform
+                    </span>
+                  </div>
+                </div>
+              </SidebarHeader>
+              
+              <SidebarContent>
+                <AdminSidebar />
+              </SidebarContent>
+              
+              <SidebarFooter>
+                <AdminNavUser />
+              </SidebarFooter>
+              
+              <SidebarRail />
+            </Sidebar>
               
               <SidebarInset
                 className={cn(
