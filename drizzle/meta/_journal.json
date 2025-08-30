@@ -57,6 +57,13 @@
       "when": 1756034977582,
       "tag": "0007_needy_red_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1756451483831,
+      "tag": "0008_sweet_mole_man",
+      "breakpoints": true
     }
   ]
 }

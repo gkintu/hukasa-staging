@@ -32,6 +32,11 @@ export const statusEnum = pgEnum('status', [
   'failed'
 ])
 
+export const userRoleEnum = pgEnum('user_role', [
+  'user',
+  'admin'
+])
+
 // Users table
 export const users = pgTable('users', {
   id: text('id').primaryKey(),
@@ -41,6 +46,9 @@ export const users = pgTable('users', {
     .notNull(),
   name: text('name').notNull(),
   image: text('image'),
+  role: userRoleEnum('role')
+    .$defaultFn(() => 'user')
+    .notNull(),
   createdAt: timestamp('created_at')
     .$defaultFn(() => new Date())
     .notNull(),

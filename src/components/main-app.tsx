@@ -4,7 +4,17 @@ import { useState, useEffect, useRef, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Settings, Upload } from "lucide-react"
-import { Sidebar } from "@/components/sidebar"
+import { MainAppSidebar } from "@/components/main-app-sidebar"
+import {
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar"
+import { LayoutProvider } from "@/lib/layout-provider"
+import { Separator } from "@/components/ui/separator"
 import { Dashboard } from "@/components/dashboard"
 import { Projects } from "@/components/projects"
 import { AllImages, AllImagesRef } from "@/components/all-images"
@@ -51,6 +61,15 @@ interface SourceImage {
 interface SourceImageWithProject extends SourceImage {
   projectId: string
   projectName: string
+}
+
+function getCookie(name: string): string | null {
+  if (typeof document === "undefined") return null
+  
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop()?.split(";").shift() || null
+  return null
 }
 
 export function MainApp({ user }: MainAppProps) {
@@ -182,32 +201,44 @@ export function MainApp({ user }: MainAppProps) {
     }
   }, [projectParam, unassignedParam, allImagesParam, activeView])
 
-  return (
-    <div className="flex h-screen bg-background">
-      <Sidebar activeView={activeView} onViewChange={handleSidebarNavigation} />
-      <main className="flex-1 overflow-auto" role="main">
-        <div className="flex justify-between items-center p-4 border-b border-border">
-          <Button
-            onClick={() => setShowUploadModal(true)}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            Upload Files
-          </Button>
-          
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setActiveView("settings")}
-            className="gap-2"
-            aria-label="Open settings"
-          >
-            <Settings className="h-4 w-4" />
-            Settings
-          </Button>
-        </div>
+  const defaultOpen = getCookie("sidebar_state") !== "false"
 
-        <div className="p-6">
+  return (
+    <SidebarProvider defaultOpen={defaultOpen}>
+      <LayoutProvider>
+        <MainAppSidebar 
+          activeView={activeView} 
+          onViewChange={handleSidebarNavigation} 
+        />
+        
+        <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12">
+            <div className="flex items-center gap-2 px-4">
+              <SidebarTrigger className="-ml-1" />
+              <Separator orientation="vertical" className="mr-2 h-4" />
+            </div>
+            
+            <div className="ml-auto flex items-center gap-2 px-4">
+              <Button
+                onClick={() => setShowUploadModal(true)}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+              >
+                <Upload className="h-4 w-4" />
+                Upload Files
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setActiveView("settings")}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </div>
+          </header>
+
+          <main className="flex-1 overflow-auto p-4" role="main">
           {/* Show specific views based on URL parameters, otherwise show view based on activeView */}
           {projectParam ? (
             <ProjectDetail 
@@ -243,21 +274,22 @@ export function MainApp({ user }: MainAppProps) {
               {activeView === "help" && <Help />}
             </>
           )}
-        </div>
-      </main>
-      
-      <UploadModal 
-        isOpen={showUploadModal} 
-        onClose={() => setShowUploadModal(false)}
-        projectId={searchParams.get('project') || undefined}
-        onUploadSuccess={handleUploadSuccess}
-      />
-      
-      <ImageDetailModal
-        isOpen={!!selectedImageForModal}
-        onClose={handleCloseImageModal}
-        sourceImage={selectedImageForModal}
-      />
-    </div>
+          </main>
+        </SidebarInset>
+
+        <UploadModal 
+          isOpen={showUploadModal} 
+          onClose={() => setShowUploadModal(false)}
+          projectId={searchParams.get('project') || undefined}
+          onUploadSuccess={handleUploadSuccess}
+        />
+        
+        <ImageDetailModal
+          isOpen={!!selectedImageForModal}
+          onClose={handleCloseImageModal}
+          sourceImage={selectedImageForModal}
+        />
+      </LayoutProvider>
+    </SidebarProvider>
   )
 }
