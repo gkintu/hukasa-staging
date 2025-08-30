@@ -50,11 +50,11 @@ export function MainAppSidebar({ activeView, onViewChange, ...props }: MainAppSi
   return (
     <Sidebar collapsible={collapsible} variant={variant} {...props}>
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-1">
+        <div className="flex items-center gap-2 px-2 py-1 group-data-[collapsible=icon]:px-1 group-data-[collapsible=icon]:justify-center">
           <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
             <Palette className="h-4 w-4" />
           </div>
-          <div className="grid flex-1 text-left text-sm leading-tight">
+          <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:sr-only">
             <span className="truncate font-semibold">Hukasa</span>
             <span className="truncate text-xs text-sidebar-foreground/70">
               Virtual Staging Platform
