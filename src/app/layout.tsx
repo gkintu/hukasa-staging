@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LayoutProvider } from "@/lib/layout-provider";
 
 export const metadata: Metadata = {
   title: "Hukasa - AI Virtual Staging Platform",
@@ -22,7 +23,9 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <LayoutProvider>
+            {children}
+          </LayoutProvider>
         </ThemeProvider>
       </body>
     </html>
