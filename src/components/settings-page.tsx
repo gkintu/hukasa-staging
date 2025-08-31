@@ -17,6 +17,7 @@ import {
   Trash2,
   LogOut,
 } from "lucide-react"
+import { signOut } from "@/lib/auth-client"
 
 interface User {
   id: string
@@ -63,9 +64,15 @@ export function SettingsPage({ user }: SettingsPageProps) {
     setIsEditing(false)
   }
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     console.log("User logged out")
-    window.location.href = '/api/auth/signout'
+    await signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          window.location.href = "/"
+        },
+      },
+    })
   }
 
   return (
