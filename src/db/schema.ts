@@ -36,6 +36,7 @@ export const auditActionEnum = pgEnum('audit_action', [
   'DELETE_IMAGE',
   'VIEW_USER_PROFILE', 
   'SUSPEND_USER',
+  'UNSUSPEND_USER',
   'MODERATE_IMAGE',
   'UPDATE_SETTINGS',
   'CREATE_USER',

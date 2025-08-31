@@ -6,7 +6,7 @@ import { validateApiSession } from '@/lib/auth-utils'
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin session
@@ -24,7 +24,7 @@ export async function POST(
       return Response.json({ success: false, message: 'Admin access required' }, { status: 403 })
     }
 
-    const userId = params.id
+    const { id: userId } = await params
     const { suspend, reason } = await request.json()
 
     // Get target user
