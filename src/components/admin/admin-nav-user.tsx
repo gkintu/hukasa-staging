@@ -100,7 +100,13 @@ export function AdminNavUser() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => signOut()}>
+            <DropdownMenuItem onClick={() => signOut({
+              fetchOptions: {
+                onSuccess: () => {
+                  window.location.href = "/"
+                }
+              }
+            })}>
               <LogOut />
               Log out
             </DropdownMenuItem>
