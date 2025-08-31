@@ -3,6 +3,7 @@ import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LayoutProvider } from "@/lib/layout-provider";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Hukasa - AI Virtual Staging Platform",
@@ -25,6 +26,7 @@ export default function RootLayout({
         >
           <LayoutProvider>
             {children}
+            <Toaster />
           </LayoutProvider>
         </ThemeProvider>
       </body>

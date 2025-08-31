@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Search, Mail, Calendar, Shield, MoreVertical } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Search, Calendar, Shield, MoreVertical, Users, AlertTriangle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -21,37 +21,139 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Textarea } from "@/components/ui/textarea"
+import { Label } from "@/components/ui/label"
 
-// Mock user data - will be replaced with API call
-const mockUsers = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john@example.com",
-    image: null,
-    role: "user" as const,
-    createdAt: "2024-01-15T10:00:00Z",
-    lastActive: "2024-01-20T15:30:00Z",
-  },
-  {
-    id: "2", 
-    name: "Jane Smith",
-    email: "jane@example.com",
-    image: null,
-    role: "admin" as const,
-    createdAt: "2024-01-10T09:00:00Z",
-    lastActive: "2024-01-21T11:45:00Z",
-  },
-]
+// Types
+type User = {
+  id: string
+  name: string
+  email: string
+  image: string | null
+  role: 'user' | 'admin'
+  suspended: boolean
+  createdAt: string
+  updatedAt: string
+  lastActiveAt: string | null
+  lastLoginAt: string | null
+  projectCount: number
+  imageCount: number
+}
+
+type UserResponse = {
+  success: boolean
+  data: {
+    users: User[]
+    pagination: {
+      page: number
+      pageSize: number
+      totalCount: number
+      totalPages: number
+      hasNextPage: boolean
+      hasPrevPage: boolean
+    }
+  }
+}
 
 export default function AdminUsersPage() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [users] = useState(mockUsers)
+  const [users, setUsers] = useState<User[]>([])
+  const [loading, setLoading] = useState(true)
+  const [pagination, setPagination] = useState({
+    page: 1,
+    pageSize: 50,
+    totalCount: 0,
+    totalPages: 0,
+    hasNextPage: false,
+    hasPrevPage: false
+  })
+  const [suspendDialogOpen, setSuspendDialogOpen] = useState(false)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [suspendReason, setSuspendReason] = useState("")
+  // Using sonner for toast notifications
 
-  const filteredUsers = users.filter(user => 
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // Fetch users from API
+  const fetchUsers = async (search = "", page = 1) => {
+    try {
+      setLoading(true)
+      const params = new URLSearchParams({
+        search,
+        page: page.toString(),
+        pageSize: pagination.pageSize.toString()
+      })
+      
+      const response = await fetch(`/api/admin/users?${params}`)
+      const data: UserResponse = await response.json()
+      
+      if (data.success) {
+        setUsers(data.data.users)
+        setPagination(data.data.pagination)
+      } else {
+        toast.error("Failed to fetch users")
+      }
+    } catch (error) {
+      toast.error("Failed to fetch users")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle search with debounce
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchUsers(searchQuery, 1)
+    }, 300)
+
+    return () => clearTimeout(timer)
+  }, [searchQuery])
+
+  // Initial load
+  useEffect(() => {
+    fetchUsers()
+  }, [])
+
+  // Handle user suspension
+  const handleSuspendUser = async (user: User, suspend: boolean) => {
+    try {
+      const response = await fetch(`/api/admin/users/${user.id}/suspend`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          suspend,
+          reason: suspendReason
+        })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        toast.success(result.message)
+        
+        // Update user in local state
+        setUsers(users.map(u => 
+          u.id === user.id ? { ...u, suspended: suspend } : u
+        ))
+        
+        setSuspendDialogOpen(false)
+        setSelectedUser(null)
+        setSuspendReason("")
+      } else {
+        toast.error(result.message)
+      }
+    } catch (error) {
+      toast.error("Failed to update user status")
+    }
+  }
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -87,8 +189,8 @@ export default function AdminUsersPage() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Mail className="h-5 w-5" />
-            Users ({filteredUsers.length})
+            <Users className="h-5 w-5" />
+            Users ({loading ? '...' : pagination.totalCount})
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -103,9 +205,15 @@ export default function AdminUsersPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredUsers.length > 0 ? (
-                filteredUsers.map((user) => (
-                  <TableRow key={user.id}>
+              {loading ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8">
+                    Loading users...
+                  </TableCell>
+                </TableRow>
+              ) : users.length > 0 ? (
+                users.map((user) => (
+                  <TableRow key={user.id} className={user.suspended ? "opacity-60" : ""}>
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
@@ -123,16 +231,24 @@ export default function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
-                        {user.role === 'admin' ? (
-                          <>
-                            <Shield className="w-3 h-3 mr-1" />
-                            Admin
-                          </>
-                        ) : (
-                          'User'
+                      <div className="flex items-center gap-2">
+                        <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                          {user.role === 'admin' ? (
+                            <>
+                              <Shield className="w-3 h-3 mr-1" />
+                              Admin
+                            </>
+                          ) : (
+                            'User'
+                          )}
+                        </Badge>
+                        {user.suspended && (
+                          <Badge variant="destructive">
+                            <AlertTriangle className="w-3 h-3 mr-1" />
+                            Suspended
+                          </Badge>
                         )}
-                      </Badge>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1 text-sm">
@@ -141,8 +257,13 @@ export default function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm text-muted-foreground">
-                        {formatDate(user.lastActive)}
+                      <div className="flex flex-col gap-1">
+                        <div className="text-sm text-muted-foreground">
+                          {user.lastActiveAt ? formatDate(user.lastActiveAt) : 'Never'}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {user.projectCount} projects, {user.imageCount} images
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -153,11 +274,29 @@ export default function AdminUsersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Profile</DropdownMenuItem>
-                          <DropdownMenuItem>View Images</DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600">
-                            Suspend User
+                          <DropdownMenuItem onClick={() => {
+                            // TODO: Implement view profile modal
+                            toast.info("Profile view feature coming soon")
+                          }}>
+                            View Profile
                           </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => {
+                            // TODO: Implement view images modal
+                            toast.info("Images view feature coming soon")
+                          }}>
+                            View Images
+                          </DropdownMenuItem>
+                          {user.role !== 'admin' && (
+                            <DropdownMenuItem 
+                              className={user.suspended ? "text-green-600" : "text-red-600"}
+                              onClick={() => {
+                                setSelectedUser(user)
+                                setSuspendDialogOpen(true)
+                              }}
+                            >
+                              {user.suspended ? 'Unsuspend User' : 'Suspend User'}
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -174,6 +313,77 @@ export default function AdminUsersPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Pagination */}
+      {pagination.totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing {users.length} of {pagination.totalCount} users
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={!pagination.hasPrevPage || loading}
+              onClick={() => fetchUsers(searchQuery, pagination.page - 1)}
+            >
+              Previous
+            </Button>
+            <span className="text-sm">
+              Page {pagination.page} of {pagination.totalPages}
+            </span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={!pagination.hasNextPage || loading}
+              onClick={() => fetchUsers(searchQuery, pagination.page + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Suspend User Dialog */}
+      <Dialog open={suspendDialogOpen} onOpenChange={setSuspendDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {selectedUser?.suspended ? 'Unsuspend' : 'Suspend'} User
+            </DialogTitle>
+            <DialogDescription>
+              {selectedUser?.suspended 
+                ? `Are you sure you want to unsuspend ${selectedUser?.name || selectedUser?.email}?`
+                : `Are you sure you want to suspend ${selectedUser?.name || selectedUser?.email}? They will not be able to access their account.`
+              }
+            </DialogDescription>
+          </DialogHeader>
+          
+          {!selectedUser?.suspended && (
+            <div className="space-y-2">
+              <Label htmlFor="reason">Reason (optional)</Label>
+              <Textarea
+                id="reason"
+                placeholder="Enter reason for suspension..."
+                value={suspendReason}
+                onChange={(e) => setSuspendReason(e.target.value)}
+              />
+            </div>
+          )}
+          
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setSuspendDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              variant={selectedUser?.suspended ? "default" : "destructive"}
+              onClick={() => selectedUser && handleSuspendUser(selectedUser, !selectedUser.suspended)}
+            >
+              {selectedUser?.suspended ? 'Unsuspend' : 'Suspend'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

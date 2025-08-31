@@ -59,6 +59,8 @@ export const users = pgTable('users', {
   role: userRoleEnum('role')
     .$defaultFn(() => 'user')
     .notNull(),
+  suspended: boolean('suspended')
+    .$defaultFn(() => false),
   lastActiveAt: timestamp('last_active_at'),
   lastLoginAt: timestamp('last_login_at'),
   createdAt: timestamp('created_at')
