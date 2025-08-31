@@ -6,7 +6,7 @@ import { validateApiSession } from '@/lib/auth-utils'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin session
@@ -24,7 +24,7 @@ export async function GET(
       return Response.json({ success: false, message: 'Admin access required' }, { status: 403 })
     }
 
-    const userId = params.id
+    const { id: userId } = await params
 
     // Verify target user exists
     const targetUser = await db.query.users.findFirst({
@@ -45,7 +45,7 @@ export async function GET(
     const offset = (page - 1) * pageSize
 
     // Build where conditions
-    let conditions = [eq(generations.userId, userId)]
+    const conditions = [eq(generations.userId, userId)]
     
     if (searchQuery) {
       conditions.push(
@@ -61,7 +61,7 @@ export async function GET(
     }
 
     if (status) {
-      conditions.push(eq(generations.status, status as any))
+      conditions.push(eq(generations.status, status as 'pending' | 'processing' | 'completed' | 'failed'))
     }
 
     // Get user's images with project information
