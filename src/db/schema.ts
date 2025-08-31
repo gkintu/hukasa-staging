@@ -32,6 +32,16 @@ export const statusEnum = pgEnum('status', [
   'failed'
 ])
 
+export const auditActionEnum = pgEnum('audit_action', [
+  'DELETE_IMAGE',
+  'VIEW_USER_PROFILE', 
+  'SUSPEND_USER',
+  'MODERATE_IMAGE',
+  'UPDATE_SETTINGS',
+  'CREATE_USER',
+  'DELETE_USER'
+])
+
 export const userRoleEnum = pgEnum('user_role', [
   'user',
   'admin'
@@ -49,6 +59,8 @@ export const users = pgTable('users', {
   role: userRoleEnum('role')
     .$defaultFn(() => 'user')
     .notNull(),
+  lastActiveAt: timestamp('last_active_at'),
+  lastLoginAt: timestamp('last_login_at'),
   createdAt: timestamp('created_at')
     .$defaultFn(() => new Date())
     .notNull(),
@@ -89,6 +101,34 @@ export const generations = pgTable('generations', {
   completedAt: timestamp('completed_at')
 })
 
+// Admin actions audit table
+export const adminActions = pgTable('admin_actions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  action: auditActionEnum('action').notNull(),
+  adminId: text('admin_id').references(() => users.id).notNull(),
+  targetUserId: text('target_user_id').references(() => users.id),
+  targetResourceType: text('target_resource_type'), // 'image', 'user_profile', 'project', etc.
+  targetResourceId: text('target_resource_id'),
+  targetResourceName: text('target_resource_name'),
+  reason: text('reason'),
+  ipAddress: text('ip_address'),
+  userAgent: text('user_agent'),
+  metadata: text('metadata'), // JSON string for additional context
+  createdAt: timestamp('created_at').defaultNow().notNull()
+})
+
+// System settings table
+export const systemSettings = pgTable('system_settings', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  key: text('key').unique().notNull(),
+  value: text('value').notNull(),
+  description: text('description'),
+  settingType: text('setting_type').notNull(), // 'security', 'moderation', 'system', 'notification'
+  isPublic: boolean('is_public').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+})
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   projects: many(projects),
@@ -111,6 +151,17 @@ export const generationsRelations = relations(generations, ({ one }) => ({
   project: one(projects, {
     fields: [generations.projectId],
     references: [projects.id]
+  })
+}))
+
+export const adminActionsRelations = relations(adminActions, ({ one }) => ({
+  admin: one(users, {
+    fields: [adminActions.adminId],
+    references: [users.id]
+  }),
+  targetUser: one(users, {
+    fields: [adminActions.targetUserId],
+    references: [users.id]
   })
 }))
 
@@ -176,3 +227,7 @@ export type Account = typeof accounts.$inferSelect
 export type NewAccount = typeof accounts.$inferInsert
 export type Verification = typeof verifications.$inferSelect
 export type NewVerification = typeof verifications.$inferInsert
+export type AdminAction = typeof adminActions.$inferSelect
+export type NewAdminAction = typeof adminActions.$inferInsert
+export type SystemSetting = typeof systemSettings.$inferSelect
+export type NewSystemSetting = typeof systemSettings.$inferInsert

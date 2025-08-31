@@ -9,57 +9,20 @@ import { formatDistanceToNow } from "date-fns"
 interface ActivityItem {
   id: string
   type: 'user_signup' | 'image_upload' | 'admin_action' | 'system_event'
-  user: string
-  action: string
-  timestamp: Date
+  title: string
+  description: string
+  user?: {
+    name: string
+    email: string
+    role?: string
+  }
+  admin?: {
+    name: string
+  }
   metadata?: Record<string, unknown>
+  timestamp: string | Date
 }
 
-// Sample activity data - in real app this would come from API
-const generateActivityData = (): ActivityItem[] => [
-  {
-    id: '1',
-    type: 'user_signup',
-    user: 'John Smith',
-    action: 'New user registered',
-    timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
-  },
-  {
-    id: '2',
-    type: 'image_upload',
-    user: 'Sarah Johnson',
-    action: 'Uploaded 3 images to "Living Room Project"',
-    timestamp: new Date(Date.now() - 1000 * 60 * 12), // 12 minutes ago
-  },
-  {
-    id: '3',
-    type: 'admin_action',
-    user: 'Admin User',
-    action: 'Updated system settings',
-    timestamp: new Date(Date.now() - 1000 * 60 * 25), // 25 minutes ago
-  },
-  {
-    id: '4',
-    type: 'system_event',
-    user: 'System',
-    action: 'Completed image processing batch (15 images)',
-    timestamp: new Date(Date.now() - 1000 * 60 * 35), // 35 minutes ago
-  },
-  {
-    id: '5',
-    type: 'user_signup',
-    user: 'Mike Chen',
-    action: 'New user registered',
-    timestamp: new Date(Date.now() - 1000 * 60 * 45), // 45 minutes ago
-  },
-  {
-    id: '6',
-    type: 'image_upload',
-    user: 'Emma Wilson',
-    action: 'Uploaded image to "Kitchen Redesign"',
-    timestamp: new Date(Date.now() - 1000 * 60 * 60), // 1 hour ago
-  },
-]
 
 function getActivityTypeInfo(type: ActivityItem['type']) {
   switch (type) {
@@ -76,48 +39,73 @@ function getActivityTypeInfo(type: ActivityItem['type']) {
   }
 }
 
-function getUserInitials(name: string) {
+function getUserInitials(name?: string) {
+  if (!name) return 'SY'
   return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
 }
 
 export function RecentActivity() {
   const [activities, setActivities] = React.useState<ActivityItem[]>([])
   const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
-    // Simulate loading
-    const loadTimer = setTimeout(() => {
-      setActivities(generateActivityData())
-      setIsLoading(false)
-    }, 1000)
-
-    // Simulate new activity every 30 seconds
-    const activityTimer = setInterval(() => {
-      const types: ActivityItem['type'][] = ['user_signup', 'image_upload', 'admin_action', 'system_event']
-      const users = ['Alice Brown', 'Bob Green', 'Carol White', 'David Black']
-      
-      const newActivity: ActivityItem = {
-        id: Date.now().toString(),
-        type: types[Math.floor(Math.random() * types.length)],
-        user: users[Math.floor(Math.random() * users.length)],
-        action: 'Recent activity occurred',
-        timestamp: new Date(),
+    async function fetchActivity() {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const response = await fetch('/api/admin/recent-activity')
+        const result = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(result.message || 'Failed to fetch activity')
+        }
+        
+        if (result.success) {
+          setActivities(result.data)
+        } else {
+          throw new Error(result.message || 'Failed to fetch activity')
+        }
+      } catch (error) {
+        console.error('Failed to fetch recent activity:', error)
+        setError(error instanceof Error ? error.message : 'Unknown error')
+      } finally {
+        setIsLoading(false)
       }
+    }
 
-      setActivities(prev => [newActivity, ...prev.slice(0, 9)]) // Keep only 10 most recent
-    }, 30000)
+    fetchActivity()
+    
+    // Refresh activity every 30 seconds
+    const refreshTimer = setInterval(fetchActivity, 30000)
 
     return () => {
-      clearTimeout(loadTimer)
-      clearInterval(activityTimer)
+      clearInterval(refreshTimer)
     }
   }, [])
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Activity</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <p>Failed to load recent activity</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   if (isLoading) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Recent Admin Actions</CardTitle>
+          <CardTitle>Recent Activity</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -143,37 +131,48 @@ export function RecentActivity() {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {activities.map((activity) => {
-            const typeInfo = getActivityTypeInfo(activity.type)
-            
-            return (
-              <div key={activity.id} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-accent/50 transition-colors">
-                <div className="relative">
-                  <Avatar className="h-10 w-10">
-                    <AvatarFallback className={`text-white ${typeInfo.color}`}>
-                      {getUserInitials(activity.user)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-background ${typeInfo.color}`} />
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2">
-                    <p className="text-sm font-medium truncate">{activity.user}</p>
-                    <Badge variant={typeInfo.variant} className="text-xs">
-                      {typeInfo.label}
-                    </Badge>
+          {activities.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No recent activity</p>
+            </div>
+          ) : (
+            activities.map((activity) => {
+              const typeInfo = getActivityTypeInfo(activity.type)
+              const displayName = activity.user?.name || activity.admin?.name || 'System'
+              const timestamp = new Date(activity.timestamp)
+              
+              return (
+                <div key={activity.id} className="flex items-start space-x-4 p-3 rounded-lg hover:bg-accent/50 transition-colors">
+                  <div className="relative">
+                    <Avatar className="h-10 w-10">
+                      <AvatarFallback className={`text-white ${typeInfo.color}`}>
+                        {getUserInitials(displayName)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-background ${typeInfo.color}`} />
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    {activity.action}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {formatDistanceToNow(activity.timestamp, { addSuffix: true })}
-                  </p>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2">
+                      <p className="text-sm font-medium truncate">{displayName}</p>
+                      <Badge variant={typeInfo.variant} className="text-xs">
+                        {typeInfo.label}
+                      </Badge>
+                    </div>
+                    <p className="text-sm font-medium mt-1">
+                      {activity.title}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {activity.description}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {formatDistanceToNow(timestamp, { addSuffix: true })}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })
+          )}
         </div>
       </CardContent>
     </Card>

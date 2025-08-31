@@ -64,6 +64,13 @@
       "when": 1756451483831,
       "tag": "0008_sweet_mole_man",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1756614868801,
+      "tag": "0009_fuzzy_landau",
+      "breakpoints": true
     }
   ]
 }

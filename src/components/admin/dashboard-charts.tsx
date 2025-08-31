@@ -11,49 +11,15 @@ import {
   XAxis,
   YAxis,
   CartesianGrid,
-  PieChart,
-  Pie,
 } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   ChartConfig,
   ChartContainer,
-  ChartLegend,
-  ChartLegendContent,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart"
 
-// Sample data - in real app this would come from API
-const userGrowthData = [
-  { month: 'Jan', users: 65, newUsers: 8 },
-  { month: 'Feb', users: 78, newUsers: 13 },
-  { month: 'Mar', users: 90, newUsers: 12 },
-  { month: 'Apr', users: 102, newUsers: 12 },
-  { month: 'May', users: 118, newUsers: 16 },
-  { month: 'Jun', users: 134, newUsers: 16 },
-]
-
-const imageUploadData = [
-  { day: 'Mon', uploads: 12, processed: 11 },
-  { day: 'Tue', uploads: 19, processed: 18 },
-  { day: 'Wed', uploads: 15, processed: 13 },
-  { day: 'Thu', uploads: 22, processed: 20 },
-  { day: 'Fri', uploads: 28, processed: 25 },
-  { day: 'Sat', uploads: 8, processed: 8 },
-  { day: 'Sun', uploads: 6, processed: 6 },
-]
-
-
-
-const processingTimeData = [
-  { hour: '00', avgTime: 2.3, maxTime: 4.5 },
-  { hour: '04', avgTime: 1.8, maxTime: 3.2 },
-  { hour: '08', avgTime: 3.5, maxTime: 6.8 },
-  { hour: '12', avgTime: 4.2, maxTime: 8.1 },
-  { hour: '16', avgTime: 3.8, maxTime: 7.2 },
-  { hour: '20', avgTime: 2.9, maxTime: 5.4 },
-]
 
 // Chart configurations
 const userGrowthConfig = {
@@ -109,34 +75,88 @@ const processingTimeConfig = {
 } satisfies ChartConfig
 
 export function UserGrowthChart() {
+  const [data, setData] = React.useState<Array<{date: string; users: number; label: string}>>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const response = await fetch('/api/admin/charts/user-growth')
+        const result = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(result.message || 'Failed to fetch user growth data')
+        }
+        
+        if (result.success) {
+          setData(result.data)
+        } else {
+          throw new Error(result.message || 'Failed to fetch user growth data')
+        }
+      } catch (error) {
+        console.error('Failed to fetch user growth data:', error)
+        setError(error instanceof Error ? error.message : 'Unknown error')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>User Growth</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <p>Failed to load user growth data</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>User Growth</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[350px] flex items-center justify-center">
+            <div className="animate-pulse text-muted-foreground">Loading chart data...</div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>User Growth</CardTitle>
+        <CardTitle>User Growth (Last 30 Days)</CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer config={userGrowthConfig} className="h-[350px]">
-          <AreaChart data={userGrowthData}>
+          <AreaChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="month" />
+            <XAxis dataKey="label" />
             <YAxis />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <ChartLegend content={<ChartLegendContent />} />
             <Area
               dataKey="users"
               type="monotone"
               fill="var(--color-users)"
               stroke="var(--color-users)"
-              stackId="1"
               fillOpacity={0.6}
-            />
-            <Area
-              dataKey="newUsers"
-              type="monotone"
-              fill="var(--color-newUsers)"
-              stroke="var(--color-newUsers)"
-              stackId="1"
-              fillOpacity={0.8}
             />
           </AreaChart>
         </ChartContainer>
@@ -146,21 +166,83 @@ export function UserGrowthChart() {
 }
 
 export function ImageUploadChart() {
+  const [data, setData] = React.useState<Array<{date: string; images: number; label: string}>>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const response = await fetch('/api/admin/charts/image-uploads')
+        const result = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(result.message || 'Failed to fetch image upload data')
+        }
+        
+        if (result.success) {
+          setData(result.data)
+        } else {
+          throw new Error(result.message || 'Failed to fetch image upload data')
+        }
+      } catch (error) {
+        console.error('Failed to fetch image upload data:', error)
+        setError(error instanceof Error ? error.message : 'Unknown error')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Image Uploads</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <p>Failed to load image upload data</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Image Uploads</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[350px] flex items-center justify-center">
+            <div className="animate-pulse text-muted-foreground">Loading chart data...</div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Weekly Image Activity</CardTitle>
+        <CardTitle>Image Uploads (Last 30 Days)</CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer config={imageUploadConfig} className="h-[350px]">
-          <BarChart data={imageUploadData}>
+          <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="day" />
+            <XAxis dataKey="label" />
             <YAxis />
             <ChartTooltip content={<ChartTooltipContent />} />
-            <ChartLegend content={<ChartLegendContent />} />
-            <Bar dataKey="uploads" fill="var(--color-uploads)" radius={[2, 2, 0, 0]} />
-            <Bar dataKey="processed" fill="var(--color-processed)" radius={[2, 2, 0, 0]} />
+            <Bar dataKey="images" fill="var(--color-uploads)" radius={[2, 2, 0, 0]} />
           </BarChart>
         </ChartContainer>
       </CardContent>
@@ -169,33 +251,84 @@ export function ImageUploadChart() {
 }
 
 export function ActivityDistributionChart() {
-  // Map activity data to chart config keys
-  const chartData = [
-    { name: 'User Logins', value: 45, fill: 'var(--color-userLogins)' },
-    { name: 'Image Uploads', value: 30, fill: 'var(--color-imageUploads)' },
-    { name: 'Admin Actions', value: 15, fill: 'var(--color-adminActions)' },
-    { name: 'System Events', value: 10, fill: 'var(--color-systemEvents)' },
-  ]
+  const [data, setData] = React.useState<Array<{hour: string; activity: number}>>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const response = await fetch('/api/admin/charts/activity-distribution')
+        const result = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(result.message || 'Failed to fetch activity distribution data')
+        }
+        
+        if (result.success) {
+          setData(result.data)
+        } else {
+          throw new Error(result.message || 'Failed to fetch activity distribution data')
+        }
+      } catch (error) {
+        console.error('Failed to fetch activity distribution data:', error)
+        setError(error instanceof Error ? error.message : 'Unknown error')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Activity Distribution</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <p>Failed to load activity distribution data</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Activity Distribution</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[350px] flex items-center justify-center">
+            <div className="animate-pulse text-muted-foreground">Loading chart data...</div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Activity Distribution</CardTitle>
+        <CardTitle>Activity by Hour</CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer config={activityConfig} className="h-[350px]">
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ name, percent }) => `${name} ${percent ? (percent * 100).toFixed(0) : 0}%`}
-              outerRadius={80}
-              dataKey="value"
-            />
+          <BarChart data={data}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="hour" />
+            <YAxis />
             <ChartTooltip content={<ChartTooltipContent />} />
-          </PieChart>
+            <Bar dataKey="activity" fill="var(--color-userLogins)" radius={[2, 2, 0, 0]} />
+          </BarChart>
         </ChartContainer>
       </CardContent>
     </Card>
@@ -203,19 +336,87 @@ export function ActivityDistributionChart() {
 }
 
 export function ProcessingTimeChart() {
+  const [data, setData] = React.useState<Array<{date: string; avgTime: number | null; count: number; label: string}>>([])
+  const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
+
+  React.useEffect(() => {
+    async function fetchData() {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const response = await fetch('/api/admin/charts/processing-time')
+        const result = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(result.message || 'Failed to fetch processing time data')
+        }
+        
+        if (result.success) {
+          setData(result.data)
+        } else {
+          throw new Error(result.message || 'Failed to fetch processing time data')
+        }
+      } catch (error) {
+        console.error('Failed to fetch processing time data:', error)
+        setError(error instanceof Error ? error.message : 'Unknown error')
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Processing Times</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <p>Failed to load processing time data</p>
+            <p className="text-sm">{error}</p>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Processing Times</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] flex items-center justify-center">
+            <div className="animate-pulse text-muted-foreground">Loading chart data...</div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
+  const chartData = data.filter(d => d.avgTime !== null)
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Processing Time Trends</CardTitle>
+        <CardTitle>Processing Times (Last 30 Days)</CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer config={processingTimeConfig} className="h-[300px]">
-          <LineChart data={processingTimeData}>
+          <LineChart data={chartData}>
             <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="hour" />
-            <YAxis />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            <ChartLegend content={<ChartLegendContent />} />
+            <XAxis dataKey="label" />
+            <YAxis label={{ value: 'Seconds', angle: -90, position: 'insideLeft' }} />
+            <ChartTooltip 
+              content={<ChartTooltipContent />}
+              formatter={(value: number) => [`${value}s`, 'Avg Time']}
+            />
             <Line
               type="monotone"
               dataKey="avgTime"
@@ -223,15 +424,6 @@ export function ProcessingTimeChart() {
               strokeWidth={3}
               dot={{ fill: "var(--color-avgTime)", r: 4 }}
               activeDot={{ r: 6, fill: "var(--color-avgTime)" }}
-            />
-            <Line
-              type="monotone"
-              dataKey="maxTime"
-              stroke="var(--color-maxTime)"
-              strokeWidth={3}
-              strokeDasharray="8 4"
-              dot={{ fill: "var(--color-maxTime)", r: 4 }}
-              activeDot={{ r: 6, fill: "var(--color-maxTime)" }}
             />
           </LineChart>
         </ChartContainer>

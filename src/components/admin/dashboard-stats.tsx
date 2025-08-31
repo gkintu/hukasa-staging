@@ -54,43 +54,82 @@ function StatCard({ title, value, change, changeLabel, icon, isLoading = false }
   )
 }
 
+interface StatsData {
+  totalUsers: number
+  totalImages: number
+  activeAdmins: number
+  weeklyActivity: number
+}
+
 export function DashboardStats() {
-  const [stats, setStats] = React.useState({
-    totalUsers: 1247,
-    totalImages: 8934,
-    activeAdmins: 3,
-    weeklyActivity: 156
+  const [stats, setStats] = React.useState<StatsData>({
+    totalUsers: 0,
+    totalImages: 0,
+    activeAdmins: 0,
+    weeklyActivity: 0
   })
   
   const [changes] = React.useState({
-    totalUsers: 12.5,
-    totalImages: 8.2,
+    totalUsers: 0,
+    totalImages: 0,
     activeAdmins: 0,
-    weeklyActivity: -2.1
+    weeklyActivity: 0
   })
 
   const [isLoading, setIsLoading] = React.useState(true)
+  const [error, setError] = React.useState<string | null>(null)
 
-  // Simulate real-time data updates
+  // Fetch real stats data
   React.useEffect(() => {
-    const initialLoadTimer = setTimeout(() => {
-      setIsLoading(false)
-    }, 1500)
+    async function fetchStats() {
+      try {
+        setIsLoading(true)
+        setError(null)
+        
+        const response = await fetch('/api/admin/stats')
+        const result = await response.json()
+        
+        if (!response.ok) {
+          throw new Error(result.message || 'Failed to fetch stats')
+        }
+        
+        if (result.success) {
+          setStats(result.data)
+        } else {
+          throw new Error(result.message || 'Failed to fetch stats')
+        }
+      } catch (error) {
+        console.error('Failed to fetch admin stats:', error)
+        setError(error instanceof Error ? error.message : 'Unknown error')
+      } finally {
+        setIsLoading(false)
+      }
+    }
 
-    const updateTimer = setInterval(() => {
-      setStats(prev => ({
-        totalUsers: prev.totalUsers + Math.floor(Math.random() * 3),
-        totalImages: prev.totalImages + Math.floor(Math.random() * 5),
-        activeAdmins: Math.max(1, prev.activeAdmins + (Math.random() > 0.7 ? (Math.random() > 0.5 ? 1 : -1) : 0)),
-        weeklyActivity: prev.weeklyActivity + Math.floor(Math.random() * 3) - 1
-      }))
-    }, 10000) // Update every 10 seconds
+    fetchStats()
+    
+    // Refresh stats every 30 seconds
+    const refreshTimer = setInterval(fetchStats, 30000)
 
     return () => {
-      clearTimeout(initialLoadTimer)
-      clearInterval(updateTimer)
+      clearInterval(refreshTimer)
     }
   }, [])
+
+  if (error) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} className="border-red-200">
+            <CardContent className="p-6">
+              <div className="text-sm text-red-600">Failed to load stats</div>
+              <div className="text-xs text-muted-foreground mt-1">{error}</div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -98,7 +137,7 @@ export function DashboardStats() {
         title="Total Users"
         value={stats.totalUsers}
         change={changes.totalUsers}
-        changeLabel="from last month"
+        changeLabel="registered users"
         icon={<Users className="h-4 w-4 text-muted-foreground" />}
         isLoading={isLoading}
       />
@@ -107,7 +146,7 @@ export function DashboardStats() {
         title="Total Images"
         value={stats.totalImages}
         change={changes.totalImages}
-        changeLabel="from last month"
+        changeLabel="processed images"
         icon={<Images className="h-4 w-4 text-muted-foreground" />}
         isLoading={isLoading}
       />
@@ -116,7 +155,7 @@ export function DashboardStats() {
         title="Active Admins"
         value={stats.activeAdmins}
         change={changes.activeAdmins}
-        changeLabel="currently online"
+        changeLabel="admin accounts"
         icon={<ShieldCheck className="h-4 w-4 text-muted-foreground" />}
         isLoading={isLoading}
       />
@@ -125,7 +164,7 @@ export function DashboardStats() {
         title="Weekly Activity" 
         value={stats.weeklyActivity}
         change={changes.weeklyActivity}
-        changeLabel="actions this week"
+        changeLabel="uploads this week"
         icon={<Activity className="h-4 w-4 text-muted-foreground" />}
         isLoading={isLoading}
       />
