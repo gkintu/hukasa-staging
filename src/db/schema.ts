@@ -91,22 +91,32 @@ export const projects = pgTable('projects', {
   updatedAt: timestamp('updated_at').defaultNow().notNull()
 })
 
-// Generations table
-export const generations = pgTable('generations', {
+// Source Images table - stores original uploaded images
+export const sourceImages = pgTable('source_images', {
   id: uuid('id').defaultRandom().primaryKey(),
   userId: text('user_id').references(() => users.id).notNull(),
   projectId: uuid('project_id').references(() => projects.id).notNull(),
   originalImagePath: text('original_image_path').notNull(), // Relative path: "uploads/uuid-filename.jpg"
   originalFileName: text('original_file_name').notNull(), // Original user filename: "vacation-photo.jpg"
   displayName: text('display_name'), // User-customizable display name, falls back to originalFileName if null
-  fileSize: integer('file_size'), // File size in bytes (nullable for migration)
+  fileSize: integer('file_size'), // File size in bytes
+  isFavorited: boolean('is_favorited').default(false).notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull()
+})
+
+// Generations table - stores AI-generated staging results based on source images
+export const generations = pgTable('generations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  sourceImageId: uuid('source_image_id').references(() => sourceImages.id, { onDelete: 'cascade' }),
+  userId: text('user_id').references(() => users.id).notNull(),
+  projectId: uuid('project_id').references(() => projects.id).notNull(),
   stagedImagePath: text('staged_image_path'), // Relative path: "uploads/staged-uuid-filename.jpg"
   variationIndex: integer('variation_index').default(1).notNull(), // 1, 2, 3 for multiple AI generations
   roomType: roomTypeEnum('room_type').notNull(),
   stagingStyle: stagingStyleEnum('staging_style').notNull(),
   operationType: operationTypeEnum('operation_type').notNull(),
   status: statusEnum('status').default('pending').notNull(),
-  isFavorited: boolean('is_favorited').default(false).notNull(),
   jobId: text('job_id'),
   errorMessage: text('error_message'),
   processingTimeMs: integer('processing_time_ms'),
@@ -145,6 +155,7 @@ export const systemSettings = pgTable('system_settings', {
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   projects: many(projects),
+  sourceImages: many(sourceImages),
   generations: many(generations)
 }))
 
@@ -153,10 +164,27 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
     fields: [projects.userId],
     references: [users.id]
   }),
+  sourceImages: many(sourceImages),
+  generations: many(generations)
+}))
+
+export const sourceImagesRelations = relations(sourceImages, ({ one, many }) => ({
+  user: one(users, {
+    fields: [sourceImages.userId],
+    references: [users.id]
+  }),
+  project: one(projects, {
+    fields: [sourceImages.projectId],
+    references: [projects.id]
+  }),
   generations: many(generations)
 }))
 
 export const generationsRelations = relations(generations, ({ one }) => ({
+  sourceImage: one(sourceImages, {
+    fields: [generations.sourceImageId],
+    references: [sourceImages.id]
+  }),
   user: one(users, {
     fields: [generations.userId],
     references: [users.id]
@@ -232,6 +260,8 @@ export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
 export type Project = typeof projects.$inferSelect
 export type NewProject = typeof projects.$inferInsert
+export type SourceImage = typeof sourceImages.$inferSelect
+export type NewSourceImage = typeof sourceImages.$inferInsert
 export type Generation = typeof generations.$inferSelect
 export type NewGeneration = typeof generations.$inferInsert
 export type Session = typeof sessions.$inferSelect

@@ -1,1 +1,2 @@
-ALTER TYPE "public"."audit_action" ADD VALUE 'UNSUSPEND_USER' BEFORE 'MODERATE_IMAGE';
+-- UNSUSPEND_USER enum value already exists, skipping
+-- ALTER TYPE "public"."audit_action" ADD VALUE 'UNSUSPEND_USER' BEFORE 'MODERATE_IMAGE';

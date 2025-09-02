@@ -1,0 +1,1 @@
+ALTER TABLE "generations" ALTER COLUMN "source_image_id" DROP NOT NULL;

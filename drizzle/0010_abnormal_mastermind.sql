@@ -1,0 +1,2 @@
+-- Empty migration (placeholder for missing file)
+-- This migration was referenced in the journal but the SQL file was missing
