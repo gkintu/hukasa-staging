@@ -1,10 +1,13 @@
 "use client"
 
-import { useEffect, useState, forwardRef, useImperativeHandle, useCallback } from 'react'
+import { useState, forwardRef, useImperativeHandle } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChevronLeft, Image as ImageIcon, Upload } from "lucide-react"
 import { SourceImageCard } from "@/components/source-image-card"
+import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog"
+import { useSimpleDeleteImage } from "@/lib/shared/hooks/use-delete-image"
+import { useProjectDetail, useRenameImage } from "@/lib/shared/hooks/use-images"
 
 interface ProjectDetailProps {
   projectId: string
@@ -47,41 +50,40 @@ interface SourceImage {
 }
 
 export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(function ProjectDetail({ projectId, onBack, onImageSelect, onUploadMore }, ref) {
-  const [project, setProject] = useState<Project | null>(null)
-  const [sourceImages, setSourceImages] = useState<SourceImage[]>([])
-  const [loading, setLoading] = useState(true)
+  // TanStack Query state (replacing manual useState)
+  const { 
+    data, 
+    isLoading: loading, 
+    refetch 
+  } = useProjectDetail(projectId)
+  
+  const project = data?.project || null
+  const sourceImages = data?.images || []
 
-  // Reusable fetch function
-  const fetchProjectDetail = useCallback(async () => {
-    if (!projectId) return
-    
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/projects/${projectId}`)
-      const data = await response.json()
-      
-      if (data.success) {
-        setProject(data.project)
-        setSourceImages(data.sourceImages || [])
-      } else {
-        console.error('Failed to fetch project details:', data.message)
-      }
-    } catch (error) {
-      console.error('Error fetching project details:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [projectId])
+  const [deleteImageId, setDeleteImageId] = useState<string | null>(null)
+  const [deleteImageName, setDeleteImageName] = useState<string>('')
 
-  // Expose refresh function via ref
+  // Use the rename mutation hook
+  const renameMutation = useRenameImage()
+
+  // Expose refresh function via ref (now uses TanStack Query refetch)
   useImperativeHandle(ref, () => ({
-    refreshProject: fetchProjectDetail
+    refreshProject: async () => {
+      await refetch()
+    }
   }))
 
-  useEffect(() => {
-    fetchProjectDetail()
-  }, [fetchProjectDetail])
-
+  // Use the unified delete hook (TanStack Query handles cache updates)
+  const { deleteImage, isLoading: isDeleting } = useSimpleDeleteImage({
+    onSuccess: () => {
+      // TanStack Query will automatically refetch and update the cache
+      setDeleteImageId(null)
+      setDeleteImageName('')
+    },
+    onError: (error) => {
+      console.error('Delete image error:', error)
+    }
+  })
 
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('en-US', {
@@ -97,52 +99,24 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
     onImageSelect(sourceImage.id, sourceImage)
   }
 
-  // Handle image deletion
-  const handleImageDelete = async (imageId: string) => {
-    if (!confirm('Are you sure you want to delete this image? This action cannot be undone.')) {
-      return
-    }
+  // Handle image deletion - now uses dialog instead of confirm
+  const handleImageDelete = (imageId: string) => {
+    const image = sourceImages.find(img => img.id === imageId)
+    setDeleteImageId(imageId)
+    setDeleteImageName(image?.displayName || image?.originalFileName || 'Unknown Image')
+  }
 
-    try {
-      const response = await fetch(`/api/images/${imageId}/delete`, {
-        method: 'DELETE'
-      })
-
-      const data = await response.json()
-      if (data.success) {
-        // Remove the image from local state
-        setSourceImages(prev => prev.filter(img => img.id !== imageId))
-      } else {
-        throw new Error(data.message || 'Failed to delete image')
-      }
-    } catch (error) {
-      console.error('Error deleting image:', error)
-      alert('Failed to delete image. Please try again.')
+  const handleConfirmDelete = (options: { reason?: string }) => {
+    if (deleteImageId) {
+      deleteImage(deleteImageId, options.reason)
     }
   }
 
-  // Handle image renaming
+  // Handle image renaming using TanStack Query
   const handleImageRename = async (imageId: string, newDisplayName: string) => {
     try {
-      const response = await fetch(`/api/images/${imageId}/rename`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ displayName: newDisplayName })
-      })
-
-      const data = await response.json()
-      if (data.success) {
-        // Update the local state to reflect the change
-        setSourceImages(prev => prev.map(img => 
-          img.id === imageId 
-            ? { ...img, displayName: newDisplayName }
-            : img
-        ))
-      } else {
-        throw new Error(data.message || 'Failed to rename image')
-      }
+      await renameMutation.mutateAsync({ id: imageId, newDisplayName })
+      // TanStack Query automatically updates cache and refetches
     } catch (error) {
       console.error('Error renaming image:', error)
       throw error // Re-throw so the component can handle the error
@@ -272,6 +246,20 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
           />
         ))}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={!!deleteImageId}
+        onClose={() => {
+          setDeleteImageId(null)
+          setDeleteImageName('')
+        }}
+        onConfirm={handleConfirmDelete}
+        context="main"
+        title="Delete Image"
+        itemName={deleteImageName}
+        isLoading={isDeleting}
+      />
     </div>
   )
 })

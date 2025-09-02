@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, forwardRef, useImperativeHandle, useCallback } from 'react'
+import { useState, forwardRef, useImperativeHandle } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -9,6 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Label } from "@/components/ui/label"
 import { Image as ImageIcon, Upload, Inbox, FolderOpen, FolderPlus, ArrowRight, CheckSquare, Square } from "lucide-react"
 import { SourceImageCard } from "@/components/source-image-card"
+import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog"
+import { useSimpleDeleteImage } from "@/lib/shared/hooks/use-delete-image"
+import { useImageList, useRenameImage, useProjectList } from "@/lib/shared/hooks/use-images"
+import type { MainImageListQuery } from "@/lib/shared/schemas/image-schemas"
 
 interface AllImagesProps {
   onImageSelect: (imageId: string, sourceImage: SourceImageWithProject) => void
@@ -47,70 +51,64 @@ interface SourceImageWithProject extends BaseSourceImage {
   projectName: string
 }
 
-interface Project {
-  id: string
-  name: string
-  sourceImageCount: number
-}
 
 export const AllImages = forwardRef<AllImagesRef, AllImagesProps>(function AllImages({ onImageSelect, onUploadClick, unassignedOnly = false }, ref) {
-  const [sourceImages, setSourceImages] = useState<SourceImageWithProject[]>([])
-  const [loading, setLoading] = useState(true)
+  // TanStack Query state (replacing manual useState)
+  const imageQuery: MainImageListQuery = { unassignedOnly }
+  const { 
+    data: sourceImages = [], 
+    isLoading: loading, 
+    refetch 
+  } = useImageList(imageQuery)
+  
+  const { 
+    data: projects = [], 
+    isLoading: loadingProjects 
+  } = useProjectList()
+
+  // Local UI state (keep these)
   const [selectedImages, setSelectedImages] = useState<Set<string>>(new Set())
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loadingProjects, setLoadingProjects] = useState(false)
   const [moveDialogOpen, setMoveDialogOpen] = useState(false)
   const [createProjectDialogOpen, setCreateProjectDialogOpen] = useState(false)
   const [targetProjectId, setTargetProjectId] = useState('')
   const [newProjectName, setNewProjectName] = useState('')
   const [isMoving, setIsMoving] = useState(false)
+  const [deleteImageId, setDeleteImageId] = useState<string | null>(null)
+  const [deleteImageName, setDeleteImageName] = useState<string>('')
 
-  // Handle image deletion
-  const handleImageDelete = async (imageId: string) => {
-    if (!confirm('Are you sure you want to delete this image? This action cannot be undone.')) {
-      return
+  // Use the unified delete hook (TanStack Query handles cache updates)
+  const { deleteImage, isLoading: isDeleting } = useSimpleDeleteImage({
+    onSuccess: () => {
+      // TanStack Query will automatically refetch and update the cache
+      setDeleteImageId(null)
+      setDeleteImageName('')
+    },
+    onError: (error) => {
+      console.error('Delete image error:', error)
     }
+  })
 
-    try {
-      const response = await fetch(`/api/images/${imageId}/delete`, {
-        method: 'DELETE'
-      })
+  // Use the rename mutation hook
+  const renameMutation = useRenameImage()
 
-      const data = await response.json()
-      if (data.success) {
-        // Remove the image from local state
-        setSourceImages(prev => prev.filter(img => img.id !== imageId))
-      } else {
-        throw new Error(data.message || 'Failed to delete image')
-      }
-    } catch (error) {
-      console.error('Error deleting image:', error)
-      alert('Failed to delete image. Please try again.')
+  // Handle image deletion - now uses dialog instead of confirm
+  const handleImageDelete = (imageId: string) => {
+    const image = sourceImages.find(img => img.id === imageId)
+    setDeleteImageId(imageId)
+    setDeleteImageName(image?.displayName || image?.originalFileName || 'Unknown Image')
+  }
+
+  const handleConfirmDelete = (options: { reason?: string }) => {
+    if (deleteImageId) {
+      deleteImage(deleteImageId, options.reason)
     }
   }
 
-  // Handle image renaming
+  // Handle image renaming using TanStack Query
   const handleImageRename = async (imageId: string, newDisplayName: string) => {
     try {
-      const response = await fetch(`/api/images/${imageId}/rename`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ displayName: newDisplayName })
-      })
-
-      const data = await response.json()
-      if (data.success) {
-        // Update the local state to reflect the change
-        setSourceImages(prev => prev.map(img => 
-          img.id === imageId 
-            ? { ...img, displayName: newDisplayName }
-            : img
-        ))
-      } else {
-        throw new Error(data.message || 'Failed to rename image')
-      }
+      await renameMutation.mutateAsync({ id: imageId, newDisplayName })
+      // TanStack Query automatically updates cache and refetches
     } catch (error) {
       console.error('Error renaming image:', error)
       throw error // Re-throw so the component can handle the error
@@ -120,58 +118,15 @@ export const AllImages = forwardRef<AllImagesRef, AllImagesProps>(function AllIm
   // Helper to check if project is unassigned
   const isUnassignedProject = (projectName: string) => projectName === "📥 Unassigned Images"
 
-  // Reusable fetch function
-  const fetchAllImages = useCallback(async () => {
-    setLoading(true)
-    try {
-      const response = await fetch('/api/images')
-      const data = await response.json()
-      
-      if (data.success) {
-        let images = data.sourceImages || []
-        
-        // Filter for unassigned images only if unassignedOnly prop is true
-        if (unassignedOnly) {
-          images = images.filter((img: SourceImageWithProject) => isUnassignedProject(img.projectName))
-        }
-        
-        setSourceImages(images)
-      } else {
-        console.error('Failed to fetch all images:', data.message)
-      }
-    } catch (error) {
-      console.error('Error fetching all images:', error)
-    } finally {
-      setLoading(false)
-    }
-  }, [unassignedOnly])
-
-  // Expose refresh function via ref
+  // Expose refresh function via ref (now uses TanStack Query refetch)
   useImperativeHandle(ref, () => ({
-    refreshImages: fetchAllImages
+    refreshImages: async () => {
+      await refetch()
+    }
   }))
 
-  useEffect(() => {
-    fetchAllImages()
-  }, [unassignedOnly, fetchAllImages])
-
-  // Load projects for move functionality
-  const loadProjects = async () => {
-    setLoadingProjects(true)
-    try {
-      const response = await fetch('/api/projects')
-      const data = await response.json()
-      if (data.success) {
-        // Filter out unassigned project from move options
-        const availableProjects = data.projects.filter((p: Project) => !isUnassignedProject(p.name))
-        setProjects(availableProjects)
-      }
-    } catch (error) {
-      console.error('Error loading projects:', error)
-    } finally {
-      setLoadingProjects(false)
-    }
-  }
+  // Filter available projects for move functionality (exclude unassigned)
+  const availableProjects = projects.filter(p => !isUnassignedProject(p.name))
 
 
   // Selection handlers
@@ -198,7 +153,6 @@ export const AllImages = forwardRef<AllImagesRef, AllImagesProps>(function AllIm
   // Move functionality
   const handleMoveSelected = () => {
     if (selectedImages.size === 0) return
-    loadProjects()
     setMoveDialogOpen(true)
   }
 
@@ -223,22 +177,13 @@ export const AllImages = forwardRef<AllImagesRef, AllImagesProps>(function AllIm
 
       const result = await response.json()
       if (result.success) {
-        // Refresh the images list
-        const response = await fetch('/api/images')
-        const data = await response.json()
-        if (data.success) {
-          let images = data.sourceImages || []
-          if (unassignedOnly) {
-            images = images.filter((img: SourceImageWithProject) => isUnassignedProject(img.projectName))
-          }
-          setSourceImages(images)
-        }
+        // TanStack Query will automatically refetch and update
+        await refetch()
         
         setSelectedImages(new Set())
         setMoveDialogOpen(false)
         setTargetProjectId('')
         
-        // Show success message (you could add a toast here)
         console.log(result.message)
       } else {
         console.error('Move failed:', result.message)
@@ -498,7 +443,7 @@ export const AllImages = forwardRef<AllImagesRef, AllImagesProps>(function AllIm
                   <SelectValue placeholder={loadingProjects ? "Loading projects..." : "Choose a project"} />
                 </SelectTrigger>
                 <SelectContent>
-                  {projects.map((project) => (
+                  {availableProjects.map((project) => (
                     <SelectItem key={project.id} value={project.id}>
                       <div className="flex items-center gap-2">
                         <FolderOpen className="h-4 w-4" />
@@ -611,6 +556,20 @@ export const AllImages = forwardRef<AllImagesRef, AllImagesProps>(function AllIm
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={!!deleteImageId}
+        onClose={() => {
+          setDeleteImageId(null)
+          setDeleteImageName('')
+        }}
+        onConfirm={handleConfirmDelete}
+        context="main"
+        title="Delete Image"
+        itemName={deleteImageName}
+        isLoading={isDeleting}
+      />
     </div>
   )
 })

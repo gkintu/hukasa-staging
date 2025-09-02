@@ -186,7 +186,8 @@ export async function DELETE(
       for (const variant of deletedResult) {
         if (variant.stagedImagePath) {
           try {
-            const filePath = path.join(process.cwd(), variant.stagedImagePath);
+            const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
+            const filePath = path.join(process.cwd(), uploadPath, variant.stagedImagePath);
             await fs.unlink(filePath);
             deletedFiles.push(variant.stagedImagePath);
           } catch (error) {
@@ -207,7 +208,8 @@ export async function DELETE(
         
         if (stagedImagePath) {
           try {
-            const filePath = path.join(process.cwd(), stagedImagePath);
+            const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
+            const filePath = path.join(process.cwd(), uploadPath, stagedImagePath);
             await fs.unlink(filePath);
             deletedFiles.push(stagedImagePath);
           } catch (error) {
@@ -228,7 +230,9 @@ export async function DELETE(
 
       if (remainingVariants.length === 0) {
         try {
-          const sourceFilePath = path.join(process.cwd(), image.originalImagePath);
+          // Fix file path construction - files are stored in uploads/{userId}/{filename}
+          const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
+          const sourceFilePath = path.join(process.cwd(), uploadPath, image.originalImagePath);
           await fs.unlink(sourceFilePath);
           deletedFiles.push(image.originalImagePath);
         } catch (error) {

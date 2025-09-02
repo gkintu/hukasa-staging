@@ -1,20 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useQueryClient } from "@tanstack/react-query"
 import { Search, Images, RefreshCw } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog"
+import type { AdvancedDelete } from "@/lib/shared/schemas/delete-schemas"
 import {
   Dialog,
   DialogContent,
@@ -29,8 +22,22 @@ import type { SortingState, ColumnFiltersState, PaginationState } from "@tanstac
 import type { ImageListQuery } from "@/lib/admin/image-schemas"
 
 export default function AdminImagesPage() {
+  const queryClient = useQueryClient()
   const [deleteImageId, setDeleteImageId] = useState<string | null>(null)
-  const [viewImage, setViewImage] = useState<any | null>(null)
+  const [viewImage, setViewImage] = useState<{
+    id: string
+    originalImagePath: string
+    originalFileName: string
+    projectName: string
+    roomType: string
+    stagingStyle: string
+    overallStatus: string
+    createdAt: Date | string
+    user: {
+      name: string | null
+      email: string
+    }
+  } | null>(null)
   
   // Use our new stores and hooks for basic filtering
   const { 
@@ -93,6 +100,9 @@ export default function AdminImagesPage() {
       toast.success('Image deleted successfully')
       setDeleteImageId(null)
       refetch()
+      // Invalidate main app queries for real-time updates
+      queryClient.invalidateQueries({ queryKey: ['images'] })
+      queryClient.invalidateQueries({ queryKey: ['projects'] })
     },
     onError: (error: Error) => {
       toast.error(`Failed to delete image: ${error.message}`)
@@ -108,14 +118,6 @@ export default function AdminImagesPage() {
     return () => clearTimeout(timeoutId)
   }, [searchQuery])
 
-  const handleDeleteImage = () => {
-    if (deleteImageId) {
-      deleteMutation.mutate({ 
-        id: deleteImageId,
-        options: { deleteVariants: true, deleteSourceFile: false }
-      })
-    }
-  }
 
   // Get images from API response
   const images = imageData?.images || []
@@ -194,26 +196,33 @@ export default function AdminImagesPage() {
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deleteImageId} onOpenChange={() => setDeleteImageId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Image</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to delete this image? This action cannot be undone and will remove the image from both the database and storage.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleDeleteImage}
-              disabled={deleteMutation.isPending}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {deleteMutation.isPending ? "Deleting..." : "Delete"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <DeleteConfirmationDialog
+        isOpen={!!deleteImageId}
+        onClose={() => setDeleteImageId(null)}
+        onConfirm={(options) => {
+          if (deleteImageId) {
+            // Type guard ensures we have AdvancedDelete for admin context
+            const adminOptions: AdvancedDelete = 'deleteVariants' in options 
+              ? options // Already AdvancedDelete from admin context
+              : { 
+                  // Transform SimpleDelete to AdvancedDelete with sensible defaults
+                  deleteVariants: true, 
+                  deleteSourceFile: true, // Super admin can delete files
+                  reason: options.reason 
+                }
+            
+            deleteMutation.mutate({ 
+              id: deleteImageId, 
+              options: adminOptions 
+            })
+          }
+        }}
+        context="admin"
+        title="Delete Image"
+        description="Are you sure you want to delete this image? This action cannot be undone and will remove the image from both the database and storage."
+        itemName="this image"
+        isLoading={deleteMutation.isPending}
+      />
 
       {/* Image View Dialog */}
       <Dialog open={!!viewImage} onOpenChange={() => setViewImage(null)}>
