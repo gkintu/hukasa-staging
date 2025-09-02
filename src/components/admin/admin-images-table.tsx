@@ -65,6 +65,7 @@ interface AdminImagesTableProps {
   onSortingChange: (updater: SortingState | ((old: SortingState) => SortingState)) => void
   onColumnFiltersChange: (updater: ColumnFiltersState | ((old: ColumnFiltersState) => ColumnFiltersState)) => void
   onDeleteImage: (imageId: string) => void
+  onViewImage?: (image: ImageRow) => void
   totalCount: number
 }
 
@@ -102,6 +103,7 @@ export function AdminImagesTable({
   onSortingChange, 
   onColumnFiltersChange,
   onDeleteImage,
+  onViewImage,
   totalCount
 }: AdminImagesTableProps) {
   
@@ -256,10 +258,12 @@ export function AdminImagesTable({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem>
-              <Eye className="w-4 h-4 mr-2" />
-              View Image
-            </DropdownMenuItem>
+            {onViewImage && (
+              <DropdownMenuItem onClick={() => onViewImage(row.original)}>
+                <Eye className="w-4 h-4 mr-2" />
+                View Image
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem>
               <Download className="w-4 h-4 mr-2" />
               Download
@@ -278,7 +282,7 @@ export function AdminImagesTable({
       enableColumnFilter: false,
       size: 40
     }
-  ], [onDeleteImage])
+  ], [onDeleteImage, onViewImage])
 
   // Create table instance with manual pagination and sorting (server-side)
   const table = useReactTable({

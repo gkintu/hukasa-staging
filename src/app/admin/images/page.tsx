@@ -15,6 +15,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { useImageList, useDeleteImage } from "@/lib/admin/image-hooks"
 import { useImageFilters } from "@/lib/admin/image-store"
 import { AdminImagesTable } from "@/components/admin/admin-images-table"
@@ -24,6 +30,7 @@ import type { ImageListQuery } from "@/lib/admin/image-schemas"
 
 export default function AdminImagesPage() {
   const [deleteImageId, setDeleteImageId] = useState<string | null>(null)
+  const [viewImage, setViewImage] = useState<any | null>(null)
   
   // Use our new stores and hooks for basic filtering
   const { 
@@ -180,6 +187,7 @@ export default function AdminImagesPage() {
               setColumnFilters(newColumnFilters)
             }}
             onDeleteImage={setDeleteImageId}
+            onViewImage={setViewImage}
             totalCount={totalCount}
           />
         </CardContent>
@@ -206,6 +214,46 @@ export default function AdminImagesPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Image View Dialog */}
+      <Dialog open={!!viewImage} onOpenChange={() => setViewImage(null)}>
+        <DialogContent className="max-w-7xl max-h-[95vh] w-[95vw]">
+          <DialogHeader>
+            <DialogTitle>{viewImage?.originalFileName}</DialogTitle>
+          </DialogHeader>
+          {viewImage && (
+            <div className="flex flex-col gap-6">
+              <div className="w-full max-h-[70vh] bg-muted rounded-lg overflow-hidden flex items-center justify-center">
+                <img
+                  src={`/api/files/${viewImage.originalImagePath.split('/').pop()?.split('.')[0]}`}
+                  alt={viewImage.originalFileName}
+                  className="max-w-full max-h-full object-contain"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <strong>Project:</strong> {viewImage.projectName}
+                </div>
+                <div>
+                  <strong>User:</strong> {viewImage.user.name || viewImage.user.email}
+                </div>
+                <div>
+                  <strong>Room Type:</strong> {viewImage.roomType.replace('_', ' ')}
+                </div>
+                <div>
+                  <strong>Staging Style:</strong> {viewImage.stagingStyle}
+                </div>
+                <div>
+                  <strong>Status:</strong> {viewImage.overallStatus}
+                </div>
+                <div>
+                  <strong>Created:</strong> {new Date(viewImage.createdAt).toLocaleDateString()}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
