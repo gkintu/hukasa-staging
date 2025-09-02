@@ -104,17 +104,18 @@ export function ConfigProvider({
   }, [storageKey])
 
   // Add search term to history
-  const addToSearchHistory = React.useCallback((term: string) => {
-    if (!term.trim()) return
+  // Unused function kept for future implementation
+  // const addToSearchHistory = React.useCallback((term: string) => {
+  //   if (!term.trim()) return
 
-    setPreferences(prev => ({
-      ...prev,
-      searchHistory: [
-        term,
-        ...prev.searchHistory.filter(t => t !== term)
-      ].slice(0, 10) // Keep only last 10 searches
-    }))
-  }, [])
+  //   setPreferences(prev => ({
+  //     ...prev,
+  //     searchHistory: [
+  //       term,
+  //       ...prev.searchHistory.filter(t => t !== term)
+  //     ].slice(0, 10) // Keep only last 10 searches
+  //   }))
+  // }, [])
 
   const contextValue: ConfigContextType = {
     preferences,

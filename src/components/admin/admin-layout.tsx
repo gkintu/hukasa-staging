@@ -19,6 +19,7 @@ import { AdminNavUser } from "./admin-nav-user"
 import { SearchProvider } from "@/lib/search-provider"
 import { ConfigProvider } from "@/lib/config-provider"
 import { RouteErrorBoundary } from "@/components/error-boundary"
+import { AdminQueryProvider } from "./admin-query-provider"
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -26,7 +27,7 @@ interface AdminLayoutProps {
 
 export async function AdminLayout({ children }: AdminLayoutProps) {
   // Get admin emails from environment variable
-  const ADMIN_EMAILS = process.env.ADMIN_EMAILS?.split(',').map(email => email.trim()) || ['georgekavumax@gmail.com']
+  const ADMIN_EMAILS = process.env.ADMIN_EMAILS?.split(',').map(email => email.trim()) || []
   
   // Full session validation - this is the actual security check
   const session = await auth.api.getSession({ 
@@ -50,10 +51,11 @@ export async function AdminLayout({ children }: AdminLayoutProps) {
   ]
 
   return (
-    <RouteErrorBoundary>
-      <ConfigProvider>
-        <SearchProvider searchableData={adminSearchData}>
-          <SidebarProvider defaultOpen={defaultOpen}>
+    <AdminQueryProvider>
+      <RouteErrorBoundary>
+        <ConfigProvider>
+          <SearchProvider searchableData={adminSearchData}>
+            <SidebarProvider defaultOpen={defaultOpen}>
             <Sidebar collapsible="icon" variant="inset">
               <SidebarHeader>
                 <div className="flex items-center gap-2 px-2 py-1 group-data-[collapsible=icon]:px-1 group-data-[collapsible=icon]:justify-center">
@@ -103,5 +105,6 @@ export async function AdminLayout({ children }: AdminLayoutProps) {
         </SearchProvider>
       </ConfigProvider>
     </RouteErrorBoundary>
+    </AdminQueryProvider>
   )
 }

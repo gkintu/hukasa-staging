@@ -1,0 +1,10 @@
+ALTER TYPE "public"."audit_action" ADD VALUE 'VIEW_AUDIT_LOGS';--> statement-breakpoint
+ALTER TYPE "public"."audit_action" ADD VALUE 'BULK_DELETE_IMAGES';--> statement-breakpoint
+ALTER TYPE "public"."audit_action" ADD VALUE 'BULK_REPROCESS_IMAGES';--> statement-breakpoint
+ALTER TYPE "public"."audit_action" ADD VALUE 'BULK_MOVE_IMAGES';--> statement-breakpoint
+ALTER TYPE "public"."audit_action" ADD VALUE 'VIEW_IMAGE_STATS';--> statement-breakpoint
+ALTER TYPE "public"."audit_action" ADD VALUE 'ACCESS_ADMIN_DASHBOARD';--> statement-breakpoint
+ALTER TYPE "public"."audit_action" ADD VALUE 'SEARCH_USERS';--> statement-breakpoint
+ALTER TYPE "public"."audit_action" ADD VALUE 'VIEW_ALL_IMAGES';--> statement-breakpoint
+ALTER TYPE "public"."audit_action" ADD VALUE 'VIEW_IMAGES_LIST';--> statement-breakpoint
+ALTER TYPE "public"."audit_action" ADD VALUE 'VIEW_USER_IMAGES';

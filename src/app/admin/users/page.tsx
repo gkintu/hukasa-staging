@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Search, Calendar, Shield, MoreVertical, Users, AlertTriangle } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -81,7 +81,7 @@ export default function AdminUsersPage() {
   // Using sonner for toast notifications
 
   // Fetch users from API
-  const fetchUsers = async (search = "", page = 1) => {
+  const fetchUsers = useCallback(async (search = "", page = 1) => {
     try {
       setLoading(true)
       const params = new URLSearchParams({
@@ -99,12 +99,12 @@ export default function AdminUsersPage() {
       } else {
         toast.error("Failed to fetch users")
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to fetch users")
     } finally {
       setLoading(false)
     }
-  }
+  }, [pagination.pageSize])
 
   // Handle search with debounce
   useEffect(() => {
@@ -113,12 +113,12 @@ export default function AdminUsersPage() {
     }, 300)
 
     return () => clearTimeout(timer)
-  }, [searchQuery])
+  }, [searchQuery, fetchUsers])
 
   // Initial load
   useEffect(() => {
     fetchUsers()
-  }, [])
+  }, [fetchUsers])
 
   // Handle user suspension
   const handleSuspendUser = async (user: User, suspend: boolean) => {
@@ -150,7 +150,7 @@ export default function AdminUsersPage() {
       } else {
         toast.error(result.message)
       }
-    } catch (error) {
+    } catch {
       toast.error("Failed to update user status")
     }
   }

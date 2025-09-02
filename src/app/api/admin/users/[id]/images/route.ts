@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/db/index'
 import { users, projects, generations, adminActions } from '@/db/schema'
-import { eq, sql, desc, ilike, or } from 'drizzle-orm'
+import { eq, sql, desc, ilike, or, type SQL } from 'drizzle-orm'
 import { validateApiSession } from '@/lib/auth-utils'
 
 export async function GET(
@@ -48,12 +48,14 @@ export async function GET(
     const conditions = [eq(generations.userId, userId)]
     
     if (searchQuery) {
+      // Use type assertion to work around Drizzle ORM TypeScript inference issue with nullable fields
+      // This is a known issue: https://github.com/drizzle-team/drizzle-orm/issues/2120
       conditions.push(
         or(
           ilike(generations.originalFileName, `%${searchQuery}%`),
           ilike(generations.displayName, `%${searchQuery}%`)
-        )
-      )
+        ) as SQL
+      );
     }
 
     if (projectId) {

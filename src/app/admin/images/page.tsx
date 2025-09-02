@@ -1,26 +1,10 @@
 "use client"
 
-import { useState } from "react"
-import { Search, Images, Trash2, Eye, Download, MoreVertical } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Search, Images, RefreshCw } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,104 +15,105 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-
-// Mock image data - will be replaced with API call
-const mockImages = [
-  {
-    id: "gen1",
-    sourceImagePath: "uploads/user1/source1.jpg", 
-    originalFileName: "living-room.jpg",
-    roomType: "living_room",
-    interiorStyle: "modern",
-    status: "completed" as const,
-    createdAt: "2024-01-20T10:00:00Z",
-    user: {
-      id: "user1",
-      name: "John Doe", 
-      email: "john@example.com",
-      image: null
-    },
-    project: {
-      id: "proj1",
-      name: "My House Staging"
-    }
-  },
-  {
-    id: "gen2",
-    sourceImagePath: "uploads/user2/source2.jpg",
-    originalFileName: "bedroom.jpg", 
-    roomType: "bedroom",
-    interiorStyle: "scandinavian",
-    status: "failed" as const,
-    createdAt: "2024-01-19T15:30:00Z",
-    user: {
-      id: "user2",
-      name: "Jane Smith",
-      email: "jane@example.com", 
-      image: null
-    },
-    project: {
-      id: "proj2",
-      name: "Apartment Redesign"
-    }
-  }
-]
+import { useImageList, useDeleteImage } from "@/lib/admin/image-hooks"
+import { useImageFilters } from "@/lib/admin/image-store"
+import { AdminImagesTable } from "@/components/admin/admin-images-table"
+import { toast } from "sonner"
+import type { SortingState, ColumnFiltersState, PaginationState } from "@tanstack/react-table"
+import type { ImageListQuery } from "@/lib/admin/image-schemas"
 
 export default function AdminImagesPage() {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [images, setImages] = useState(mockImages)
   const [deleteImageId, setDeleteImageId] = useState<string | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  
+  // Use our new stores and hooks for basic filtering
+  const { 
+    searchQuery, 
+    setSearchQuery, 
+  } = useImageFilters()
 
-  const filteredImages = images.filter(image => 
-    image.originalFileName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    image.user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    image.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    image.project.name.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  // TanStack Table state - controlled externally for server-side operations
+  const [sorting, setSorting] = useState<SortingState>([
+    { id: 'createdAt', desc: true } // Default sort by creation date
+  ])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [pagination, setPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 20
+  })
 
-  const handleDeleteImage = async (imageId: string) => {
-    setIsDeleting(true)
-    try {
-      // TODO: Call actual delete API
-      const response = await fetch(`/api/generations/${imageId}`, {
-        method: 'DELETE'
-      })
-      
-      if (response.ok) {
-        setImages(prev => prev.filter(img => img.id !== imageId))
-        // TODO: Log to audit system
+  // Build query from table state
+  const buildQuery = (): ImageListQuery => {
+    const query: ImageListQuery = {
+      page: pagination.pageIndex + 1,
+      limit: pagination.pageSize,
+      sortBy: (sorting[0]?.id as 'createdAt' | 'updatedAt' | 'originalFileName' | 'userName' | 'projectName' | 'status') || 'createdAt',
+      sortOrder: sorting[0]?.desc ? 'desc' : 'asc'
+    }
+
+    // Add global search
+    if (searchQuery?.trim()) {
+      query.search = searchQuery.trim()
+    }
+
+    // Add column filters
+    columnFilters.forEach(filter => {
+      if (filter.value) {
+        // Handle specific filter types
+        if (filter.id === 'status') {
+          query.status = filter.value as 'pending' | 'processing' | 'completed' | 'failed'
+        } else if (filter.id === 'user') {
+          query.userId = filter.value as string
+        } else if (filter.id === 'project') {
+          query.projectId = filter.value as string
+        }
       }
-    } catch (error) {
-      console.error('Failed to delete image:', error)
-    } finally {
-      setIsDeleting(false)
-      setDeleteImageId(null)
-    }
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short', 
-      day: 'numeric'
     })
+
+    return query
   }
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'completed':
-        return <Badge className="bg-green-100 text-green-800">Completed</Badge>
-      case 'failed':
-        return <Badge variant="destructive">Failed</Badge>
-      case 'processing':
-        return <Badge variant="secondary">Processing</Badge>
-      case 'pending':
-        return <Badge variant="outline">Pending</Badge>
-      default:
-        return <Badge variant="outline">{status}</Badge>
+  // Fetch real image data with table state
+  const { 
+    data: imageData, 
+    isLoading, 
+    error,
+    refetch 
+  } = useImageList(buildQuery())
+
+  // Delete mutation
+  const deleteMutation = useDeleteImage({
+    onSuccess: () => {
+      toast.success('Image deleted successfully')
+      setDeleteImageId(null)
+      refetch()
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to delete image: ${error.message}`)
+    }
+  })
+
+  // Update search with debouncing - reset to first page when searching
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setPagination(prev => ({ ...prev, pageIndex: 0 }))
+    }, 300)
+    
+    return () => clearTimeout(timeoutId)
+  }, [searchQuery])
+
+  const handleDeleteImage = () => {
+    if (deleteImageId) {
+      deleteMutation.mutate({ 
+        id: deleteImageId,
+        options: { deleteVariants: true, deleteSourceFile: false }
+      })
     }
   }
+
+  // Get images from API response
+  const images = imageData?.images || []
+  const totalCount = imageData?.pagination?.total || 0
+
 
   return (
     <div className="p-6 space-y-6">
@@ -157,100 +142,46 @@ export default function AdminImagesPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Images className="h-5 w-5" />
-            All Images ({filteredImages.length})
+            All Images {isLoading ? '(Loading...)' : `(${totalCount})`}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Image</TableHead>
-                <TableHead>User</TableHead>
-                <TableHead>Project</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead className="w-12"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredImages.length > 0 ? (
-                filteredImages.map((image) => (
-                  <TableRow key={image.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center">
-                          <Images className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <div className="font-medium text-sm">{image.originalFileName}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {image.roomType.replace('_', ' ')} • {image.interiorStyle}
-                          </div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Avatar className="h-6 w-6">
-                          <AvatarImage src={image.user.image || ""} alt={image.user.name} />
-                          <AvatarFallback className="text-xs">
-                            {image.user.name.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <div className="text-sm font-medium">{image.user.name}</div>
-                          <div className="text-xs text-muted-foreground">{image.user.email}</div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm">{image.project.name}</div>
-                    </TableCell>
-                    <TableCell>
-                      {getStatusBadge(image.status)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm text-muted-foreground">
-                        {formatDate(image.createdAt)}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>
-                            <Eye className="w-4 h-4 mr-2" />
-                            View Image
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Download className="w-4 h-4 mr-2" />
-                            Download
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-red-600"
-                            onClick={() => setDeleteImageId(image.id)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Delete Image
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                    {searchQuery ? "No images found matching your search." : "No images found."}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+          {error && (
+            <div className="text-red-600 p-4 bg-red-50 rounded-md mb-4">
+              Error loading images: {error.message}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => refetch()}
+                className="ml-2"
+              >
+                <RefreshCw className="h-4 w-4 mr-1" />
+                Retry
+              </Button>
+            </div>
+          )}
+          
+          <AdminImagesTable
+            data={images}
+            isLoading={isLoading}
+            pagination={pagination}
+            sorting={sorting}
+            columnFilters={columnFilters}
+            onPaginationChange={(updater) => {
+              const newPagination = typeof updater === 'function' ? updater(pagination) : updater
+              setPagination(newPagination)
+            }}
+            onSortingChange={(updater) => {
+              const newSorting = typeof updater === 'function' ? updater(sorting) : updater
+              setSorting(newSorting)
+            }}
+            onColumnFiltersChange={(updater) => {
+              const newColumnFilters = typeof updater === 'function' ? updater(columnFilters) : updater
+              setColumnFilters(newColumnFilters)
+            }}
+            onDeleteImage={setDeleteImageId}
+            totalCount={totalCount}
+          />
         </CardContent>
       </Card>
 
@@ -264,13 +195,13 @@ export default function AdminImagesPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction 
-              onClick={() => deleteImageId && handleDeleteImage(deleteImageId)}
-              disabled={isDeleting}
+              onClick={handleDeleteImage}
+              disabled={deleteMutation.isPending}
               className="bg-red-600 hover:bg-red-700"
             >
-              {isDeleting ? "Deleting..." : "Delete"}
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

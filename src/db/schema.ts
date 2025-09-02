@@ -40,7 +40,17 @@ export const auditActionEnum = pgEnum('audit_action', [
   'MODERATE_IMAGE',
   'UPDATE_SETTINGS',
   'CREATE_USER',
-  'DELETE_USER'
+  'DELETE_USER',
+  'VIEW_AUDIT_LOGS',
+  'BULK_DELETE_IMAGES',
+  'BULK_REPROCESS_IMAGES',
+  'BULK_MOVE_IMAGES',
+  'VIEW_IMAGE_STATS',
+  'ACCESS_ADMIN_DASHBOARD',
+  'SEARCH_USERS',
+  'VIEW_ALL_IMAGES',
+  'VIEW_IMAGES_LIST',
+  'VIEW_USER_IMAGES'
 ])
 
 export const userRoleEnum = pgEnum('user_role', [

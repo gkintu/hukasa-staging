@@ -55,7 +55,6 @@ export function SourceImageCard({
   variant = 'default',
   isSelected = false,
   showProjectName = false,
-  showCreationDate = false,
   onSelect,
   onClick,
   onRename,
@@ -135,15 +134,6 @@ export function SourceImageCard({
     return <Badge variant="outline">No variants</Badge>
   }
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
 
   const isSelectable = variant === 'selectable'
   const isDetailed = variant === 'detailed'

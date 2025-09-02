@@ -133,7 +133,7 @@ export type AdminPermission = typeof AdminPermissions[keyof typeof AdminPermissi
  * Check if admin has specific permission
  * For now, all admins have all permissions, but this allows for future role-based permissions
  */
-export function hasAdminPermission(adminContext: AdminContext, _permission: AdminPermission): boolean {
+export function hasAdminPermission(adminContext: AdminContext): boolean {
   // All admins currently have all permissions
   return adminContext.isAdmin
 }

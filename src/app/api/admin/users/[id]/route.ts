@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/db/index'
 import { users, projects, generations, adminActions } from '@/db/schema'
-import { eq, sql, count, desc, gte } from 'drizzle-orm'
+import { eq, sql, count, desc, gte, and } from 'drizzle-orm'
 import { validateApiSession } from '@/lib/auth-utils'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     // Validate admin session
@@ -24,7 +24,7 @@ export async function GET(
       return Response.json({ success: false, message: 'Admin access required' }, { status: 403 })
     }
 
-    const userId = params.id
+    const { id: userId } = await params
 
     // Get user details
     const targetUser = await db.query.users.findFirst({
@@ -65,32 +65,40 @@ export async function GET(
       db.select({ count: sql<number>`count(*)` })
         .from(generations)
         .where(
-          eq(generations.userId, userId),
-          gte(generations.createdAt, thirtyDaysAgo)
+          and(
+            eq(generations.userId, userId),
+            gte(generations.createdAt, thirtyDaysAgo)
+          )
         ),
 
       // Weekly images (last 7 days)
       db.select({ count: sql<number>`count(*)` })
         .from(generations)
         .where(
-          eq(generations.userId, userId),
-          gte(generations.createdAt, sevenDaysAgo)
+          and(
+            eq(generations.userId, userId),
+            gte(generations.createdAt, sevenDaysAgo)
+          )
         ),
 
       // Completed images
       db.select({ count: sql<number>`count(*)` })
         .from(generations)
         .where(
-          eq(generations.userId, userId),
-          eq(generations.status, 'completed')
+          and(
+            eq(generations.userId, userId),
+            eq(generations.status, 'completed')
+          )
         ),
 
       // Failed images
       db.select({ count: sql<number>`count(*)` })
         .from(generations)
         .where(
-          eq(generations.userId, userId),
-          eq(generations.status, 'failed')
+          and(
+            eq(generations.userId, userId),
+            eq(generations.status, 'failed')
+          )
         )
     ])
 
