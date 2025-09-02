@@ -3,11 +3,13 @@
 import { useState, forwardRef, useImperativeHandle } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { ChevronLeft, Image as ImageIcon, Upload } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ChevronLeft, Image as ImageIcon, Upload, Trash2 } from "lucide-react"
 import { SourceImageCard } from "@/components/source-image-card"
 import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog"
 import { useSimpleDeleteImage } from "@/lib/shared/hooks/use-delete-image"
 import { useProjectDetail, useRenameImage } from "@/lib/shared/hooks/use-images"
+import { useImageSelection } from "@/lib/shared/hooks/use-row-selection"
 
 interface ProjectDetailProps {
   projectId: string
@@ -62,6 +64,10 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
 
   const [deleteImageId, setDeleteImageId] = useState<string | null>(null)
   const [deleteImageName, setDeleteImageName] = useState<string>('')
+  const [bulkDeleteIds, setBulkDeleteIds] = useState<string[]>([])
+  
+  // Bulk selection state
+  const selection = useImageSelection(sourceImages)
 
   // Use the rename mutation hook
   const renameMutation = useRenameImage()
@@ -109,6 +115,33 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
   const handleConfirmDelete = (options: { reason?: string }) => {
     if (deleteImageId) {
       deleteImage(deleteImageId, options.reason)
+    }
+  }
+
+  // Bulk delete handlers
+  const handleBulkDelete = () => {
+    if (selection.selectedIds.length > 0) {
+      setBulkDeleteIds(selection.selectedIds)
+    }
+  }
+
+  const handleConfirmBulkDelete = (options: { reason?: string }) => {
+    if (bulkDeleteIds.length > 0) {
+      let completedCount = 0
+      const totalCount = bulkDeleteIds.length
+      
+      bulkDeleteIds.forEach(imageId => {
+        deleteImage(imageId, options.reason)
+        completedCount++
+        
+        // Clear selection and modal when all deletions are done
+        if (completedCount === totalCount) {
+          setTimeout(() => {
+            selection.clearSelection()
+            setBulkDeleteIds([])
+          }, 100) // Small delay to ensure all mutations complete
+        }
+      })
     }
   }
 
@@ -233,6 +266,48 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
         </Button>
       </div>
 
+      {/* Bulk Selection Controls */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Checkbox
+              checked={selection.isAllSelected}
+              ref={undefined}
+              onCheckedChange={selection.selectAll}
+              className="rounded-sm"
+            />
+            <span className="text-sm text-muted-foreground">
+              {selection.selectedIds.length > 0 ? (
+                `${selection.selectedIds.length} selected`
+              ) : (
+                'Select all'
+              )}
+            </span>
+          </div>
+          
+          {selection.selectedIds.length > 0 && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={selection.clearSelection}
+              >
+                Clear
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={handleBulkDelete}
+                className="gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete ({selection.selectedIds.length})
+              </Button>
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {sourceImages.map((sourceImage, index) => (
           <SourceImageCard
@@ -243,6 +318,9 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
             onRename={handleImageRename}
             onDelete={handleImageDelete}
             index={index}
+            selectable={true}
+            selected={selection.getRowProps(sourceImage.id).checked}
+            onSelectionChange={selection.getRowProps(sourceImage.id).onCheckedChange}
           />
         ))}
       </div>
@@ -258,6 +336,18 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
         context="main"
         title="Delete Image"
         itemName={deleteImageName}
+        isLoading={isDeleting}
+      />
+
+      {/* Bulk Delete Confirmation Dialog */}
+      <DeleteConfirmationDialog
+        isOpen={bulkDeleteIds.length > 0}
+        onClose={() => setBulkDeleteIds([])}
+        onConfirm={handleConfirmBulkDelete}
+        context="main"
+        title="Delete Images"
+        description={`Are you sure you want to delete ${bulkDeleteIds.length} ${bulkDeleteIds.length === 1 ? 'image' : 'images'}? This action cannot be undone.`}
+        itemName={`${bulkDeleteIds.length} ${bulkDeleteIds.length === 1 ? 'image' : 'images'}`}
         isLoading={isDeleting}
       />
     </div>

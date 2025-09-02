@@ -48,6 +48,10 @@ interface SourceImageCardProps {
   onRename?: (id: string, newDisplayName: string) => void
   onDelete?: (id: string) => void
   index?: number
+  // New bulk selection props
+  selectable?: boolean
+  selected?: boolean
+  onSelectionChange?: (checked: boolean) => void
 }
 
 export function SourceImageCard({
@@ -59,7 +63,10 @@ export function SourceImageCard({
   onClick,
   onRename,
   onDelete,
-  index = 0
+  index = 0,
+  selectable = false,
+  selected = false,
+  onSelectionChange
 }: SourceImageCardProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(image.displayName || image.originalFileName)
@@ -135,15 +142,26 @@ export function SourceImageCard({
   }
 
 
-  const isSelectable = variant === 'selectable'
+  const isSelectable = variant === 'selectable' || selectable
   const isDetailed = variant === 'detailed'
   const hasProjectName = showProjectName && 'projectName' in image
 
   const handleCardClick = (e: React.MouseEvent) => {
-    if (isSelectable) {
+    // Don't trigger click if clicking on checkbox
+    if ((e.target as HTMLElement).closest('[role="checkbox"]')) {
+      e.stopPropagation()
+      return
+    }
+    
+    if (isSelectable && !selectable) {
+      // Old selectable variant behavior
       e.preventDefault()
       onSelect?.(image.id)
+    } else if (selectable) {
+      // When using new selectable prop, card click still works normally
+      onClick?.(image)
     } else {
+      // Normal click behavior
       onClick?.(image)
     }
   }
@@ -151,19 +169,19 @@ export function SourceImageCard({
   return (
     <Card
       className={`group cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02] animate-fade-in pt-0 ${
-        isSelected ? 'ring-2 ring-primary border-primary' : ''
+        (selectable ? selected : isSelected) ? 'ring-2 ring-primary border-primary' : ''
       }`}
       style={{ animationDelay: `${index * 100}ms` }}
       onClick={handleCardClick}
     >
       <CardContent className="p-0">
         <div className="relative">
-          {/* Selection checkbox for selectable variant */}
+          {/* Selection checkbox for selectable variant or bulk selection */}
           {isSelectable && (
             <div className="absolute top-2 left-2 z-10">
               <Checkbox
-                checked={isSelected}
-                onCheckedChange={() => onSelect?.(image.id)}
+                checked={selectable ? selected : isSelected}
+                onCheckedChange={selectable ? onSelectionChange : () => onSelect?.(image.id)}
                 className="bg-background/90 border-2"
               />
             </div>
