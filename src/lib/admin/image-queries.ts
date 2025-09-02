@@ -1,7 +1,7 @@
 import { db } from '@/db';
 import { generations, projects, users, adminActions } from '@/db/schema';
 import { and, or, eq, ilike, gte, lte, desc, asc, count, sql, inArray } from 'drizzle-orm';
-import type { ImageListQuery, AdvancedSearch } from './image-schemas';
+import type { ImageListQuery } from './image-schemas';
 
 // Helper function to build dynamic where conditions
 export function buildImageWhereConditions(query: ImageListQuery) {
@@ -224,38 +224,6 @@ export async function getImagesWithFilters(query: ImageListQuery) {
   };
 }
 
-// Advanced search with weighted relevance
-export async function performAdvancedImageSearch(search: AdvancedSearch) {
-  const { query: searchQuery, searchFields, filters, pagination, sort } = search;
-  
-  // Build search conditions with field-specific weighting
-  const searchConditions = [];
-  
-  if (searchFields.includes('originalFileName')) {
-    searchConditions.push(ilike(generations.originalFileName, `%${searchQuery}%`));
-  }
-  if (searchFields.includes('displayName')) {
-    searchConditions.push(ilike(generations.displayName, `%${searchQuery}%`));
-  }
-  if (searchFields.includes('projectName')) {
-    searchConditions.push(ilike(projects.name, `%${searchQuery}%`));
-  }
-  if (searchFields.includes('userName')) {
-    searchConditions.push(ilike(users.name, `%${searchQuery}%`));
-  }
-  if (searchFields.includes('userEmail')) {
-    searchConditions.push(ilike(users.email, `%${searchQuery}%`));
-  }
-
-  // Note: searchConditions and filters would be used in a more complete search implementation
-
-  return getImagesWithFilters({
-    ...filters,
-    ...pagination,
-    ...sort,
-    search: undefined, // We handle search separately
-  });
-}
 
 // Get single image with all variants
 export async function getImageById(imageId: string) {

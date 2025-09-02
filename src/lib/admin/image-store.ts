@@ -50,9 +50,6 @@ interface ModalState {
     isOpen: boolean;
     imageIds: string[];
   };
-  advancedSearchModal: {
-    isOpen: boolean;
-  };
 }
 
 // Combined store interface
@@ -112,8 +109,6 @@ interface AdminImageStore {
   closeImageDetail: () => void;
   openBulkDeleteModal: (imageIds: string[]) => void;
   closeBulkDeleteModal: () => void;
-  openAdvancedSearch: () => void;
-  closeAdvancedSearch: () => void;
   closeAllModals: () => void;
 }
 
@@ -169,9 +164,6 @@ const defaultModals: ModalState = {
   bulkDeleteModal: {
     isOpen: false,
     imageIds: [],
-  },
-  advancedSearchModal: {
-    isOpen: false,
   },
 };
 
@@ -569,25 +561,6 @@ export const useAdminImageStore = create<AdminImageStore>()(
         });
       },
 
-      openAdvancedSearch: () => {
-        set({
-          modals: {
-            ...get().modals,
-            advancedSearchModal: {
-              isOpen: true,
-            },
-          },
-        });
-      },
-
-      closeAdvancedSearch: () => {
-        set({
-          modals: {
-            ...get().modals,
-            advancedSearchModal: defaultModals.advancedSearchModal,
-          },
-        });
-      },
 
       closeAllModals: () => {
         set({

@@ -281,19 +281,6 @@ export function useAnalytics(context: 'main' | 'admin' = 'main') {
     })
   }, [trackEvent, context])
 
-  const trackAdvancedSearch = useCallback((filters: Record<string, unknown>, resultCount: number, performanceMs?: number) => {
-    trackEvent({
-      type: 'search',
-      action: 'advanced_search',
-      context,
-      metadata: { 
-        query: String(filters.query || ''),
-        searchResultCount: resultCount, 
-        performanceMs,
-        filters: JSON.stringify(filters)
-      }
-    })
-  }, [trackEvent, context])
 
   const trackNavigation = useCallback((fromPage: string, toPage: string) => {
     trackEvent({
@@ -369,7 +356,6 @@ export function useAnalytics(context: 'main' | 'admin' = 'main') {
     
     // Helper functions
     trackSearch,
-    trackAdvancedSearch,
     trackNavigation,
     trackBulkOperation,
     trackItemView,

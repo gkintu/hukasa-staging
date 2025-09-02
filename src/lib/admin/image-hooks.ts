@@ -13,8 +13,7 @@ import {
   BulkOperationResponse,
   ImageDelete,
   ImageDeleteResponse,
-  ImageStatsResponse,
-  AdvancedSearch
+  ImageStatsResponse
 } from './image-schemas';
 
 // Query Keys Factory
@@ -25,7 +24,6 @@ export const imageKeys = {
   details: () => [...imageKeys.all, 'detail'] as const,
   detail: (id: string) => [...imageKeys.details(), id] as const,
   stats: () => [...imageKeys.all, 'stats'] as const,
-  search: (query: AdvancedSearch) => [...imageKeys.all, 'search', query] as const,
 };
 
 // API Functions
@@ -128,25 +126,6 @@ async function deleteImage(id: string, options?: ImageDelete): Promise<ImageDele
   return data;
 }
 
-async function performAdvancedSearch(search: AdvancedSearch): Promise<ImageListResponse['data']> {
-  const response = await fetch('/api/admin/images/search', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(search),
-  });
-  
-  const data = await response.json();
-  
-  if (!response.ok) {
-    throw new Error(data.message || 'Failed to perform search');
-  }
-  
-  if (!data.success) {
-    throw new Error(data.message);
-  }
-  
-  return data.data;
-}
 
 // Query Hooks
 export function useImageList(
@@ -186,18 +165,6 @@ export function useImageStats(
   });
 }
 
-export function useAdvancedSearch(
-  search: AdvancedSearch,
-  options?: UseQueryOptions<ImageListResponse['data'], Error>
-) {
-  return useQuery({
-    queryKey: imageKeys.search(search),
-    queryFn: () => performAdvancedSearch(search),
-    enabled: !!search.query.trim(),
-    staleTime: 1000 * 60 * 2, // 2 minutes
-    ...options,
-  });
-}
 
 // Mutation Hooks
 export function useBulkOperation(

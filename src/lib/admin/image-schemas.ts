@@ -152,20 +152,6 @@ export const ImageDeleteResponseSchema = z.object({
   }),
 });
 
-// Advanced search schema
-export const AdvancedSearchSchema = z.object({
-  query: z.string().min(1).max(200),
-  searchFields: z.array(z.enum([
-    'originalFileName',
-    'displayName', 
-    'projectName',
-    'userName',
-    'userEmail'
-  ])).default(['originalFileName', 'displayName', 'projectName']),
-  filters: ImageListQuerySchema.omit({ search: true, page: true, limit: true }),
-  pagination: PaginationSchema,
-  sort: SortSchema,
-});
 
 // Statistics schemas
 export const ImageStatsResponseSchema = z.object({
@@ -211,7 +197,6 @@ export type BulkOperation = z.infer<typeof BulkOperationSchema>;
 export type BulkOperationResponse = z.infer<typeof BulkOperationResponseSchema>;
 export type ImageDelete = z.infer<typeof ImageDeleteSchema>;
 export type ImageDeleteResponse = z.infer<typeof ImageDeleteResponseSchema>;
-export type AdvancedSearch = z.infer<typeof AdvancedSearchSchema>;
 export type ImageStatsResponse = z.infer<typeof ImageStatsResponseSchema>;
 export type ApiResponse<T = unknown> = {
   success: boolean;
