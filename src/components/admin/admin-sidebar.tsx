@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   Users,
   Images,
+  FolderOpen,
   Shield,
   ChevronRight,
   Settings,
@@ -54,6 +55,11 @@ const adminNavItems: AdminNavItem[] = [
     title: "Images",
     url: "/admin/images",
     icon: Images,
+  },
+  {
+    title: "Projects",
+    url: "/admin/projects",
+    icon: FolderOpen,
   },
   {
     title: "Audit Logs",
