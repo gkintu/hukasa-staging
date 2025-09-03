@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/db/index'
-import { users, generations, projects, adminActions } from '@/db/schema'
+import { users, sourceImages, projects, adminActions } from '@/db/schema'
 import { eq, desc, sql } from 'drizzle-orm'
 import { validateApiSession } from '@/lib/auth-utils'
 
@@ -35,22 +35,22 @@ export async function GET(request: NextRequest) {
       .orderBy(desc(users.createdAt))
       .limit(5)
 
-    // Get recent image uploads (last 10)
+    // Get recent source image uploads (last 10)
     const recentUploads = await db
       .select({
-        id: generations.id,
-        fileName: generations.originalFileName,
+        id: sourceImages.id,
+        fileName: sourceImages.originalFileName,
         userName: users.name,
         userEmail: users.email,
         projectName: projects.name,
-        status: generations.status,
-        createdAt: generations.createdAt,
+        status: sql<string>`'uploaded'`, // Source images are always 'uploaded'
+        createdAt: sourceImages.createdAt,
         type: sql<string>`'image_upload'`
       })
-      .from(generations)
-      .leftJoin(users, eq(generations.userId, users.id))
-      .leftJoin(projects, eq(generations.projectId, projects.id))
-      .orderBy(desc(generations.createdAt))
+      .from(sourceImages)
+      .leftJoin(users, eq(sourceImages.userId, users.id))
+      .leftJoin(projects, eq(sourceImages.projectId, projects.id))
+      .orderBy(desc(sourceImages.createdAt))
       .limit(5)
 
     // Get recent admin actions (last 10)

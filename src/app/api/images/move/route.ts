@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateApiSession } from '@/lib/auth-utils'
 import { db } from '@/db'
-import { generations, projects } from '@/db/schema'
+import { sourceImages, projects } from '@/db/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 
 interface MoveImagesRequest {
@@ -43,15 +43,15 @@ export async function POST(request: NextRequest) {
     // Verify all images belong to user and get current project info
     const imagesToMove = await db
       .select({
-        id: generations.id,
-        originalImagePath: generations.originalImagePath,
-        originalFileName: generations.originalFileName,
-        currentProjectId: generations.projectId
+        id: sourceImages.id,
+        originalImagePath: sourceImages.originalImagePath,
+        originalFileName: sourceImages.originalFileName,
+        currentProjectId: sourceImages.projectId
       })
-      .from(generations)
+      .from(sourceImages)
       .where(and(
-        inArray(generations.id, imageIds),
-        eq(generations.userId, userId)
+        inArray(sourceImages.id, imageIds),
+        eq(sourceImages.userId, userId)
       ))
 
     if (imagesToMove.length === 0) {
@@ -74,20 +74,20 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Move all image variants to the target project
-    // We need to move all generations that share the same originalImagePath
-    const originalImagePaths = imagesToMove.map(img => img.originalImagePath)
+    // Move source images to the target project (generations will stay with their source images)
+    const sourceImageIds = imagesToMove.map(img => img.id)
     
     const moveResult = await db
-      .update(generations)
+      .update(sourceImages)
       .set({ 
-        projectId: targetProjectId
+        projectId: targetProjectId,
+        updatedAt: new Date()
       })
       .where(and(
-        inArray(generations.originalImagePath, originalImagePaths),
-        eq(generations.userId, userId)
+        inArray(sourceImages.id, sourceImageIds),
+        eq(sourceImages.userId, userId)
       ))
-      .returning({ id: generations.id })
+      .returning({ id: sourceImages.id })
 
     // Get project names for response
     const projectNames = await db

@@ -4,7 +4,7 @@ import { quickStart } from '@/lib/file-service'
 import { createUserId, FileServiceErrorCode, isUploadError, isValidationError, type FileServiceErrorType } from '@/lib/file-service'
 import { getOrCreateUnassignedProject } from '@/lib/unassigned-project'
 import { db } from '@/db'
-import { generations, projects } from '@/db/schema'
+import { sourceImages, projects } from '@/db/schema'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
@@ -171,18 +171,14 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
             uploadedAt: uploadResult.metadata.uploadedAt.toISOString()
           })
 
-          // Insert into generations table
-          await db.insert(generations).values({
+          // Insert into source_images table
+          await db.insert(sourceImages).values({
             userId: session.user.id,
             projectId: projectId,
             originalImagePath: uploadResult.relativePath,
             originalFileName: file.name, // Store the original user filename
             fileSize: file.size, // Store the file size
-            roomType: 'living_room', // Default value
-            stagingStyle: 'modern', // Default value
-            operationType: 'stage_empty', // Default value
-            status: 'pending',
-            variationIndex: 1 // First variation for this source image
+            isFavorited: false
           })
         } else {
           // Handle FileService errors

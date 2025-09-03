@@ -77,9 +77,6 @@ export function FilterControls({
     updateFilter(filterKey, newValues.length > 0 ? newValues : undefined)
   }
 
-  const clearFilter = (filterKey: keyof FilterState) => {
-    updateFilter(filterKey, undefined)
-  }
 
   const clearAllFilters = () => {
     onFiltersChange({})

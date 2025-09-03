@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/db/index'
-import { users, projects, generations, adminActions } from '@/db/schema'
+import { users, projects, sourceImages, generations, adminActions } from '@/db/schema'
 import { eq, sql, count, desc, gte, and } from 'drizzle-orm'
 import { validateApiSession } from '@/lib/auth-utils'
 
@@ -56,83 +56,85 @@ export async function GET(
         .from(projects)
         .where(eq(projects.userId, userId)),
 
-      // Total images/generations
+      // Total source images uploaded
       db.select({ count: sql<number>`count(*)` })
-        .from(generations)
-        .where(eq(generations.userId, userId)),
+        .from(sourceImages)
+        .where(eq(sourceImages.userId, userId)),
 
-      // Recent images (last 30 days)
+      // Recent source images (last 30 days)
       db.select({ count: sql<number>`count(*)` })
-        .from(generations)
+        .from(sourceImages)
         .where(
           and(
-            eq(generations.userId, userId),
-            gte(generations.createdAt, thirtyDaysAgo)
+            eq(sourceImages.userId, userId),
+            gte(sourceImages.createdAt, thirtyDaysAgo)
           )
         ),
 
-      // Weekly images (last 7 days)
+      // Weekly source images (last 7 days)
       db.select({ count: sql<number>`count(*)` })
-        .from(generations)
+        .from(sourceImages)
         .where(
           and(
-            eq(generations.userId, userId),
-            gte(generations.createdAt, sevenDaysAgo)
+            eq(sourceImages.userId, userId),
+            gte(sourceImages.createdAt, sevenDaysAgo)
           )
         ),
 
-      // Completed images
+      // Completed generations (count generations with completed status)
       db.select({ count: sql<number>`count(*)` })
         .from(generations)
+        .innerJoin(sourceImages, eq(generations.sourceImageId, sourceImages.id))
         .where(
           and(
-            eq(generations.userId, userId),
+            eq(sourceImages.userId, userId),
             eq(generations.status, 'completed')
           )
         ),
 
-      // Failed images
+      // Failed generations (count generations with failed status)
       db.select({ count: sql<number>`count(*)` })
         .from(generations)
+        .innerJoin(sourceImages, eq(generations.sourceImageId, sourceImages.id))
         .where(
           and(
-            eq(generations.userId, userId),
+            eq(sourceImages.userId, userId),
             eq(generations.status, 'failed')
           )
         )
     ])
 
-    // Get user's recent projects with image counts
+    // Get user's recent projects with source image counts
     const recentProjects = await db
       .select({
         id: projects.id,
         name: projects.name,
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
-        imageCount: count(generations.id)
+        imageCount: count(sourceImages.id)
       })
       .from(projects)
-      .leftJoin(generations, eq(projects.id, generations.projectId))
+      .leftJoin(sourceImages, eq(projects.id, sourceImages.projectId))
       .where(eq(projects.userId, userId))
       .groupBy(projects.id, projects.name, projects.createdAt, projects.updatedAt)
       .orderBy(desc(projects.updatedAt))
       .limit(5)
 
-    // Get recent generations for activity timeline
+    // Get recent source images for activity timeline
     const recentActivity = await db
       .select({
-        id: generations.id,
-        originalFileName: generations.originalFileName,
-        displayName: generations.displayName,
-        status: generations.status,
-        createdAt: generations.createdAt,
-        completedAt: generations.completedAt,
+        id: sourceImages.id,
+        originalFileName: sourceImages.originalFileName,
+        displayName: sourceImages.displayName,
+        status: sql<string>`'uploaded'`, // Source images have status 'uploaded'
+        createdAt: sourceImages.createdAt,
+        completedAt: sourceImages.createdAt, // For source images, upload time = completion time
         projectName: projects.name
       })
-      .from(generations)
-      .innerJoin(projects, eq(generations.projectId, projects.id))
-      .where(eq(generations.userId, userId))
-      .orderBy(desc(generations.createdAt))
+      .from(sourceImages)
+      .innerJoin(projects, eq(sourceImages.projectId, projects.id))
+      .where(eq(sourceImages.userId, userId))
+      .orderBy(desc(sourceImages.createdAt))
       .limit(10)
 
     // Log admin action

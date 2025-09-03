@@ -1,5 +1,5 @@
 import { eq, and, desc, sql } from 'drizzle-orm'
-import { db, users, generations, type User, type Generation, type NewUser, type NewGeneration } from './index'
+import { db, users, generations, sourceImages, type User, type Generation, type NewUser, type NewGeneration } from './index'
 
 // User operations
 export const userOperations = {
@@ -62,12 +62,29 @@ export const generationOperations = {
       .limit(limit)
   },
 
-  // Find user's favorited generations
+  // Find user's favorited source images (with their generations)
   async findFavoritedByUserId(userId: string): Promise<Generation[]> {
     return db
-      .select()
+      .select({
+        id: generations.id,
+        sourceImageId: generations.sourceImageId,
+        userId: generations.userId,
+        projectId: generations.projectId,
+        stagedImagePath: generations.stagedImagePath,
+        variationIndex: generations.variationIndex,
+        roomType: generations.roomType,
+        stagingStyle: generations.stagingStyle,
+        operationType: generations.operationType,
+        status: generations.status,
+        jobId: generations.jobId,
+        errorMessage: generations.errorMessage,
+        processingTimeMs: generations.processingTimeMs,
+        createdAt: generations.createdAt,
+        completedAt: generations.completedAt
+      })
       .from(generations)
-      .where(and(eq(generations.userId, userId), eq(generations.isFavorited, true)))
+      .innerJoin(sourceImages, eq(generations.sourceImageId, sourceImages.id))
+      .where(and(eq(generations.userId, userId), eq(sourceImages.isFavorited, true)))
       .orderBy(desc(generations.createdAt))
   },
 
@@ -95,16 +112,38 @@ export const generationOperations = {
     return updatedGeneration
   },
 
-  // Toggle favorite
-  async toggleFavorite(id: string): Promise<Generation | undefined> {
-    const [generation] = await db.select().from(generations).where(eq(generations.id, id))
-    if (!generation) return undefined
+  // Toggle favorite on source image (via generation ID)
+  async toggleFavorite(generationId: string): Promise<Generation | undefined> {
+    const [generation] = await db
+      .select({
+        id: generations.id,
+        sourceImageId: generations.sourceImageId
+      })
+      .from(generations)
+      .where(eq(generations.id, generationId))
+    
+    if (!generation || !generation.sourceImageId) return undefined
 
+    // Get current favorite status of source image
+    const [sourceImage] = await db
+      .select({ isFavorited: sourceImages.isFavorited })
+      .from(sourceImages)
+      .where(eq(sourceImages.id, generation.sourceImageId))
+    
+    if (!sourceImage) return undefined
+
+    // Toggle favorite on source image
+    await db
+      .update(sourceImages)
+      .set({ isFavorited: !sourceImage.isFavorited })
+      .where(eq(sourceImages.id, generation.sourceImageId))
+
+    // Return the generation with updated info
     const [updatedGeneration] = await db
-      .update(generations)
-      .set({ isFavorited: !generation.isFavorited })
-      .where(eq(generations.id, id))
-      .returning()
+      .select()
+      .from(generations)
+      .where(eq(generations.id, generationId))
+    
     return updatedGeneration
   },
 

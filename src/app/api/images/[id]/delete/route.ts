@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateApiSession } from '@/lib/auth-utils'
 import { db } from '@/db'
-import { generations } from '@/db/schema'
+import { sourceImages } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 
 export async function DELETE(
@@ -20,8 +20,8 @@ export async function DELETE(
     // Check if the image exists and belongs to the user
     const existingImage = await db
       .select()
-      .from(generations)
-      .where(eq(generations.id, imageId))
+      .from(sourceImages)
+      .where(eq(sourceImages.id, imageId))
       .limit(1)
 
     if (existingImage.length === 0) {
@@ -34,9 +34,10 @@ export async function DELETE(
 
     // Only delete from database - files will be cleaned up by cron job after 30 days
     // This allows users to contact support if they regret deleting images
+    // Deleting source image will cascade delete any associated generations
     await db
-      .delete(generations)
-      .where(eq(generations.id, imageId))
+      .delete(sourceImages)
+      .where(eq(sourceImages.id, imageId))
 
     console.log(`Soft delete: Removed image ${imageId} from database, files preserved for recovery`)
 

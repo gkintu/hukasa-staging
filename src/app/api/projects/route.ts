@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateApiSession } from '@/lib/auth-utils'
 import { db } from '@/db'
-import { projects, generations } from '@/db/schema'
+import { projects, sourceImages, generations } from '@/db/schema'
 import { eq, sql, desc } from 'drizzle-orm'
 
 export async function GET(request: NextRequest) {
@@ -20,12 +20,13 @@ export async function GET(request: NextRequest) {
         name: projects.name,
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
-        sourceImageCount: sql<number>`count(distinct ${generations.originalImagePath})::int`,
-        stagedVersionCount: sql<number>`count(case when ${generations.stagedImagePath} is not null then 1 end)::int`,
-        thumbnailUrl: sql<string>`min(${generations.originalImagePath})`
+        sourceImageCount: sql<number>`count(distinct ${sourceImages.id})::int`,
+        stagedVersionCount: sql<number>`count(distinct ${generations.id})::int`,
+        thumbnailUrl: sql<string>`min(${sourceImages.originalImagePath})`
       })
       .from(projects)
-      .leftJoin(generations, eq(projects.id, generations.projectId))
+      .leftJoin(sourceImages, eq(projects.id, sourceImages.projectId))
+      .leftJoin(generations, eq(sourceImages.id, generations.sourceImageId))
       .where(eq(projects.userId, userId))
       .groupBy(projects.id, projects.name, projects.createdAt, projects.updatedAt)
       .orderBy(desc(projects.updatedAt))

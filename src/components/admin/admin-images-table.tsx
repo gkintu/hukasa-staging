@@ -38,9 +38,9 @@ interface ImageRow {
   originalFileName: string
   displayName: string | null
   fileSize: number | null
-  roomType: 'living_room' | 'bedroom' | 'kitchen' | 'bathroom' | 'dining_room' | 'office'
-  stagingStyle: 'modern' | 'luxury' | 'traditional' | 'scandinavian' | 'industrial' | 'bohemian'
-  operationType: string
+  roomType: 'living_room' | 'bedroom' | 'kitchen' | 'bathroom' | 'dining_room' | 'office' | null
+  stagingStyle: 'modern' | 'luxury' | 'traditional' | 'scandinavian' | 'industrial' | 'bohemian' | null
+  operationType: string | null
   createdAt: Date | string
   completedAt?: Date | string | null
   user: {
@@ -52,7 +52,7 @@ interface ImageRow {
   totalVariants: number
   completedVariants: number
   failedVariants: number
-  overallStatus: 'pending' | 'processing' | 'completed' | 'failed'
+  overallStatus: 'pending' | 'processing' | 'completed' | 'failed' | 'no_generations'
 }
 
 interface AdminImagesTableProps {
@@ -79,6 +79,8 @@ const getStatusBadge = (status: string) => {
       return <Badge variant="secondary">Processing</Badge>
     case 'pending':
       return <Badge variant="outline">Pending</Badge>
+    case 'no_generations':
+      return <Badge variant="outline" className="text-muted-foreground">No Generations</Badge>
     default:
       return <Badge variant="outline">{status}</Badge>
   }
@@ -129,7 +131,7 @@ export function AdminImagesTable({
           <div>
             <div className="font-medium text-sm">{row.original.originalFileName}</div>
             <div className="text-xs text-muted-foreground">
-              {row.original.roomType.replace('_', ' ')} • {row.original.stagingStyle}
+              {row.original.roomType ? row.original.roomType.replace('_', ' ') : 'No room type'} • {row.original.stagingStyle || 'No style'}
             </div>
           </div>
         </div>

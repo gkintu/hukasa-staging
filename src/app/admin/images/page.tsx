@@ -29,8 +29,8 @@ export default function AdminImagesPage() {
     originalImagePath: string
     originalFileName: string
     projectName: string
-    roomType: string
-    stagingStyle: string
+    roomType: string | null
+    stagingStyle: string | null
     overallStatus: string
     createdAt: Date | string
     user: {
@@ -247,10 +247,10 @@ export default function AdminImagesPage() {
                   <strong>User:</strong> {viewImage.user.name || viewImage.user.email}
                 </div>
                 <div>
-                  <strong>Room Type:</strong> {viewImage.roomType.replace('_', ' ')}
+                  <strong>Room Type:</strong> {viewImage.roomType ? viewImage.roomType.replace('_', ' ') : 'No room type'}
                 </div>
                 <div>
-                  <strong>Staging Style:</strong> {viewImage.stagingStyle}
+                  <strong>Staging Style:</strong> {viewImage.stagingStyle || 'No staging style'}
                 </div>
                 <div>
                   <strong>Status:</strong> {viewImage.overallStatus}

@@ -13,6 +13,7 @@ import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmatio
 import { useSimpleDeleteImage } from "@/lib/shared/hooks/use-delete-image"
 import { useImageList, useRenameImage, useProjectList } from "@/lib/shared/hooks/use-images"
 import type { MainImageListQuery } from "@/lib/shared/schemas/image-schemas"
+import { SourceImage, SourceImageWithProject } from "@/lib/shared/types/image-types"
 
 interface AllImagesProps {
   onImageSelect: (imageId: string, sourceImage: SourceImageWithProject) => void
@@ -23,34 +24,6 @@ interface AllImagesProps {
 export interface AllImagesRef {
   refreshImages: () => Promise<void>
 }
-
-interface GeneratedVariant {
-  id: string
-  stagedImagePath: string | null
-  variationIndex: number
-  status: string
-  completedAt: Date | null
-  errorMessage: string | null
-}
-
-interface BaseSourceImage {
-  id: string
-  originalImagePath: string
-  originalFileName: string
-  displayName: string | null
-  fileSize: number | null
-  roomType: string
-  stagingStyle: string
-  operationType: string
-  createdAt: Date
-  variants: GeneratedVariant[]
-}
-
-interface SourceImageWithProject extends BaseSourceImage {
-  projectId: string
-  projectName: string
-}
-
 
 export const AllImages = forwardRef<AllImagesRef, AllImagesProps>(function AllImages({ onImageSelect, onUploadClick, unassignedOnly = false }, ref) {
   // TanStack Query state (replacing manual useState)
@@ -224,7 +197,7 @@ export const AllImages = forwardRef<AllImagesRef, AllImagesProps>(function AllIm
   }
 
 
-  const handleImageClick = (sourceImage: SourceImageWithProject | BaseSourceImage) => {
+  const handleImageClick = (sourceImage: SourceImageWithProject | SourceImage) => {
     // Since this is only called from the detailed view, we know it's SourceImageWithProject
     onImageSelect(sourceImage.id, sourceImage as SourceImageWithProject)
   }

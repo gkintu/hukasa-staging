@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { validateApiSession } from '@/lib/auth-utils';
 import { db } from '@/db';
-import { users, generations } from '@/db/schema';
+import { users, sourceImages, generations } from '@/db/schema';
 import { eq, gte, sql, desc } from 'drizzle-orm';
 import { z } from 'zod';
 import { 
@@ -82,15 +82,16 @@ export async function GET(request: NextRequest) {
     
     const recentActivityData = await db
       .select({
-        date: sql<string>`DATE_TRUNC('day', ${generations.createdAt})`,
-        uploads: sql<number>`COUNT(DISTINCT ${generations.originalImagePath})`,
+        date: sql<string>`DATE_TRUNC('day', ${sourceImages.createdAt})`,
+        uploads: sql<number>`COUNT(DISTINCT ${sourceImages.id})`,
         completed: sql<number>`COUNT(CASE WHEN ${generations.status} = 'completed' THEN 1 END)`,
         failed: sql<number>`COUNT(CASE WHEN ${generations.status} = 'failed' THEN 1 END)`
       })
-      .from(generations)
-      .where(gte(generations.createdAt, thirtyDaysAgo))
-      .groupBy(sql`DATE_TRUNC('day', ${generations.createdAt})`)
-      .orderBy(desc(sql`DATE_TRUNC('day', ${generations.createdAt})`))
+      .from(sourceImages)
+      .leftJoin(generations, eq(sourceImages.id, generations.sourceImageId))
+      .where(gte(sourceImages.createdAt, thirtyDaysAgo))
+      .groupBy(sql`DATE_TRUNC('day', ${sourceImages.createdAt})`)
+      .orderBy(desc(sql`DATE_TRUNC('day', ${sourceImages.createdAt})`))
       .limit(30);
 
     const recentActivity = recentActivityData.map(activity => ({
@@ -109,7 +110,8 @@ export async function GET(request: NextRequest) {
       'Image Statistics Dashboard',
       {
         dateRange,
-        totalImages: stats.totalImages,
+        totalSourceImages: stats.totalSourceImages,
+        totalGenerations: stats.totalGenerations,
         queryDays: query.days
       },
       request

@@ -1,24 +1,5 @@
-export interface GeneratedVariant {
-  id: string
-  stagedImagePath: string | null
-  variationIndex: number
-  status: string
-  completedAt: Date | null
-  errorMessage: string | null
-}
-
-export interface SourceImage {
-  id: string
-  originalImagePath: string
-  originalFileName: string
-  displayName: string | null
-  fileSize: number | null
-  roomType: string
-  stagingStyle: string
-  operationType: string
-  createdAt: Date
-  variants: GeneratedVariant[]
-}
+// Re-export shared types to maintain compatibility
+export type { GeneratedVariant, SourceImage, SourceImageWithProject } from "@/lib/shared/types/image-types"
 
 export interface MockGeneratedImage {
   id: string;

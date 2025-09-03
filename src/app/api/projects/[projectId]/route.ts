@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateApiSession } from '@/lib/auth-utils'
 import { db } from '@/db'
-import { projects, generations } from '@/db/schema'
+import { projects, sourceImages, generations } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 
 export async function GET(
@@ -28,61 +28,97 @@ export async function GET(
       return NextResponse.json({ success: false, message: 'Project not found' }, { status: 404 })
     }
 
-    // Get all generations for this project, grouped by source image
-    const projectGenerations = await db
-      .select()
-      .from(generations)
-      .where(and(eq(generations.projectId, projectId), eq(generations.userId, userId)))
-      .orderBy(generations.originalImagePath, generations.variationIndex)
+    // Get all source images for this project with their generations
+    const projectSourceImages = await db
+      .select({
+        // Source image fields
+        id: sourceImages.id,
+        originalImagePath: sourceImages.originalImagePath,
+        originalFileName: sourceImages.originalFileName,
+        displayName: sourceImages.displayName,
+        fileSize: sourceImages.fileSize,
+        isFavorited: sourceImages.isFavorited,
+        createdAt: sourceImages.createdAt,
+        updatedAt: sourceImages.updatedAt,
+        // Generation fields (will be null if no generations exist)
+        generationId: generations.id,
+        stagedImagePath: generations.stagedImagePath,
+        variationIndex: generations.variationIndex,
+        roomType: generations.roomType,
+        stagingStyle: generations.stagingStyle,
+        operationType: generations.operationType,
+        status: generations.status,
+        jobId: generations.jobId,
+        errorMessage: generations.errorMessage,
+        processingTimeMs: generations.processingTimeMs,
+        completedAt: generations.completedAt
+      })
+      .from(sourceImages)
+      .leftJoin(generations, eq(sourceImages.id, generations.sourceImageId))
+      .where(and(eq(sourceImages.projectId, projectId), eq(sourceImages.userId, userId)))
+      .orderBy(sourceImages.createdAt, generations.variationIndex)
 
-    // Group generations by source image
-    const sourceImages = new Map<string, {
+    // Group source images with their generations
+    const sourceImagesMap = new Map<string, {
       id: string
       originalImagePath: string
       originalFileName: string
+      displayName: string | null
       fileSize: number | null
-      roomType: string
-      stagingStyle: string
-      operationType: string
+      isFavorited: boolean
       createdAt: Date
+      updatedAt: Date
       variants: Array<{
         id: string
         stagedImagePath: string | null
         variationIndex: number
+        roomType: string
+        stagingStyle: string
+        operationType: string
         status: string
-        completedAt: Date | null
+        jobId: string | null
         errorMessage: string | null
+        processingTimeMs: number | null
+        completedAt: Date | null
       }>
     }>()
 
-    for (const gen of projectGenerations) {
-      const key = gen.originalImagePath
+    for (const row of projectSourceImages) {
+      const sourceImageId = row.id
       
-      if (!sourceImages.has(key)) {
-        sourceImages.set(key, {
-          id: gen.id,
-          originalImagePath: gen.originalImagePath,
-          originalFileName: gen.originalFileName,
-          fileSize: gen.fileSize,
-          roomType: gen.roomType,
-          stagingStyle: gen.stagingStyle,
-          operationType: gen.operationType,
-          createdAt: gen.createdAt,
+      if (!sourceImagesMap.has(sourceImageId)) {
+        sourceImagesMap.set(sourceImageId, {
+          id: row.id,
+          originalImagePath: row.originalImagePath,
+          originalFileName: row.originalFileName,
+          displayName: row.displayName,
+          fileSize: row.fileSize,
+          isFavorited: row.isFavorited,
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt,
           variants: []
         })
       }
 
-      sourceImages.get(key)!.variants.push({
-        id: gen.id,
-        stagedImagePath: gen.stagedImagePath,
-        variationIndex: gen.variationIndex,
-        status: gen.status,
-        completedAt: gen.completedAt,
-        errorMessage: gen.errorMessage
-      })
+      // Add generation variant if it exists (all generation fields will be non-null when generationId exists)
+      if (row.generationId && row.roomType && row.stagingStyle && row.operationType && row.status) {
+        sourceImagesMap.get(sourceImageId)!.variants.push({
+          id: row.generationId,
+          stagedImagePath: row.stagedImagePath,
+          variationIndex: row.variationIndex || 1,
+          roomType: row.roomType,
+          stagingStyle: row.stagingStyle,
+          operationType: row.operationType,
+          status: row.status,
+          jobId: row.jobId,
+          errorMessage: row.errorMessage,
+          processingTimeMs: row.processingTimeMs,
+          completedAt: row.completedAt
+        })
+      }
     }
 
-    const sourceImagesArray = Array.from(sourceImages.values())
+    const sourceImagesArray = Array.from(sourceImagesMap.values())
 
     return NextResponse.json({ 
       success: true, 
@@ -152,10 +188,10 @@ export async function DELETE(
     const { projectId } = await params
     const userId = session.user.id
 
-    // Delete all generations first (cascade delete)
+    // Delete all source images first (this will cascade delete generations due to FK constraint)
     await db
-      .delete(generations)
-      .where(and(eq(generations.projectId, projectId), eq(generations.userId, userId)))
+      .delete(sourceImages)
+      .where(and(eq(sourceImages.projectId, projectId), eq(sourceImages.userId, userId)))
 
     // Delete the project
     const deletedProject = await db

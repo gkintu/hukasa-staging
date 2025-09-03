@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateApiSession } from '@/lib/auth-utils'
 import { db } from '@/db'
-import { generations } from '@/db/schema'
+import { sourceImages } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 
@@ -38,8 +38,8 @@ export async function PATCH(
     // Check if the image exists and belongs to the user
     const existingImage = await db
       .select()
-      .from(generations)
-      .where(eq(generations.id, imageId))
+      .from(sourceImages)
+      .where(eq(sourceImages.id, imageId))
       .limit(1)
 
     if (existingImage.length === 0) {
@@ -52,9 +52,9 @@ export async function PATCH(
 
     // Update the display name
     await db
-      .update(generations)
-      .set({ displayName })
-      .where(eq(generations.id, imageId))
+      .update(sourceImages)
+      .set({ displayName, updatedAt: new Date() })
+      .where(eq(sourceImages.id, imageId))
 
     return NextResponse.json({ 
       success: true, 

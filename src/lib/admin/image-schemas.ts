@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 // Enums for validation
 export const ImageStatusSchema = z.enum(['pending', 'processing', 'completed', 'failed']);
+export const OverallStatusSchema = z.enum(['pending', 'processing', 'completed', 'failed', 'no_generations']);
 export const RoomTypeSchema = z.enum(['living_room', 'bedroom', 'kitchen', 'bathroom', 'office', 'dining_room']);
 export const StagingStyleSchema = z.enum(['modern', 'luxury', 'traditional', 'scandinavian', 'industrial', 'bohemian']);
 export const SortOrderSchema = z.enum(['asc', 'desc']);
@@ -38,8 +39,10 @@ export const ImageVariantSchema = z.object({
   id: z.string().uuid(),
   stagedImagePath: z.string().nullable(),
   variationIndex: z.number().int(),
+  roomType: RoomTypeSchema.nullable(),
+  stagingStyle: StagingStyleSchema.nullable(),
+  operationType: z.string().nullable(),
   status: ImageStatusSchema,
-  isFavorited: z.boolean(),
   processingTimeMs: z.number().nullable(),
   errorMessage: z.string().nullable(),
   completedAt: z.date().nullable(),
@@ -53,10 +56,11 @@ export const ImageDetailSchema = z.object({
   originalFileName: z.string(),
   displayName: z.string().nullable(),
   fileSize: z.number().nullable(),
-  roomType: RoomTypeSchema,
-  stagingStyle: StagingStyleSchema,
-  operationType: z.string(),
+  roomType: RoomTypeSchema.nullable(),
+  stagingStyle: StagingStyleSchema.nullable(),
+  operationType: z.string().nullable(),
   createdAt: z.date(),
+  updatedAt: z.date(),
   completedAt: z.date().nullable(),
   variants: z.array(ImageVariantSchema),
   user: z.object({
@@ -76,10 +80,11 @@ export const ImageListItemSchema = z.object({
   originalFileName: z.string(),
   displayName: z.string().nullable(),
   fileSize: z.number().nullable(),
-  roomType: RoomTypeSchema,
-  stagingStyle: StagingStyleSchema,
-  operationType: z.string(),
+  roomType: RoomTypeSchema.nullable(),
+  stagingStyle: StagingStyleSchema.nullable(),
+  operationType: z.string().nullable(),
   createdAt: z.date(),
+  updatedAt: z.date(),
   completedAt: z.date().nullable(),
   variants: z.array(ImageVariantSchema),
   user: z.object({
@@ -92,7 +97,7 @@ export const ImageListItemSchema = z.object({
   totalVariants: z.number().int(),
   completedVariants: z.number().int(),
   failedVariants: z.number().int(),
-  overallStatus: ImageStatusSchema,
+  overallStatus: z.enum(['pending', 'processing', 'completed', 'failed', 'no_generations']),
 });
 
 export const ImageListResponseSchema = z.object({
@@ -198,6 +203,10 @@ export type BulkOperationResponse = z.infer<typeof BulkOperationResponseSchema>;
 export type ImageDelete = z.infer<typeof ImageDeleteSchema>;
 export type ImageDeleteResponse = z.infer<typeof ImageDeleteResponseSchema>;
 export type ImageStatsResponse = z.infer<typeof ImageStatsResponseSchema>;
+export type ImageStatus = z.infer<typeof ImageStatusSchema>;
+export type OverallStatus = z.infer<typeof OverallStatusSchema>;
+export type RoomType = z.infer<typeof RoomTypeSchema>;
+export type StagingStyle = z.infer<typeof StagingStyleSchema>;
 export type ApiResponse<T = unknown> = {
   success: boolean;
   message: string;

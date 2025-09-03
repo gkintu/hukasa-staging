@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { validateApiSession } from '@/lib/auth-utils';
 import { db } from '@/db';
-import { users, generations, projects } from '@/db/schema';
+import { users, sourceImages, generations, projects } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { 
   BulkOperationSchema,
@@ -152,15 +152,15 @@ export async function POST(request: NextRequest) {
 
 // Helper functions for bulk operations
 async function handleBulkDelete(image: { id: string }) {
-  // Delete the generation record
-  await db.delete(generations).where(eq(generations.id, image.id));
+  // Delete the source image record (this will cascade delete all generations)
+  await db.delete(sourceImages).where(eq(sourceImages.id, image.id));
   
-  // TODO: Delete associated files if this is the last variant
-  // This would require checking if other variants exist and cleaning up files
+  // Note: Files are preserved for 30 days by design for potential recovery
+  // A separate cleanup job handles file deletion after the grace period
 }
 
 async function handleBulkReprocess(image: { id: string }) {
-  // Update status to pending for reprocessing
+  // Update all generations for this source image to pending for reprocessing
   await db
     .update(generations)
     .set({ 
@@ -169,10 +169,10 @@ async function handleBulkReprocess(image: { id: string }) {
       processingTimeMs: null,
       completedAt: null
     })
-    .where(eq(generations.id, image.id));
+    .where(eq(generations.sourceImageId, image.id));
     
   // TODO: Add to processing queue
-  // This would typically involve queuing the image for background processing
+  // This would typically involve queuing the source image for background processing
 }
 
 async function handleBulkMoveProject(image: { id: string }, targetProjectId: string) {
@@ -185,11 +185,12 @@ async function handleBulkMoveProject(image: { id: string }, targetProjectId: str
     throw new Error(`Target project ${targetProjectId} not found`);
   }
 
-  // Update the generation's project
+  // Update the source image's project (this affects all its generations)
   await db
-    .update(generations)
+    .update(sourceImages)
     .set({ 
-      projectId: targetProjectId
+      projectId: targetProjectId,
+      updatedAt: new Date()
     })
-    .where(eq(generations.id, image.id));
+    .where(eq(sourceImages.id, image.id));
 }

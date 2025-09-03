@@ -9,9 +9,9 @@ export const BasicImageSchema = z.object({
   originalFileName: z.string(),
   displayName: z.string().nullable(),
   fileSize: z.number().nullable(),
-  roomType: z.string(),
-  stagingStyle: z.string(),
-  operationType: z.string(),
+  roomType: z.string().nullable(),
+  stagingStyle: z.string().nullable(),
+  operationType: z.string().nullable(),
   createdAt: z.date(),
   variants: z.array(z.object({
     id: z.string().uuid(),

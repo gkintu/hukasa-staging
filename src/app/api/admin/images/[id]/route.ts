@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { validateApiSession } from '@/lib/auth-utils';
 import { db } from '@/db';
-import { users, generations } from '@/db/schema';
+import { users, sourceImages, generations } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 import { 
@@ -174,10 +174,10 @@ export async function DELETE(
 
     // Delete from database
     if (deleteOptions.deleteVariants) {
-      // Delete all variants for this source image
+      // Delete all generations for this source image
       const deletedResult = await db
         .delete(generations)
-        .where(eq(generations.originalImagePath, image.originalImagePath))
+        .where(eq(generations.sourceImageId, imageId))
         .returning({ id: generations.id, stagedImagePath: generations.stagedImagePath });
       
       deletedVariants = deletedResult.length;
@@ -196,48 +196,44 @@ export async function DELETE(
         }
       }
     } else {
-      // Delete only the specific variant
+      // This operation doesn't make sense with the new schema
+      // We can only delete specific generation variants, not the source image by variant ID
+      // For now, delete all generations for this source image
       const deletedResult = await db
         .delete(generations)
-        .where(eq(generations.id, imageId))
+        .where(eq(generations.sourceImageId, imageId))
         .returning({ stagedImagePath: generations.stagedImagePath });
 
-      if (deletedResult.length > 0) {
-        deletedVariants = 1;
-        const stagedImagePath = deletedResult[0].stagedImagePath;
-        
-        if (stagedImagePath) {
+      deletedVariants = deletedResult.length;
+      
+      // Delete staged image files
+      for (const variant of deletedResult) {
+        if (variant.stagedImagePath) {
           try {
             const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
-            const filePath = path.join(process.cwd(), uploadPath, stagedImagePath);
+            const filePath = path.join(process.cwd(), uploadPath, variant.stagedImagePath);
             await fs.unlink(filePath);
-            deletedFiles.push(stagedImagePath);
+            deletedFiles.push(variant.stagedImagePath);
           } catch (error) {
-            console.warn(`Failed to delete staged image file: ${stagedImagePath}`, error);
+            console.warn(`Failed to delete staged image file: ${variant.stagedImagePath}`, error);
           }
         }
       }
     }
 
-    // Delete source file if requested and no other variants exist
+    // Delete source image and file if requested
     if (deleteOptions.deleteSourceFile) {
-      // Check if there are other variants remaining
-      const remainingVariants = await db
-        .select({ id: generations.id })
-        .from(generations)
-        .where(eq(generations.originalImagePath, image.originalImagePath))
-        .limit(1);
-
-      if (remainingVariants.length === 0) {
-        try {
-          // Fix file path construction - files are stored in uploads/{userId}/{filename}
-          const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
-          const sourceFilePath = path.join(process.cwd(), uploadPath, image.originalImagePath);
-          await fs.unlink(sourceFilePath);
-          deletedFiles.push(image.originalImagePath);
-        } catch (error) {
-          console.warn(`Failed to delete source image file: ${image.originalImagePath}`, error);
-        }
+      // Delete the source image record (cascade will handle remaining generations)
+      await db.delete(sourceImages).where(eq(sourceImages.id, imageId));
+      
+      try {
+        // Delete the source image file
+        const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
+        const sourceFilePath = path.join(process.cwd(), uploadPath, image.originalImagePath);
+        await fs.unlink(sourceFilePath);
+        deletedFiles.push(image.originalImagePath);
+      } catch (error) {
+        console.warn(`Failed to delete source image file: ${image.originalImagePath}`, error);
       }
     }
 

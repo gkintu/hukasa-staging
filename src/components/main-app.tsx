@@ -29,32 +29,7 @@ interface MainAppProps {
 }
 
 // Define types for the image detail modal
-interface GeneratedVariant {
-  id: string
-  stagedImagePath: string | null
-  variationIndex: number
-  status: string
-  completedAt: Date | null
-  errorMessage: string | null
-}
-
-interface SourceImage {
-  id: string
-  originalImagePath: string
-  originalFileName: string
-  displayName: string | null
-  fileSize: number | null
-  roomType: string
-  stagingStyle: string
-  operationType: string
-  createdAt: Date
-  variants: GeneratedVariant[]
-}
-
-interface SourceImageWithProject extends SourceImage {
-  projectId: string
-  projectName: string
-}
+import { SourceImage, SourceImageWithProject, type ImageSelectHandler } from '@/lib/shared/types/image-types'
 
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null
@@ -153,7 +128,7 @@ export function MainApp({ user }: MainAppProps) {
     router.push('/')
   }
 
-  const handleImageSelect = (imageId: string, sourceImage: SourceImage | SourceImageWithProject) => {
+  const handleImageSelect: ImageSelectHandler = (imageId: string, sourceImage) => {
     // Open image detail modal
     setSelectedImageForModal(sourceImage)
     const currentProject = searchParams.get('project')

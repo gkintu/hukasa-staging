@@ -191,11 +191,9 @@ interface LoadingPageProps {
 }
 
 export function LoadingPage({ 
-  title = 'Loading...', 
   showBackButton = true,
   onBack,
   className,
-  context = 'main'
 }: LoadingPageProps) {
   return (
     <div className={cn("p-8 animate-fade-in", className)}>
@@ -216,7 +214,7 @@ export function LoadingPage({
         <Skeleton className="h-8 w-48" />
       </div>
       
-      <LoadingGrid context={context} />
+      <LoadingGrid context="main" />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/db/index'
-import { users, generations } from '@/db/schema'
+import { users, sourceImages } from '@/db/schema'
 import { eq, sql, gte } from 'drizzle-orm'
 import { validateApiSession } from '@/lib/auth-utils'
 
@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       return Response.json({ success: false, message: 'Admin access required' }, { status: 403 })
     }
 
-    // Get last 30 days of image uploads
+    // Get last 30 days of source image uploads
     const thirtyDaysAgo = new Date()
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
 
@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
         date: sql<string>`DATE(created_at)`,
         count: sql<number>`count(*)`
       })
-      .from(generations)
-      .where(gte(generations.createdAt, thirtyDaysAgo))
+      .from(sourceImages)
+      .where(gte(sourceImages.createdAt, thirtyDaysAgo))
       .groupBy(sql`DATE(created_at)`)
       .orderBy(sql`DATE(created_at)`)
 

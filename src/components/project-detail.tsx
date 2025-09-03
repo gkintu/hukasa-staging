@@ -14,7 +14,7 @@ import { useImageSelection } from "@/lib/shared/hooks/use-row-selection"
 interface ProjectDetailProps {
   projectId: string
   onBack: () => void
-  onImageSelect: (imageId: string, sourceImage: SourceImage) => void
+  onImageSelect: ImageSelectHandler
   onUploadMore?: () => void
 }
 
@@ -22,34 +22,15 @@ export interface ProjectDetailRef {
   refreshProject: () => Promise<void>
 }
 
-interface Project {
-  id: string
-  name: string
-  createdAt: string
-  updatedAt: string
-}
+// interface Project {
+//   id: string
+//   name: string
+//   createdAt: string
+//   updatedAt: string
+// }
 
-interface GeneratedVariant {
-  id: string
-  stagedImagePath: string | null
-  variationIndex: number
-  status: string
-  completedAt: Date | null
-  errorMessage: string | null
-}
 
-interface SourceImage {
-  id: string
-  originalImagePath: string
-  originalFileName: string
-  displayName: string | null
-  fileSize: number | null
-  roomType: string
-  stagingStyle: string
-  operationType: string
-  createdAt: Date
-  variants: GeneratedVariant[]
-}
+import { SourceImage, type ImageSelectHandler } from '@/lib/shared/types/image-types'
 
 export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(function ProjectDetail({ projectId, onBack, onImageSelect, onUploadMore }, ref) {
   // TanStack Query state (replacing manual useState)

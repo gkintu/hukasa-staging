@@ -9,42 +9,16 @@ import { RenameModal } from "@/components/ui/rename-modal"
 import { useState } from "react"
 import Link from "next/link"
 import { Folder } from "lucide-react"
-
-interface GeneratedVariant {
-  id: string
-  stagedImagePath: string | null
-  variationIndex: number
-  status: string
-  completedAt: Date | null
-  errorMessage: string | null
-}
-
-interface BaseSourceImage {
-  id: string
-  originalImagePath: string
-  originalFileName: string
-  displayName: string | null
-  fileSize: number | null
-  roomType: string
-  stagingStyle: string
-  operationType: string
-  createdAt: Date
-  variants: GeneratedVariant[]
-}
-
-interface SourceImageWithProject extends BaseSourceImage {
-  projectId: string
-  projectName: string
-}
+import { SourceImage, SourceImageWithProject, GeneratedVariant } from "@/lib/shared/types/image-types"
 
 interface SourceImageCardProps {
-  image: SourceImageWithProject | BaseSourceImage
+  image: SourceImageWithProject | SourceImage
   variant?: 'default' | 'selectable' | 'detailed'
   isSelected?: boolean
   showProjectName?: boolean
   showCreationDate?: boolean
   onSelect?: (id: string) => void
-  onClick?: (image: SourceImageWithProject | BaseSourceImage) => void
+  onClick?: (image: SourceImageWithProject | SourceImage) => void
   onRename?: (id: string, newDisplayName: string) => void
   onDelete?: (id: string) => void
   index?: number

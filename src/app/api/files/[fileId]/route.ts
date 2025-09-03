@@ -151,31 +151,62 @@ export const PATCH = withAuth(async (request: NextRequest, user) => {
     }
 
     const { db } = await import('@/db')
-    const { generations } = await import('@/db/schema')
+    const { sourceImages, generations } = await import('@/db/schema')
     const { eq, and } = await import('drizzle-orm')
     
-    // Find the file record by exact database ID match
-    const fileRecords = await db.select().from(generations)
+    // Find the file record by exact database ID match - check source images first
+    const fileRecords = await db.select().from(sourceImages)
       .where(and(
-        eq(generations.userId, user.id),
-        eq(generations.id, databaseId)
+        eq(sourceImages.userId, user.id),
+        eq(sourceImages.id, databaseId)
       ))
       .limit(1)
     
     if (fileRecords.length === 0) {
-      return NextResponse.json(
-        { error: 'File not found' },
-        { status: 404 }
-      )
+      // Check generations table (backwards compatibility)
+      const genRecords = await db.select({
+        id: generations.id,
+        userId: sourceImages.userId,
+        originalFileName: sourceImages.originalFileName
+      }).from(generations)
+        .innerJoin(sourceImages, eq(generations.sourceImageId, sourceImages.id))
+        .where(and(
+          eq(sourceImages.userId, user.id),
+          eq(generations.id, databaseId)
+        ))
+        .limit(1)
+      
+      if (genRecords.length === 0) {
+        return NextResponse.json(
+          { error: 'File not found' },
+          { status: 404 }
+        )
+      }
     }
+
+    const isSourceImage = fileRecords.length > 0
     
-    // Update the filename in database
-    await db.update(generations)
-      .set({ originalFileName: originalFileName.trim() })
-      .where(and(
-        eq(generations.userId, user.id),
-        eq(generations.id, databaseId)
-      ))
+    // Update the filename in the appropriate table
+    if (isSourceImage) {
+      await db.update(sourceImages)
+        .set({ originalFileName: originalFileName.trim() })
+        .where(and(
+          eq(sourceImages.userId, user.id),
+          eq(sourceImages.id, databaseId)
+        ))
+    } else {
+      // For generations, we need to update the source image filename
+      const sourceImageResult = await db.select({ sourceImageId: generations.sourceImageId })
+        .from(generations)
+        .where(eq(generations.id, databaseId))
+        .limit(1)
+        
+      if (sourceImageResult.length > 0 && sourceImageResult[0].sourceImageId) {
+        await db.update(sourceImages)
+          .set({ originalFileName: originalFileName.trim() })
+          .where(eq(sourceImages.id, sourceImageResult[0].sourceImageId))
+      }
+    }
 
     return NextResponse.json({
       success: true,
@@ -211,32 +242,68 @@ export const DELETE = withAuth(async (request: NextRequest, user) => {
 
   try {
     const { db } = await import('@/db')
-    const { generations } = await import('@/db/schema')
+    const { sourceImages, generations } = await import('@/db/schema')
     const { eq, and } = await import('drizzle-orm')
     
-    // Find the file record by exact database ID match
-    const fileRecords = await db.select().from(generations)
+    // Find the file record by exact database ID match - check source images first
+    const fileRecords = await db.select().from(sourceImages)
       .where(and(
-        eq(generations.userId, user.id),
-        eq(generations.id, databaseId)
+        eq(sourceImages.userId, user.id),
+        eq(sourceImages.id, databaseId)
       ))
       .limit(1)
     
-    if (fileRecords.length === 0) {
+    const isSourceImage = fileRecords.length > 0
+    type SourceImageRecord = typeof fileRecords[0]
+    type GenerationRecord = { id: string; originalImagePath: string; sourceImageId: string | null }
+    let foundRecord: SourceImageRecord | GenerationRecord | undefined
+    
+    if (isSourceImage) {
+      foundRecord = fileRecords[0]
+    } else {
+      // Check generations table (backwards compatibility)
+      const genRecords = await db.select({
+        id: generations.id,
+        originalImagePath: sourceImages.originalImagePath,
+        sourceImageId: generations.sourceImageId
+      }).from(generations)
+        .innerJoin(sourceImages, eq(generations.sourceImageId, sourceImages.id))
+        .where(and(
+          eq(sourceImages.userId, user.id),
+          eq(generations.id, databaseId)
+        ))
+        .limit(1)
+      
+      if (genRecords.length === 0) {
+        return NextResponse.json(
+          { error: 'File not found' },
+          { status: 404 }
+        )
+      }
+      
+      foundRecord = genRecords[0]
+    }
+    
+    if (!foundRecord) {
       return NextResponse.json(
         { error: 'File not found' },
         { status: 404 }
       )
     }
     
-    const foundRecord = fileRecords[0]
-    
     // Delete from database
-    await db.delete(generations)
-      .where(and(
-        eq(generations.userId, user.id),
-        eq(generations.id, databaseId)
-      ))
+    if (isSourceImage) {
+      // Deleting a source image also deletes all its generations (cascade)
+      await db.delete(sourceImages)
+        .where(and(
+          eq(sourceImages.userId, user.id),
+          eq(sourceImages.id, databaseId)
+        ))
+    } else {
+      // Deleting a specific generation
+      await db.delete(generations)
+        .where(eq(generations.id, databaseId))
+    }
 
     // Delete physical file - extract filename from originalImagePath
     const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'

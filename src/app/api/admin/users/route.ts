@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { db } from '@/db/index'
-import { users, projects, generations } from '@/db/schema'
+import { users, projects, sourceImages } from '@/db/schema'
 import { eq, sql, ilike, or, desc, count } from 'drizzle-orm'
 import { validateApiSession } from '@/lib/auth-utils'
 
@@ -50,11 +50,11 @@ export async function GET(request: NextRequest) {
         lastActiveAt: users.lastActiveAt,
         lastLoginAt: users.lastLoginAt,
         projectCount: count(projects.id),
-        imageCount: count(generations.id),
+        imageCount: count(sourceImages.id),
       })
       .from(users)
       .leftJoin(projects, eq(users.id, projects.userId))
-      .leftJoin(generations, eq(users.id, generations.userId))
+      .leftJoin(sourceImages, eq(users.id, sourceImages.userId))
       .where(searchCondition)
       .groupBy(users.id, users.name, users.email, users.image, users.role, users.suspended, users.createdAt, users.updatedAt, users.lastActiveAt, users.lastLoginAt)
       .orderBy(desc(users.createdAt))
