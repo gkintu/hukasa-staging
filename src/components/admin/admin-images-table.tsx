@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
+import { getGenericStatusBadge } from "@/lib/shared/utils/status-badge"
 
 // Type for our image data - matching the API response structure
 interface ImageRow {
@@ -69,22 +69,6 @@ interface AdminImagesTableProps {
   totalCount: number
 }
 
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case 'completed':
-      return <Badge className="bg-green-100 text-green-800">Completed</Badge>
-    case 'failed':
-      return <Badge variant="destructive">Failed</Badge>
-    case 'processing':
-      return <Badge variant="secondary">Processing</Badge>
-    case 'pending':
-      return <Badge variant="outline">Pending</Badge>
-    case 'no_generations':
-      return <Badge variant="outline" className="text-muted-foreground">No Generations</Badge>
-    default:
-      return <Badge variant="outline">{status}</Badge>
-  }
-}
 
 const formatDate = (date: Date | string) => {
   const dateObj = date instanceof Date ? date : new Date(date)
@@ -219,7 +203,7 @@ export function AdminImagesTable({
           )}
         </Button>
       ),
-      cell: ({ row }) => getStatusBadge(row.original.overallStatus),
+      cell: ({ row }) => getGenericStatusBadge(row.original.overallStatus),
       enableColumnFilter: true,
       filterFn: "equals",
     },

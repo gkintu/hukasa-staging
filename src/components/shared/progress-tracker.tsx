@@ -4,10 +4,12 @@ import React from 'react'
 import { Progress } from '@/components/ui/progress'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { formatFileSize } from '@/lib/shared/utils/format'
+import { getProgressStatusBadge } from '@/lib/shared/utils/status-badge'
 import { CheckCircle, AlertCircle, Upload, Clock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type ProgressStatus = 'pending' | 'uploading' | 'processing' | 'completed' | 'error'
+type ProgressStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled'
 
 export interface ProgressItem {
   id: string
@@ -37,38 +39,17 @@ export function ProgressTracker({
     switch (status) {
       case 'pending':
         return <Clock className="h-4 w-4 text-muted-foreground" />
-      case 'uploading':
-      case 'processing':
+      case 'in_progress':
         return <Upload className="h-4 w-4 text-primary animate-pulse" />
       case 'completed':
         return <CheckCircle className="h-4 w-4 text-green-600" />
-      case 'error':
+      case 'failed':
         return <AlertCircle className="h-4 w-4 text-destructive" />
+      case 'cancelled':
+        return <AlertCircle className="h-4 w-4 text-muted-foreground" />
     }
   }
 
-  const getStatusBadge = (status: ProgressStatus) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="secondary">Pending</Badge>
-      case 'uploading':
-        return <Badge variant="default" className="bg-primary">Uploading</Badge>
-      case 'processing':
-        return <Badge variant="default" className="bg-secondary">Processing</Badge>
-      case 'completed':
-        return <Badge variant="default" className="bg-green-600">Completed</Badge>
-      case 'error':
-        return <Badge variant="destructive">Error</Badge>
-    }
-  }
-
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-  }
 
   // Calculate overall progress
   const totalProgress = items.length > 0 
@@ -76,8 +57,8 @@ export function ProgressTracker({
     : 0
 
   const completedCount = items.filter(u => u.status === 'completed').length
-  const errorCount = items.filter(u => u.status === 'error').length
-  const inProgressCount = items.filter(u => u.status === 'uploading' || u.status === 'processing').length
+  const errorCount = items.filter(u => u.status === 'failed').length
+  const inProgressCount = items.filter(u => u.status === 'in_progress').length
 
   return (
     <Card className={cn(
@@ -128,7 +109,7 @@ export function ProgressTracker({
                   <p className="text-sm font-medium text-foreground truncate">
                     {item.title}
                   </p>
-                  {getStatusBadge(item.status)}
+                  {getProgressStatusBadge(item.status)}
                 </div>
                 
                 <div className="flex items-center gap-2">
@@ -138,7 +119,7 @@ export function ProgressTracker({
                     </Badge>
                   )}
                   
-                  {item.status !== 'pending' && item.status !== 'error' && (
+                  {item.status !== 'pending' && item.status !== 'failed' && (
                     <span className="text-xs text-muted-foreground">
                       {item.progress}%
                     </span>
@@ -146,12 +127,12 @@ export function ProgressTracker({
                 </div>
 
                 {/* Progress Bar for Individual Item */}
-                {(item.status === 'uploading' || item.status === 'processing') && (
+                {item.status === 'in_progress' && (
                   <Progress value={item.progress} className="h-1" />
                 )}
 
                 {/* Error Message */}
-                {item.status === 'error' && item.error && (
+                {item.status === 'failed' && item.error && (
                   <p className="text-xs text-destructive">
                     {item.error}
                   </p>

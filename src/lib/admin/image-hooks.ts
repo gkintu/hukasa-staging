@@ -16,15 +16,10 @@ import {
   ImageStatsResponse
 } from './image-schemas';
 
-// Query Keys Factory
-export const imageKeys = {
-  all: ['admin', 'images'] as const,
-  lists: () => [...imageKeys.all, 'list'] as const,
-  list: (filters: ImageListQuery) => [...imageKeys.lists(), filters] as const,
-  details: () => [...imageKeys.all, 'detail'] as const,
-  detail: (id: string) => [...imageKeys.details(), id] as const,
-  stats: () => [...imageKeys.all, 'stats'] as const,
-};
+import { adminImageKeys } from '@/lib/shared/utils/query-keys'
+
+// Use shared query keys instead of duplicated factory
+export const imageKeys = adminImageKeys;
 
 // API Functions
 async function fetchImageList(query: ImageListQuery): Promise<ImageListResponse['data']> {

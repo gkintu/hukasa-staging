@@ -45,6 +45,7 @@ import {
   ArrowDown
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { formatFileSize, formatDate } from '@/lib/shared/utils/format'
 
 import { ManagedFile } from './index'
 
@@ -72,22 +73,7 @@ export function FileManager({
   const [sorting, setSorting] = useState<SortingState>([])
   const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
 
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-  }
 
-  const formatDate = (date: Date): string => {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(date)
-  }
 
   const canDownload = (file: ManagedFile) => {
     return file.status === 'completed' && file.downloadUrl

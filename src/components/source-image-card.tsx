@@ -1,15 +1,15 @@
 "use client"
 
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { CardActionsMenu } from "@/components/ui/card-actions-menu"
 import { RenameModal } from "@/components/ui/rename-modal"
+import { getVariantStatusBadge } from "@/lib/shared/utils/status-badge"
 import { useState } from "react"
 import Link from "next/link"
 import { Folder } from "lucide-react"
-import { SourceImage, SourceImageWithProject, GeneratedVariant } from "@/lib/shared/types/image-types"
+import { SourceImage, SourceImageWithProject } from "@/lib/shared/types/image-types"
 
 interface SourceImageCardProps {
   image: SourceImageWithProject | SourceImage
@@ -94,26 +94,6 @@ export function SourceImageCard({
     }
   }
 
-  const getStatusBadge = (variants: GeneratedVariant[]) => {
-    const completedCount = variants.filter(v => v.status === 'completed').length
-    const processingCount = variants.filter(v => v.status === 'processing').length
-    const pendingCount = variants.filter(v => v.status === 'pending').length
-    const failedCount = variants.filter(v => v.status === 'failed').length
-
-    if (failedCount > 0) {
-      return <Badge variant="destructive">Failed</Badge>
-    }
-    if (processingCount > 0) {
-      return <Badge variant="secondary">Processing</Badge>
-    }
-    if (pendingCount > 0) {
-      return <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">Ready to Stage</Badge>
-    }
-    if (completedCount > 0) {
-      return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Completed</Badge>
-    }
-    return <Badge variant="outline">No variants</Badge>
-  }
 
 
   const isSelectable = variant === 'selectable' || selectable
@@ -187,7 +167,7 @@ export function SourceImageCard({
           </div>
 
           <div className="absolute bottom-2 left-2">
-            {getStatusBadge(image.variants)}
+            {getVariantStatusBadge(image.variants)}
           </div>
 
         </div>

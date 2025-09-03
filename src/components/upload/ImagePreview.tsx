@@ -6,6 +6,7 @@ import { AspectRatio } from '@/components/ui/aspect-ratio'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { formatFileSize } from '@/lib/shared/utils/format'
 import { Download, Eye, RotateCcw, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -40,13 +41,6 @@ export function ImagePreview({
   className,
   showActions = true
 }: ImagePreviewProps) {
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 B'
-    const k = 1024
-    const sizes = ['B', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
-  }
 
   return (
     <Card className={cn("overflow-hidden", className)}>
