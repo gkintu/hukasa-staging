@@ -9,6 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { promises as fs } from 'node:fs'
 import { join } from 'node:path'
 import { withAuth } from '@/lib/withAuth'
+import { isUserAdmin } from '@/lib/admin-auth'
 
 
 /**
@@ -43,23 +44,48 @@ export const GET = withAuth(async (request: NextRequest, user) => {
     const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
     const userId = user.id
     
-    // Basic security: ensure file belongs to the user
-    const userDir = join(uploadPath, userId)
+    // Check if user is admin - they can access any user's files
+    const isAdmin = await isUserAdmin(userId)
     
     // Try different extensions
     const extensions = ['.jpg', '.jpeg', '.png', '.webp']
     let filePath: string | null = null
     let actualExtension = ''
     
-    for (const ext of extensions) {
-      const testPath = join(userDir, `${fileId}${ext}`)
-      try {
-        await fs.access(testPath)
-        filePath = testPath
-        actualExtension = ext
-        break
-      } catch {
-        // File doesn't exist with this extension, try next
+    if (isAdmin) {
+      // Admin can access files from any user directory
+      // Try to find the file in all user directories
+      const uploadDir = await fs.readdir(uploadPath, { withFileTypes: true })
+      const userDirs = uploadDir.filter(dirent => dirent.isDirectory()).map(dirent => dirent.name)
+      
+      for (const userDirName of userDirs) {
+        for (const ext of extensions) {
+          const testPath = join(uploadPath, userDirName, `${fileId}${ext}`)
+          try {
+            await fs.access(testPath)
+            filePath = testPath
+            actualExtension = ext
+            break
+          } catch {
+            // File doesn't exist with this extension/user, try next
+          }
+        }
+        if (filePath) break
+      }
+    } else {
+      // Regular users can only access their own files
+      const userDir = join(uploadPath, userId)
+      
+      for (const ext of extensions) {
+        const testPath = join(userDir, `${fileId}${ext}`)
+        try {
+          await fs.access(testPath)
+          filePath = testPath
+          actualExtension = ext
+          break
+        } catch {
+          // File doesn't exist with this extension, try next
+        }
       }
     }
 
@@ -154,12 +180,15 @@ export const PATCH = withAuth(async (request: NextRequest, user) => {
     const { sourceImages, generations } = await import('@/db/schema')
     const { eq, and } = await import('drizzle-orm')
     
+    // Check if user is admin - they can rename any user's files
+    const isAdmin = await isUserAdmin(user.id)
+    
     // Find the file record by exact database ID match - check source images first
     const fileRecords = await db.select().from(sourceImages)
-      .where(and(
-        eq(sourceImages.userId, user.id),
-        eq(sourceImages.id, databaseId)
-      ))
+      .where(isAdmin ? 
+        eq(sourceImages.id, databaseId) : // Admin can access any file
+        and(eq(sourceImages.userId, user.id), eq(sourceImages.id, databaseId)) // Regular users only their files
+      )
       .limit(1)
     
     if (fileRecords.length === 0) {
@@ -170,10 +199,10 @@ export const PATCH = withAuth(async (request: NextRequest, user) => {
         originalFileName: sourceImages.originalFileName
       }).from(generations)
         .innerJoin(sourceImages, eq(generations.sourceImageId, sourceImages.id))
-        .where(and(
-          eq(sourceImages.userId, user.id),
-          eq(generations.id, databaseId)
-        ))
+        .where(isAdmin ?
+          eq(generations.id, databaseId) : // Admin can access any generation
+          and(eq(sourceImages.userId, user.id), eq(generations.id, databaseId)) // Regular users only their files
+        )
         .limit(1)
       
       if (genRecords.length === 0) {
@@ -245,12 +274,15 @@ export const DELETE = withAuth(async (request: NextRequest, user) => {
     const { sourceImages, generations } = await import('@/db/schema')
     const { eq, and } = await import('drizzle-orm')
     
+    // Check if user is admin - they can delete any user's files
+    const isAdmin = await isUserAdmin(user.id)
+    
     // Find the file record by exact database ID match - check source images first
     const fileRecords = await db.select().from(sourceImages)
-      .where(and(
-        eq(sourceImages.userId, user.id),
-        eq(sourceImages.id, databaseId)
-      ))
+      .where(isAdmin ?
+        eq(sourceImages.id, databaseId) : // Admin can access any file
+        and(eq(sourceImages.userId, user.id), eq(sourceImages.id, databaseId)) // Regular users only their files
+      )
       .limit(1)
     
     const isSourceImage = fileRecords.length > 0
@@ -268,10 +300,10 @@ export const DELETE = withAuth(async (request: NextRequest, user) => {
         sourceImageId: generations.sourceImageId
       }).from(generations)
         .innerJoin(sourceImages, eq(generations.sourceImageId, sourceImages.id))
-        .where(and(
-          eq(sourceImages.userId, user.id),
-          eq(generations.id, databaseId)
-        ))
+        .where(isAdmin ?
+          eq(generations.id, databaseId) : // Admin can access any generation
+          and(eq(sourceImages.userId, user.id), eq(generations.id, databaseId)) // Regular users only their files
+        )
         .limit(1)
       
       if (genRecords.length === 0) {
@@ -295,10 +327,10 @@ export const DELETE = withAuth(async (request: NextRequest, user) => {
     if (isSourceImage) {
       // Deleting a source image also deletes all its generations (cascade)
       await db.delete(sourceImages)
-        .where(and(
-          eq(sourceImages.userId, user.id),
-          eq(sourceImages.id, databaseId)
-        ))
+        .where(isAdmin ?
+          eq(sourceImages.id, databaseId) : // Admin can delete any file
+          and(eq(sourceImages.userId, user.id), eq(sourceImages.id, databaseId)) // Regular users only their files
+        )
     } else {
       // Deleting a specific generation
       await db.delete(generations)
@@ -309,8 +341,20 @@ export const DELETE = withAuth(async (request: NextRequest, user) => {
     const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
     const pathParts = foundRecord.originalImagePath.split('/')
     const physicalFilename = pathParts[pathParts.length - 1] // Get actual filename
-    const userDir = join(uploadPath, user.id)
-    const filePath = join(userDir, physicalFilename)
+    
+    // Check if user is admin for deletion access (reuse the existing isAdmin variable)
+    let filePath: string
+    
+    if (isAdmin) {
+      // Admin can delete files from any user directory
+      // Extract user directory from originalImagePath
+      const userDirectoryFromPath = pathParts.length > 1 ? pathParts[pathParts.length - 2] : user.id
+      filePath = join(uploadPath, userDirectoryFromPath, physicalFilename)
+    } else {
+      // Regular users can only delete their own files
+      const userDir = join(uploadPath, user.id)
+      filePath = join(userDir, physicalFilename)
+    }
     
     try {
       await fs.access(filePath)

@@ -149,7 +149,7 @@ export function UploadModal({ isOpen, onClose, projectId, onUploadSuccess }: Upl
           prev.map(upload => {
             const isCurrentUpload = newUploads.some(nu => nu.id === upload.id)
             return isCurrentUpload 
-              ? { ...upload, status: 'error', progress: 0, error: result.message }
+              ? { ...upload, status: 'failed', progress: 0, error: result.message }
               : upload
           })
         )
@@ -187,7 +187,7 @@ export function UploadModal({ isOpen, onClose, projectId, onUploadSuccess }: Upl
         prev.map(upload => {
           const isCurrentUpload = newUploads.some(nu => nu.id === upload.id)
           return isCurrentUpload 
-            ? { ...upload, status: 'error', progress: 0, error: 'Network error' }
+            ? { ...upload, status: 'failed', progress: 0, error: 'Network error' }
             : upload
         })
       )

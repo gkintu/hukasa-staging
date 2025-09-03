@@ -127,7 +127,7 @@ export function BulkOperationsToolbar({
             if (item.id === itemToUpdate.id) {
               return {
                 ...item,
-                status: Math.random() > 0.1 ? 'completed' as const : 'error' as const,
+                status: Math.random() > 0.1 ? 'completed' as const : 'failed' as const,
                 progress: 100,
                 error: Math.random() > 0.1 ? undefined : 'Operation failed'
               }
@@ -136,7 +136,7 @@ export function BulkOperationsToolbar({
           })
 
           const completed = newItems.filter(item => item.status === 'completed').length
-          const failed = newItems.filter(item => item.status === 'error').length
+          const failed = newItems.filter(item => item.status === 'failed').length
           const isComplete = completed + failed === newItems.length
 
           return {
