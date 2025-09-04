@@ -29,9 +29,9 @@ export function getVariantStatusBadge(variants: GeneratedVariant[]) {
     return <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">Ready to Stage</Badge>
   }
   if (completedCount > 0) {
-    return <Badge variant="default" className="bg-green-500 hover:bg-green-600">Completed</Badge>
+    return <Badge variant="default" className="bg-green-500 hover:bg-green-600">{completedCount} variant{completedCount !== 1 ? 's' : ''}</Badge>
   }
-  return <Badge variant="outline">No variants</Badge>
+  return <Badge variant="secondary" className="bg-muted text-foreground border-border">No variants</Badge>
 }
 
 // Upload status badge

@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { getGenericStatusBadge } from "@/lib/shared/utils/status-badge"
+import { Badge } from "@/components/ui/badge"
 
 // Type for our image data - matching the API response structure
 interface ImageRow {
@@ -77,6 +77,25 @@ const formatDate = (date: Date | string) => {
     month: 'short', 
     day: 'numeric'
   })
+}
+
+// Admin variant status badge function
+const getAdminVariantBadge = (row: ImageRow) => {
+  const { completedVariants, failedVariants, overallStatus } = row
+  
+  if (failedVariants > 0) {
+    return <Badge variant="destructive">Failed</Badge>
+  }
+  if (overallStatus === 'processing') {
+    return <Badge variant="secondary">Processing</Badge>
+  }
+  if (overallStatus === 'pending') {
+    return <Badge variant="secondary" className="bg-blue-100 text-blue-800 border-blue-200">Ready to Stage</Badge>
+  }
+  if (completedVariants > 0) {
+    return <Badge variant="default" className="bg-green-500 hover:bg-green-600">{completedVariants} variant{completedVariants !== 1 ? 's' : ''}</Badge>
+  }
+  return <Badge variant="secondary" className="bg-muted text-foreground border-border">No variants</Badge>
 }
 
 export function AdminImagesTable({
@@ -203,7 +222,7 @@ export function AdminImagesTable({
           )}
         </Button>
       ),
-      cell: ({ row }) => getGenericStatusBadge(row.original.overallStatus),
+      cell: ({ row }) => getAdminVariantBadge(row.original),
       enableColumnFilter: true,
       filterFn: "equals",
     },

@@ -21,3 +21,20 @@ export const mockGeneratedImages: MockGeneratedImage[] = [
   { id: 'gen2', url: '/mock-generations/mock-image-2.png' },
   { id: 'gen3', url: '/mock-generations/mock-image-3.png' },
 ];
+
+// Utility functions to convert between UI display values and database enum values
+export const convertRoomTypeToEnum = (displayValue: string): string => {
+  return displayValue.toLowerCase().replace(' ', '_');
+};
+
+export const convertRoomTypeFromEnum = (enumValue: string): string => {
+  return enumValue.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+};
+
+export const convertStyleToEnum = (displayValue: string): string => {
+  return displayValue.toLowerCase();
+};
+
+export const convertStyleFromEnum = (enumValue: string): string => {
+  return enumValue.charAt(0).toUpperCase() + enumValue.slice(1);
+};

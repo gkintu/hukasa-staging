@@ -1,8 +1,9 @@
 "use client"
 
-import { useState } from "react"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
-import { SourceImage, MockGeneratedImage, mockGeneratedImages } from "./types"
+import { useState, useEffect } from "react"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
+import { SourceImage, MockGeneratedImage, mockGeneratedImages, convertRoomTypeFromEnum, convertStyleFromEnum } from "./types"
 import { GenerationForm } from "./generation-form"
 import { GeneratingView } from "./generating-view"
 import { GenerationResultsView } from "./generation-results-view"
@@ -16,20 +17,101 @@ interface ImageDetailModalProps {
 export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailModalProps) {
   const [generationState, setGenerationState] = useState<'form' | 'generating' | 'results'>('form');
   const [generatedImages, setGeneratedImages] = useState<MockGeneratedImage[]>([]);
+  const [isLoadingExisting, setIsLoadingExisting] = useState(false);
   
   const [selectedRoomType, setSelectedRoomType] = useState<string>("")
   const [selectedStyle, setSelectedStyle] = useState<string>("")
 
+  // Fetch existing generations when modal opens
+  useEffect(() => {
+    if (isOpen && sourceImage) {
+      fetchExistingGenerations();
+    }
+  }, [isOpen, sourceImage]);
+
+  const fetchExistingGenerations = async () => {
+    if (!sourceImage) return;
+    
+    setIsLoadingExisting(true);
+    try {
+      const response = await fetch(`/api/images/${sourceImage.id}/generations`);
+      const data = await response.json();
+      
+      if (data.success && data.data.generations.length > 0) {
+        // Convert database generations to MockGeneratedImage format
+        const convertedImages = data.data.generations.map((gen: any) => ({
+          id: gen.id,
+          url: gen.stagedImagePath
+        }));
+        setGeneratedImages(convertedImages);
+        setGenerationState('results');
+        
+        // Set the room type and style from the most recent generation
+        const mostRecent = data.data.generations[0];
+        setSelectedRoomType(convertRoomTypeFromEnum(mostRecent.roomType));
+        setSelectedStyle(convertStyleFromEnum(mostRecent.stagingStyle));
+      } else {
+        // No existing generations, show form
+        setGenerationState('form');
+        setGeneratedImages([]);
+      }
+    } catch (error) {
+      console.error('Error fetching existing generations:', error);
+      setGenerationState('form');
+    } finally {
+      setIsLoadingExisting(false);
+    }
+  };
+
   if (!sourceImage) return null
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
     // Use NEXT_PUBLIC_MOCK_API env var to toggle mock flow
     if (process.env.NEXT_PUBLIC_MOCK_API === 'true') {
       setGenerationState('generating');
-      setTimeout(() => {
-        setGeneratedImages(mockGeneratedImages);
-        setGenerationState('results');
-      }, 2000);
+      
+      try {
+        // Save mock generations to database
+        const response = await fetch(`/api/images/${sourceImage.id}/generations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            roomType: selectedRoomType,
+            stagingStyle: selectedStyle,
+            mockGenerations: mockGeneratedImages
+          })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          // Convert saved generations back to MockGeneratedImage format
+          const newGenerations = data.data.generations.map((gen: any) => ({
+            id: gen.id,
+            url: gen.stagedImagePath
+          }));
+          
+          // Add new generations to existing ones (additive)
+          setGeneratedImages(prev => [...prev, ...newGenerations]);
+          setGenerationState('results');
+        } else {
+          console.error('Failed to save generations:', data.message);
+          // Fallback to old mock behavior
+          setTimeout(() => {
+            setGeneratedImages(prev => [...prev, ...mockGeneratedImages]);
+            setGenerationState('results');
+          }, 2000);
+        }
+      } catch (error) {
+        console.error('Error saving generations:', error);
+        // Fallback to old mock behavior
+        setTimeout(() => {
+          setGeneratedImages(prev => [...prev, ...mockGeneratedImages]);
+          setGenerationState('results');
+        }, 2000);
+      }
     } else {
       // Placeholder for real API call
       console.log("Generating staging variants:", {
@@ -43,7 +125,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
 
   const handleRegenerate = () => {
     setGenerationState('form');
-    setGeneratedImages([]);
+    // Don't clear existing images - we want additive behavior
   }
   
   const handleClose = () => {
@@ -57,6 +139,13 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-4xl max-h-[95vh] overflow-hidden bg-background border-border p-0">
+        <VisuallyHidden>
+          <DialogTitle>
+            {generationState === 'form' ? 'Generate Staging Variants' : 
+             generationState === 'generating' ? 'Generating Variants' : 
+             'Generation Results'}
+          </DialogTitle>
+        </VisuallyHidden>
         {generationState === 'form' && (
           <GenerationForm 
             sourceImage={sourceImage}

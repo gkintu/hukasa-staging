@@ -13,11 +13,15 @@ export const roomTypeEnum = pgEnum('room_type', [
 
 export const stagingStyleEnum = pgEnum('staging_style', [
   'modern',
+  'midcentury',
+  'scandinavian', 
   'luxury',
-  'traditional',
-  'scandinavian',
+  'coastal',
+  'farmhouse',
   'industrial',
-  'bohemian'
+  'bohemian',
+  'minimalist',
+  'traditional'
 ])
 
 export const operationTypeEnum = pgEnum('operation_type', [
