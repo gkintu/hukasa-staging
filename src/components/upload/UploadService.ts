@@ -21,7 +21,15 @@ export interface UploadResult {
 
 export class UploadService {
   private static readonly MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-  private static readonly ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+  private static readonly ALLOWED_TYPES = [
+    'image/jpeg', 
+    'image/jpg', 
+    'image/png', 
+    'image/webp',
+    'image/heic',
+    'image/tiff', 
+    'image/bmp'
+  ]
   private static readonly MAX_FILES = 5
 
   static validateFiles(files: File[]): {

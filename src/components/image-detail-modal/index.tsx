@@ -47,7 +47,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
         // Convert database generations to MockGeneratedImage format
         const convertedImages = data.data.generations.map((gen: any) => ({
           id: gen.id,
-          url: gen.stagedImagePath
+          url: `/api/files/${gen.stagedImagePath.split('/').pop()?.split('.')[0]}`
         }));
         setGeneratedImages(convertedImages);
         setGenerationState('results');
@@ -104,7 +104,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
           // Convert saved generations back to MockGeneratedImage format
           const newGenerations = data.data.generations.map((gen: any) => ({
             id: gen.id,
-            url: gen.stagedImagePath
+            url: `/api/files/${gen.stagedImagePath.split('/').pop()?.split('.')[0]}`
           }));
           
           // Add new generations to existing ones (additive)
@@ -143,12 +143,40 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
     // Generate more variants directly without switching to form view
     handleGenerate(variantCount);
   }
+
+  const handleDeleteVariant = async (variantId: string) => {
+    try {
+      const response = await fetch(`/api/images/variants/${variantId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        // Remove the deleted variant from state
+        setGeneratedImages(prev => prev.filter(img => img.id !== variantId));
+        
+        // Invalidate cache to update badge status
+        invalidateImageQueries.invalidateAll();
+        invalidateProjectQueries.invalidateAll();
+      } else {
+        console.error('Failed to delete variant:', data.message);
+        alert(`Delete failed: ${data.message}`);
+      }
+    } catch (error) {
+      console.error('Error deleting variant:', error);
+      alert('Delete failed: Network error');
+    }
+  }
   
   const handleClose = () => {
     onClose();
     // Delay resetting state to avoid UI flicker during closing animation
     setTimeout(() => {
-        handleRegenerate();
+      setGenerationState('form');
+      setGeneratedImages([]);
+      setSelectedRoomType("");
+      setSelectedStyle("");
     }, 300);
   }
 
@@ -181,6 +209,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
             sourceImage={sourceImage}
             generatedImages={generatedImages}
             onRegenerate={handleRegenerate}
+            onDeleteVariant={handleDeleteVariant}
             roomType={selectedRoomType}
             furnitureStyle={selectedStyle}
             defaultVariantCount={lastVariantCount}
