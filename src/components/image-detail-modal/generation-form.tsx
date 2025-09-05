@@ -16,11 +16,23 @@ interface GenerationFormProps {
     setSelectedRoomType: (value: string) => void;
     selectedStyle: string;
     setSelectedStyle: (value: string) => void;
+    previousVariantCount?: number;
+    autoExpandAdvanced?: boolean;
 }
 
-export function GenerationForm({ sourceImage, onClose, onGenerate, selectedRoomType, setSelectedRoomType, selectedStyle, setSelectedStyle }: GenerationFormProps) {
-    const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
-    const [imageCount, setImageCount] = useState([3])
+export function GenerationForm({ 
+    sourceImage, 
+    onClose, 
+    onGenerate, 
+    selectedRoomType, 
+    setSelectedRoomType, 
+    selectedStyle, 
+    setSelectedStyle,
+    previousVariantCount = 3,
+    autoExpandAdvanced = false
+}: GenerationFormProps) {
+    const [isAdvancedOpen, setIsAdvancedOpen] = useState(autoExpandAdvanced)
+    const [imageCount, setImageCount] = useState([previousVariantCount])
     const isGenerateDisabled = !selectedRoomType || !selectedStyle
 
     return (

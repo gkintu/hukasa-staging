@@ -3,19 +3,29 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { Download, Edit, Lock, RotateCcw, ChevronLeft, ChevronRight } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Download, Edit, Lock, RotateCcw, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { SourceImage, MockGeneratedImage, roomTypes, interiorStyles } from "./types";
 
 interface GenerationResultsViewProps {
     sourceImage: SourceImage;
     generatedImages: MockGeneratedImage[];
-    onRegenerate: () => void;
+    onRegenerate: (variantCount: number) => void;
     roomType: string;
     furnitureStyle: string;
+    defaultVariantCount?: number;
 }
 
-export function GenerationResultsView({ sourceImage, generatedImages, onRegenerate, roomType, furnitureStyle }: GenerationResultsViewProps) {
+export function GenerationResultsView({ 
+  sourceImage, 
+  generatedImages, 
+  onRegenerate, 
+  roomType, 
+  furnitureStyle, 
+  defaultVariantCount = 3 
+}: GenerationResultsViewProps) {
   const [selectedThumbnail, setSelectedThumbnail] = useState(0)
+  const [imageCount, setImageCount] = useState([defaultVariantCount])
   
   const [currentRoomType, setCurrentRoomType] = useState(roomType)
   const [currentFurnitureStyle, setCurrentFurnitureStyle] = useState(furnitureStyle)
@@ -56,10 +66,30 @@ export function GenerationResultsView({ sourceImage, generatedImages, onRegenera
                     </SelectContent>
                   </Select>
                 </div>
-                <Button onClick={onRegenerate} className="w-full flex items-center justify-center gap-2">
-                  <RotateCcw className="h-4 w-4" />
-                  Create more
-                </Button>
+                
+                <div className="space-y-4 pt-4 border-t border-border/20">
+                  <div className="space-y-3">
+                    <Label className="text-sm font-medium text-foreground">Number of variants</Label>
+                    <Slider 
+                      value={imageCount} 
+                      onValueChange={setImageCount} 
+                      max={4} 
+                      min={1} 
+                      step={1} 
+                      className="w-full" 
+                    />
+                    <div className="text-center text-sm text-muted-foreground">
+                      {imageCount[0]} variant{imageCount[0] !== 1 ? "s" : ""} selected
+                    </div>
+                  </div>
+                  <Button 
+                    onClick={() => onRegenerate(imageCount[0])} 
+                    className="w-full flex items-center justify-center gap-2"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    Generate {imageCount[0]} more
+                  </Button>
+                </div>
                 
               </div>
             </div>

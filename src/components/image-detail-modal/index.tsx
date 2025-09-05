@@ -22,6 +22,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
   
   const [selectedRoomType, setSelectedRoomType] = useState<string>("")
   const [selectedStyle, setSelectedStyle] = useState<string>("")
+  const [lastVariantCount, setLastVariantCount] = useState<number>(3)
   
   // TanStack Query invalidation hooks
   const invalidateImageQueries = useInvalidateImageQueries()
@@ -71,6 +72,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
   if (!sourceImage) return null
 
   const handleGenerate = async (imageCount: number = 3) => {
+    setLastVariantCount(imageCount); // Remember the count for next time
     // Validate that both room type and style are selected
     if (!selectedRoomType || !selectedStyle) {
       console.error('Generation cancelled: Room type and furniture style must be selected');
@@ -137,9 +139,9 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
     }
   }
 
-  const handleRegenerate = () => {
-    setGenerationState('form');
-    // Don't clear existing images - we want additive behavior
+  const handleRegenerate = (variantCount: number) => {
+    // Generate more variants directly without switching to form view
+    handleGenerate(variantCount);
   }
   
   const handleClose = () => {
@@ -169,6 +171,8 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
             setSelectedRoomType={setSelectedRoomType}
             selectedStyle={selectedStyle}
             setSelectedStyle={setSelectedStyle}
+            previousVariantCount={lastVariantCount}
+            autoExpandAdvanced={generatedImages.length > 0}
           />
         )}
         {generationState === 'generating' && <GeneratingView sourceImage={sourceImage} />}
@@ -179,6 +183,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
             onRegenerate={handleRegenerate}
             roomType={selectedRoomType}
             furnitureStyle={selectedStyle}
+            defaultVariantCount={lastVariantCount}
           />
         )}
       </DialogContent>
