@@ -20,7 +20,10 @@ export enum FileStorageProvider {
 export enum SupportedFileType {
   JPEG = 'image/jpeg',
   PNG = 'image/png',
-  WEBP = 'image/webp'
+  WEBP = 'image/webp',
+  HEIC = 'image/heic',    // iPhone/modern mobile photos
+  TIFF = 'image/tiff',    // Professional photography
+  BMP = 'image/bmp'       // Legacy Windows format
 }
 
 // File metadata interface

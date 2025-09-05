@@ -3,6 +3,15 @@ import { validateApiSession } from '@/lib/auth-utils'
 import { db } from '@/db'
 import { generations, sourceImages } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
+import { getGenerationStorageService } from '@/lib/generation-storage'
+import { SupportedFileType } from '@/lib/file-service/types'
+
+// Helper function to simulate image buffer creation (replace with real AI generation)
+async function createMockImageBuffer(): Promise<Buffer> {
+  // Simple 1x1 PNG in base64 - replace this with actual AI generation service
+  const pngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
+  return Buffer.from(pngBase64, 'base64')
+}
 
 export async function GET(
   request: NextRequest,
@@ -110,25 +119,54 @@ export async function POST(
       ? maxVariationResult[0].maxVariation + 1 
       : 1
 
-    // Create new generations (additive)
-    const newGenerations = mockGenerations.map((mockGen: { url: string }, index: number) => ({
-      sourceImageId: imageId,
-      userId: sourceImage.userId,
-      projectId: sourceImage.projectId,
-      stagedImagePath: mockGen.url,
-      variationIndex: startingVariationIndex + index,
-      roomType: roomType.toLowerCase().replace(/\s+/g, '_'),
-      stagingStyle: stagingStyle.toLowerCase(),
-      operationType: 'stage_empty' as const,
-      status: 'completed' as const,
-      processingTimeMs: 2000,
-      completedAt: new Date()
-    }))
-
-    const insertedGenerations = await db
-      .insert(generations)
-      .values(newGenerations)
-      .returning()
+    // Get the generation storage service
+    const generationStorageService = await getGenerationStorageService()
+    
+    // Create new generations using the storage service
+    const insertedGenerations = []
+    
+    for (let index = 0; index < mockGenerations.length; index++) {
+      const variationIndex = startingVariationIndex + index
+      
+      // Create mock image data (replace with real AI generation)
+      const imageBuffer = await createMockImageBuffer()
+      
+      try {
+        // Store the generation using hierarchical storage
+        const storageResult = await generationStorageService.storeGeneration({
+          userId: sourceImage.userId,
+          sourceImageId: imageId,
+          projectId: sourceImage.projectId,
+          roomType: roomType.toLowerCase().replace(/\s+/g, '_'),
+          stagingStyle: stagingStyle.toLowerCase(),
+          operationType: 'stage_empty',
+          variationIndex: variationIndex,
+          imageBuffer: imageBuffer,
+          mimeType: SupportedFileType.PNG,
+          jobId: `mock-job-${Date.now()}-${index}`
+        })
+        
+        insertedGenerations.push({
+          id: storageResult.generationId,
+          sourceImageId: imageId,
+          userId: sourceImage.userId,
+          projectId: sourceImage.projectId,
+          stagedImagePath: storageResult.stagedImagePath,
+          variationIndex: storageResult.variationIndex,
+          roomType: roomType.toLowerCase().replace(/\s+/g, '_'),
+          stagingStyle: stagingStyle.toLowerCase(),
+          operationType: 'stage_empty',
+          status: 'completed',
+          processingTimeMs: 2000,
+          createdAt: new Date(),
+          completedAt: new Date()
+        })
+        
+      } catch (error) {
+        console.error(`Failed to store generation ${variationIndex}:`, error)
+        // Continue with other generations even if one fails
+      }
+    }
 
     return NextResponse.json({
       success: true,

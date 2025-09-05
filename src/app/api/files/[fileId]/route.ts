@@ -60,15 +60,61 @@ export const GET = withAuth(async (request: NextRequest, user) => {
       
       for (const userDirName of userDirs) {
         for (const ext of extensions) {
-          const testPath = join(uploadPath, userDirName, `${fileId}${ext}`)
-          try {
-            await fs.access(testPath)
-            filePath = testPath
-            actualExtension = ext
-            break
-          } catch {
-            // File doesn't exist with this extension/user, try next
+          // Try hierarchical structure first (sources and generations)
+          const hierarchicalPaths = [
+            join(uploadPath, userDirName, 'sources', `${fileId}${ext}`),
+            join(uploadPath, userDirName, 'generations', '*', `*${fileId}*${ext}`)
+          ]
+          
+          for (const testPath of hierarchicalPaths) {
+            try {
+              if (testPath.includes('*')) {
+                // For generation paths, we need to search subdirectories
+                const generationsDir = join(uploadPath, userDirName, 'generations')
+                try {
+                  const sourceImageDirs = await fs.readdir(generationsDir, { withFileTypes: true })
+                  for (const sourceDir of sourceImageDirs) {
+                    if (sourceDir.isDirectory()) {
+                      const genFiles = await fs.readdir(join(generationsDir, sourceDir.name))
+                      const matchingFile = genFiles.find(file => file.includes(fileId) && file.endsWith(ext))
+                      if (matchingFile) {
+                        const fullPath = join(generationsDir, sourceDir.name, matchingFile)
+                        await fs.access(fullPath)
+                        filePath = fullPath
+                        actualExtension = ext
+                        break
+                      }
+                    }
+                  }
+                } catch {
+                  // Generations directory doesn't exist or is empty
+                }
+              } else {
+                await fs.access(testPath)
+                filePath = testPath
+                actualExtension = ext
+                break
+              }
+            } catch {
+              // File doesn't exist with this path, try next
+            }
+            if (filePath) break
           }
+          
+          // Fall back to old flat structure
+          if (!filePath) {
+            const flatPath = join(uploadPath, userDirName, `${fileId}${ext}`)
+            try {
+              await fs.access(flatPath)
+              filePath = flatPath
+              actualExtension = ext
+              break
+            } catch {
+              // File doesn't exist with this extension/user, try next
+            }
+          }
+          
+          if (filePath) break
         }
         if (filePath) break
       }
@@ -77,15 +123,53 @@ export const GET = withAuth(async (request: NextRequest, user) => {
       const userDir = join(uploadPath, userId)
       
       for (const ext of extensions) {
-        const testPath = join(userDir, `${fileId}${ext}`)
+        // Try hierarchical structure first (sources and generations)
+        const hierarchicalPaths = [
+          join(userDir, 'sources', `${fileId}${ext}`),
+        ]
+        
+        // Also try to find in generations subdirectories
         try {
-          await fs.access(testPath)
-          filePath = testPath
-          actualExtension = ext
-          break
+          const generationsDir = join(userDir, 'generations')
+          const sourceImageDirs = await fs.readdir(generationsDir, { withFileTypes: true })
+          for (const sourceDir of sourceImageDirs) {
+            if (sourceDir.isDirectory()) {
+              const genFiles = await fs.readdir(join(generationsDir, sourceDir.name))
+              const matchingFile = genFiles.find(file => file.includes(fileId) && file.endsWith(ext))
+              if (matchingFile) {
+                hierarchicalPaths.push(join(generationsDir, sourceDir.name, matchingFile))
+              }
+            }
+          }
         } catch {
-          // File doesn't exist with this extension, try next
+          // Generations directory doesn't exist or is empty
         }
+        
+        for (const testPath of hierarchicalPaths) {
+          try {
+            await fs.access(testPath)
+            filePath = testPath
+            actualExtension = ext
+            break
+          } catch {
+            // File doesn't exist with this path, try next
+          }
+        }
+        
+        // Fall back to old flat structure
+        if (!filePath) {
+          const flatPath = join(userDir, `${fileId}${ext}`)
+          try {
+            await fs.access(flatPath)
+            filePath = flatPath
+            actualExtension = ext
+            break
+          } catch {
+            // File doesn't exist with this extension, try next
+          }
+        }
+        
+        if (filePath) break
       }
     }
 

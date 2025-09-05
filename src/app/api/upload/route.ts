@@ -1,14 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateApiSession } from '@/lib/auth-utils'
-import { quickStart } from '@/lib/file-service'
+import { FileServiceConfig, FileStorageProvider, SupportedFileType } from '@/lib/file-service/types'
+import { EnhancedLocalFileService } from '@/lib/file-service/enhanced-local-service'
 import { createUserId, FileServiceErrorCode, isUploadError, isValidationError, type FileServiceErrorType } from '@/lib/file-service'
+import { createSourceImageId } from '@/lib/file-service/storage-paths'
+import { nanoid } from 'nanoid'
 import { getOrCreateUnassignedProject } from '@/lib/unassigned-project'
 import { db } from '@/db'
 import { sourceImages, projects } from '@/db/schema'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
-const ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+const ALLOWED_TYPES = [
+  'image/jpeg', 
+  'image/jpg', 
+  'image/png', 
+  'image/webp',
+  'image/heic',
+  'image/tiff', 
+  'image/bmp'
+]
 const MAX_FILES = 5
+
+// Create enhanced file service instance
+function createEnhancedFileService(): EnhancedLocalFileService {
+  const config: FileServiceConfig = {
+    provider: FileStorageProvider.LOCAL,
+    maxFileSize: MAX_FILE_SIZE,
+    allowedTypes: [
+      SupportedFileType.JPEG,
+      SupportedFileType.PNG,
+      SupportedFileType.WEBP,
+      SupportedFileType.HEIC,
+      SupportedFileType.TIFF,
+      SupportedFileType.BMP
+    ],
+    storageConfig: {
+      type: 'local',
+      uploadPath: './uploads',
+      publicPath: '/uploads',
+      createDirectories: true
+    },
+    imageProcessing: {
+      quality: { jpeg: 85, webp: 80, png: 6 },
+      maxDimensions: { width: 4096, height: 4096 },
+      enableOptimization: true,
+      preserveMetadata: false
+    }
+  }
+  return new EnhancedLocalFileService(config)
+}
 
 interface UploadResponse {
   success: boolean
@@ -135,8 +175,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
       projectId = await getOrCreateUnassignedProject(session.user.id)
     }
 
-    // Process valid files
-    const fileService = quickStart()
+    // Process valid files using enhanced service
+    const fileService = createEnhancedFileService()
+    await fileService.initialize()
+    
     const userId = createUserId(session.user.id)
     const uploadResults: Array<{
       id: string
@@ -157,12 +199,20 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
       }
 
       try {
-        // The FileService handles buffer conversion and processing internally.
-        const uploadResult = await fileService.uploadFile(file, userId)
+        // Generate a unique source image ID for hierarchical storage
+        const sourceImageId = createSourceImageId(nanoid())
+        
+        // Use enhanced file service for hierarchical storage
+        const uploadResult = await fileService.uploadSourceImage(
+          file, 
+          userId, 
+          sourceImageId,
+          { originalName: file.name }
+        )
 
         if (uploadResult.success) {
           uploadResults.push({
-            id: uploadResult.metadata.id,
+            id: sourceImageId, // Use source image ID as the primary ID
             fileName: uploadResult.metadata.originalName, // Use original name for display
             originalFileName: file.name,
             fileSize: uploadResult.metadata.size,
@@ -171,8 +221,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
             uploadedAt: uploadResult.metadata.uploadedAt.toISOString()
           })
 
-          // Insert into source_images table
+          // Insert into source_images table with the predefined source image ID
           await db.insert(sourceImages).values({
+            id: sourceImageId, // Use the same ID we generated
             userId: session.user.id,
             projectId: projectId,
             originalImagePath: uploadResult.relativePath,

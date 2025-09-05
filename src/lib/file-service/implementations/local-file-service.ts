@@ -242,6 +242,26 @@ class ImageProcessor {
             quality: this.config.imageProcessing.quality.webp
           })
           break
+
+        case SupportedFileType.HEIC:
+          // Convert HEIC to JPEG for compatibility
+          processedInstance = sharpInstance.jpeg({
+            quality: this.config.imageProcessing.quality.jpeg,
+            mozjpeg: true
+          })
+          break
+
+        case SupportedFileType.TIFF:
+          // Keep as TIFF for professional use cases
+          processedInstance = sharpInstance.tiff({ compression: 'lzw' })
+          break
+
+        case SupportedFileType.BMP:
+          // Convert BMP to PNG for web compatibility
+          processedInstance = sharpInstance.png({
+            compressionLevel: this.config.imageProcessing.quality.png
+          })
+          break
       }
 
       // Apply metadata preservation if enabled
@@ -521,6 +541,12 @@ export class LocalFileService extends BaseFileService {
         return '.png'
       case SupportedFileType.WEBP:
         return '.webp'
+      case SupportedFileType.HEIC:
+        return '.heic'
+      case SupportedFileType.TIFF:
+        return '.tiff'
+      case SupportedFileType.BMP:
+        return '.bmp'
       default:
         throw new Error(`Unsupported MIME type: ${mimeType}`)
     }
