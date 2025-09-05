@@ -369,7 +369,7 @@ export function UploadModal({ isOpen, onClose, projectId, onUploadSuccess }: Upl
             </h4>
             <ul className="text-sm text-muted-foreground space-y-1">
               <li>• Use high-resolution images (minimum 1200x800px) for best results</li>
-              <li>• Supported formats: JPG, PNG, WEBP</li>
+              <li>• Supported formats: JPG, PNG, WEBP, HEIC, TIFF, BMP</li>
               <li>• Maximum file size: 10MB per image</li>
               <li>• Upload up to 5 images at once</li>
               <li>• Empty or minimally furnished rooms work best</li>

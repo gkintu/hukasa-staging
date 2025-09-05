@@ -80,9 +80,23 @@ export async function POST(
     const { roomType, stagingStyle, mockGenerations } = body
 
     // Validate required fields
-    if (!roomType || !stagingStyle || !mockGenerations) {
+    if (!roomType) {
       return NextResponse.json(
-        { success: false, message: 'Missing required fields' },
+        { success: false, message: 'Room type is required' },
+        { status: 400 }
+      )
+    }
+    
+    if (!stagingStyle) {
+      return NextResponse.json(
+        { success: false, message: 'Furniture style is required' },
+        { status: 400 }
+      )
+    }
+    
+    if (!mockGenerations) {
+      return NextResponse.json(
+        { success: false, message: 'Generation data is required' },
         { status: 400 }
       )
     }

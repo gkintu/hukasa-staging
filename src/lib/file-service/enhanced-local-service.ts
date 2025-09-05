@@ -143,6 +143,9 @@ class EnhancedStorageManager {
           console.warn(`Failed to delete generations directory: ${error instanceof Error ? error.message : 'Unknown error'}`)
         }
       }
+
+      // Clean up empty parent directories
+      await this.cleanupEmptyDirectories(userId, sourceImageId)
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         throw FileServiceErrorFactory.createAccessError(
@@ -235,6 +238,9 @@ class EnhancedStorageManager {
 
     try {
       await fs.unlink(filePath)
+
+      // Clean up empty directories after generation deletion
+      await this.cleanupEmptyDirectories(userId, sourceImageId)
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         throw FileServiceErrorFactory.createAccessError(
@@ -250,6 +256,63 @@ class EnhancedStorageManager {
   }
 
   // ===== UTILITY METHODS =====
+
+  /**
+   * Clean up empty directories after file deletion
+   * Removes empty user directories recursively: sources/, generations/, and user folder if completely empty
+   */
+  async cleanupEmptyDirectories(userId: UserId, sourceImageId: SourceImageId): Promise<void> {
+    try {
+      const userDir = join(this.config.uploadPath, userId)
+      const sourcesDir = this.pathManager.getSourcesDirectory(userId)
+      const userGenerationsDir = join(userDir, 'generations')
+
+      // Helper function to recursively remove empty directories
+      const removeEmptyDirRecursive = async (dirPath: string): Promise<boolean> => {
+        try {
+          const contents = await fs.readdir(dirPath)
+          
+          // Process each item in the directory
+          for (const item of contents) {
+            const itemPath = join(dirPath, item)
+            try {
+              const stat = await fs.stat(itemPath)
+              if (stat.isDirectory()) {
+                // Recursively try to remove subdirectory
+                await removeEmptyDirRecursive(itemPath)
+              }
+            } catch (error) {
+              // Skip items that can't be accessed
+            }
+          }
+          
+          // After processing contents, check if directory is now empty
+          const newContents = await fs.readdir(dirPath)
+          if (newContents.length === 0) {
+            await fs.rmdir(dirPath)
+            return true // Successfully removed
+          }
+          return false // Directory not empty
+        } catch (error) {
+          // Directory doesn't exist or can't be accessed
+          return false
+        }
+      }
+
+      // Clean up sources directory
+      await removeEmptyDirRecursive(sourcesDir)
+
+      // Clean up generations directory
+      await removeEmptyDirRecursive(userGenerationsDir)
+
+      // Clean up user directory if now empty
+      await removeEmptyDirRecursive(userDir)
+      
+    } catch (error) {
+      // Log but don't fail the operation for cleanup issues
+      console.warn(`Failed to cleanup empty directories for user ${userId}:`, error)
+    }
+  }
 
   /**
    * Check if source image exists

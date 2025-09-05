@@ -126,9 +126,8 @@ export class GenerationStorageService {
         throw new Error('Failed to store generation file')
       }
 
-      // Create database record
+      // Create database record (let database generate the ID)
       const generationRecord = await db.insert(generations).values({
-        id: storageResult.generationId,
         sourceImageId: request.sourceImageId,
         userId: request.userId,
         projectId: request.projectId,
@@ -144,7 +143,7 @@ export class GenerationStorageService {
       }).returning()
 
       return {
-        generationId: storageResult.generationId,
+        generationId: generationRecord[0].id, // Use database-generated ID
         stagedImagePath: storageResult.relativePath,
         publicUrl: storageResult.publicUrl,
         variationIndex: storageResult.variationIndex

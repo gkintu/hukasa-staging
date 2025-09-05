@@ -7,6 +7,7 @@ import { SourceImage, MockGeneratedImage, mockGeneratedImages, convertRoomTypeFr
 import { GenerationForm } from "./generation-form"
 import { GeneratingView } from "./generating-view"
 import { GenerationResultsView } from "./generation-results-view"
+import { useInvalidateImageQueries, useInvalidateProjectQueries } from "@/lib/shared/hooks/use-images"
 
 interface ImageDetailModalProps {
   isOpen: boolean
@@ -21,6 +22,10 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
   
   const [selectedRoomType, setSelectedRoomType] = useState<string>("")
   const [selectedStyle, setSelectedStyle] = useState<string>("")
+  
+  // TanStack Query invalidation hooks
+  const invalidateImageQueries = useInvalidateImageQueries()
+  const invalidateProjectQueries = useInvalidateProjectQueries()
 
   // Fetch existing generations when modal opens
   useEffect(() => {
@@ -66,6 +71,13 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
   if (!sourceImage) return null
 
   const handleGenerate = async () => {
+    // Validate that both room type and style are selected
+    if (!selectedRoomType || !selectedStyle) {
+      console.error('Generation cancelled: Room type and furniture style must be selected');
+      // TODO: Show user-friendly error message (toast notification or alert)
+      return;
+    }
+
     // Use NEXT_PUBLIC_MOCK_API env var to toggle mock flow
     if (process.env.NEXT_PUBLIC_MOCK_API === 'true') {
       setGenerationState('generating');
@@ -96,13 +108,15 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
           // Add new generations to existing ones (additive)
           setGeneratedImages(prev => [...prev, ...newGenerations]);
           setGenerationState('results');
+          
+          // ✅ Invalidate TanStack Query cache to update badge status immediately
+          invalidateImageQueries.invalidateAll();
+          invalidateProjectQueries.invalidateAll();
         } else {
           console.error('Failed to save generations:', data.message);
-          // Fallback to old mock behavior
-          setTimeout(() => {
-            setGeneratedImages(prev => [...prev, ...mockGeneratedImages]);
-            setGenerationState('results');
-          }, 2000);
+          setGenerationState('form');
+          // TODO: Show user-friendly error message with data.message
+          alert(`Generation failed: ${data.message}`);
         }
       } catch (error) {
         console.error('Error saving generations:', error);

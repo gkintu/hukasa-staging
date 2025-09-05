@@ -199,7 +199,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
       }
 
       try {
-        // Generate a unique source image ID for hierarchical storage
+        // Generate a unique source image ID for hierarchical storage (used for filename only)
         const sourceImageId = createSourceImageId(nanoid())
         
         // Use enhanced file service for hierarchical storage
@@ -211,25 +211,24 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
         )
 
         if (uploadResult.success) {
-          uploadResults.push({
-            id: sourceImageId, // Use source image ID as the primary ID
-            fileName: uploadResult.metadata.originalName, // Use original name for display
-            originalFileName: file.name,
-            fileSize: uploadResult.metadata.size,
-            fileType: uploadResult.metadata.mimeType,
-            relativePath: uploadResult.relativePath,
-            uploadedAt: uploadResult.metadata.uploadedAt.toISOString()
-          })
-
-          // Insert into source_images table with the predefined source image ID
-          await db.insert(sourceImages).values({
-            id: sourceImageId, // Use the same ID we generated
+          // Insert into source_images table (let database generate the ID)
+          const insertedImage = await db.insert(sourceImages).values({
             userId: session.user.id,
             projectId: projectId,
             originalImagePath: uploadResult.relativePath,
             originalFileName: file.name, // Store the original user filename
             fileSize: file.size, // Store the file size
             isFavorited: false
+          }).returning()
+
+          uploadResults.push({
+            id: insertedImage[0].id, // Use database-generated UUID
+            fileName: uploadResult.metadata.originalName, // Use original name for display
+            originalFileName: file.name,
+            fileSize: uploadResult.metadata.size,
+            fileType: uploadResult.metadata.mimeType,
+            relativePath: uploadResult.relativePath,
+            uploadedAt: uploadResult.metadata.uploadedAt.toISOString()
           })
         } else {
           // Handle FileService errors
