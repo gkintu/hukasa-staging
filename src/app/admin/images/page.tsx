@@ -201,19 +201,11 @@ export default function AdminImagesPage() {
         onClose={() => setDeleteImageId(null)}
         onConfirm={(options) => {
           if (deleteImageId) {
-            // Type guard ensures we have AdvancedDelete for admin context
-            const adminOptions: AdvancedDelete = 'deleteVariants' in options 
-              ? options // Already AdvancedDelete from admin context
-              : { 
-                  // Transform SimpleDelete to AdvancedDelete with sensible defaults
-                  deleteVariants: true, 
-                  deleteSourceFile: true, // Super admin can delete files
-                  reason: options.reason 
-                }
-            
+            // Admin context always returns AdvancedDelete options from dialog
+            // Use the exact options returned by the dialog (respects user's checkbox selections)
             deleteMutation.mutate({ 
               id: deleteImageId, 
-              options: adminOptions 
+              options: options as AdvancedDelete 
             })
           }
         }}

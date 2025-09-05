@@ -214,6 +214,7 @@ export default function AdminProjectsPage() {
               ? options // Already AdvancedDelete from admin context
               : { 
                   // Transform SimpleDelete to AdvancedDelete with sensible defaults
+                  deleteSourceImage: false, // Default to NOT deleting source images
                   deleteVariants: true, 
                   deleteSourceFile: false, // Default to NOT deleting files
                   reason: options.reason 

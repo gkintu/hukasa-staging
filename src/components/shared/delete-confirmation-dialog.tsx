@@ -38,8 +38,9 @@ export function DeleteConfirmationDialog({
   isLoading = false,
 }: DeleteConfirmationDialogProps) {
   const [reason, setReason] = useState('')
-  const [deleteVariants, setDeleteVariants] = useState(true)
+  const [deleteSourceImage, setDeleteSourceImage] = useState(false)
   const [deleteSourceFile, setDeleteSourceFile] = useState(false)
+  const [deleteVariants, setDeleteVariants] = useState(true)
 
   const handleConfirm = () => {
     if (context === 'main') {
@@ -51,8 +52,9 @@ export function DeleteConfirmationDialog({
     } else {
       const options: AdvancedDelete = {
         reason: reason.trim() || undefined,
-        deleteVariants,
+        deleteSourceImage,
         deleteSourceFile,
+        deleteVariants,
       }
       onConfirm(options)
     }
@@ -61,8 +63,9 @@ export function DeleteConfirmationDialog({
   const handleClose = () => {
     if (!isLoading) {
       setReason('')
-      setDeleteVariants(true)
+      setDeleteSourceImage(false)
       setDeleteSourceFile(false)
+      setDeleteVariants(true)
       onClose()
     }
   }
@@ -107,27 +110,61 @@ export function DeleteConfirmationDialog({
             <div className="space-y-3 pt-2 border-t">
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="delete-variants"
-                  checked={deleteVariants}
-                  onCheckedChange={(checked) => setDeleteVariants(!!checked)}
+                  id="delete-source-image"
+                  checked={deleteSourceImage}
+                  onCheckedChange={(checked) => {
+                    const isChecked = !!checked
+                    setDeleteSourceImage(isChecked)
+                    // If deleting source image, automatically delete variants too (cascade)
+                    if (isChecked) {
+                      setDeleteVariants(true)
+                    }
+                  }}
                   disabled={isLoading}
                 />
-                <Label htmlFor="delete-variants" className="text-sm">
-                  Delete all variants of this image
+                <Label htmlFor="delete-source-image" className="text-sm font-medium">
+                  Delete source image from database
+                </Label>
+              </div>
+              <div className="text-xs text-muted-foreground ml-6 -mt-1">
+                This will automatically delete all variants (database cascade)
+              </div>
+              
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="delete-source-file"
+                  checked={deleteSourceFile}
+                  onCheckedChange={(checked) => setDeleteSourceFile(!!checked)}
+                  disabled={isLoading}
+                />
+                <Label htmlFor="delete-source-file" className="text-sm">
+                  Delete source file from storage
                 </Label>
               </div>
               
               <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="delete-source"
-                  checked={deleteSourceFile}
-                  onCheckedChange={(checked) => setDeleteSourceFile(!!checked)}
-                  disabled={isLoading}
+                  id="delete-variants"
+                  checked={deleteVariants}
+                  onCheckedChange={(checked) => {
+                    const isChecked = !!checked
+                    setDeleteVariants(isChecked)
+                    // Can't uncheck variants if source image is being deleted (cascade)
+                    if (!isChecked && deleteSourceImage) {
+                      setDeleteVariants(true)
+                    }
+                  }}
+                  disabled={isLoading || deleteSourceImage}
                 />
-                <Label htmlFor="delete-source" className="text-sm">
-                  Delete source file from storage
+                <Label htmlFor="delete-variants" className={`text-sm ${deleteSourceImage ? 'text-muted-foreground' : ''}`}>
+                  Delete variant images and files
                 </Label>
               </div>
+              {deleteSourceImage && (
+                <div className="text-xs text-muted-foreground ml-6 -mt-1">
+                  Automatically included when deleting source image
+                </div>
+              )}
             </div>
           </div>
         )}

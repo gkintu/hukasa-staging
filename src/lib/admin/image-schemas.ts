@@ -143,8 +143,9 @@ export const BulkOperationResponseSchema = z.object({
 // Image delete schema
 export const ImageDeleteSchema = z.object({
   reason: z.string().min(1).max(500).optional(),
-  deleteVariants: z.boolean().default(true),
-  deleteSourceFile: z.boolean().default(false),
+  deleteSourceImage: z.boolean().default(false), // Delete source image from database (cascades to variants)
+  deleteSourceFile: z.boolean().default(false),  // Delete source file from storage
+  deleteVariants: z.boolean().default(true),     // Delete only variants (keep source image)
 });
 
 export const ImageDeleteResponseSchema = z.object({

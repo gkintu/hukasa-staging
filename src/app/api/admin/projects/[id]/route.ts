@@ -38,6 +38,7 @@ export async function DELETE(
 
     // Parse delete options from request body
     let deleteOptions: AdvancedDelete = {
+      deleteSourceImage: false,
       deleteVariants: true,
       deleteSourceFile: false
     };
@@ -45,6 +46,7 @@ export async function DELETE(
     try {
       const body = await request.json();
       deleteOptions = {
+        deleteSourceImage: body.deleteSourceImage ?? false,
         deleteVariants: body.deleteVariants ?? true,
         deleteSourceFile: body.deleteSourceFile ?? false,
         reason: body.reason

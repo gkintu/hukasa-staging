@@ -14,8 +14,9 @@ export const SimpleDeleteSchema = z.object({
 // Advanced delete operation for admin contexts
 export const AdvancedDeleteSchema = z.object({
   reason: z.string().min(1).max(500).optional(),
-  deleteVariants: z.boolean().default(true),
-  deleteSourceFile: z.boolean().default(false),
+  deleteSourceImage: z.boolean().default(false), // Delete source image from database (cascades to variants)
+  deleteSourceFile: z.boolean().default(false),  // Delete source file from storage
+  deleteVariants: z.boolean().default(true),     // Delete only variants (keep source image)
 });
 
 // Unified delete options that can handle both contexts
