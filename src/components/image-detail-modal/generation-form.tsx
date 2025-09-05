@@ -11,7 +11,7 @@ import { SourceImage, roomTypes, interiorStyles } from "./types";
 interface GenerationFormProps {
     sourceImage: SourceImage;
     onClose: () => void;
-    onGenerate: () => void;
+    onGenerate: (imageCount: number) => void;
     selectedRoomType: string;
     setSelectedRoomType: (value: string) => void;
     selectedStyle: string;
@@ -106,7 +106,7 @@ export function GenerationForm({ sourceImage, onClose, onGenerate, selectedRoomT
                             <Button variant="outline" onClick={onClose} className="px-6 hover:bg-muted/70 hover:text-foreground cursor-pointer">
                                 Cancel
                             </Button>
-                            <Button onClick={onGenerate} disabled={isGenerateDisabled} className="px-6 cursor-pointer">
+                            <Button onClick={() => onGenerate(imageCount[0])} disabled={isGenerateDisabled} className="px-6 cursor-pointer">
                                 <Sparkles className="w-4 h-4 mr-2" />
                                 Generate
                             </Button>

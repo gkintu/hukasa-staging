@@ -70,7 +70,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
 
   if (!sourceImage) return null
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (imageCount: number = 3) => {
     // Validate that both room type and style are selected
     if (!selectedRoomType || !selectedStyle) {
       console.error('Generation cancelled: Room type and furniture style must be selected');
@@ -92,7 +92,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
           body: JSON.stringify({
             roomType: selectedRoomType,
             stagingStyle: selectedStyle,
-            mockGenerations: mockGeneratedImages
+            mockGenerations: mockGeneratedImages.slice(0, imageCount)
           })
         });
 
@@ -122,7 +122,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
         console.error('Error saving generations:', error);
         // Fallback to old mock behavior
         setTimeout(() => {
-          setGeneratedImages(prev => [...prev, ...mockGeneratedImages]);
+          setGeneratedImages(prev => [...prev, ...mockGeneratedImages.slice(0, imageCount)]);
           setGenerationState('results');
         }, 2000);
       }
