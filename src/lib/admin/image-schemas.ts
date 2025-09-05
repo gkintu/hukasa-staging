@@ -140,12 +140,12 @@ export const BulkOperationResponseSchema = z.object({
   }),
 });
 
-// Image delete schema
+// Image delete schema - 3-tier logical system
 export const ImageDeleteSchema = z.object({
   reason: z.string().min(1).max(500).optional(),
-  deleteSourceImage: z.boolean().default(false), // Delete source image from database (cascades to variants)
-  deleteSourceFile: z.boolean().default(false),  // Delete source file from storage
-  deleteVariants: z.boolean().default(true),     // Delete only variants (keep source image)
+  deleteVariants: z.boolean().default(false),     // Tier 1: Delete only variants (keep source)
+  deleteSourceImage: z.boolean().default(false), // Tier 2: Delete source image from DB (cascades variants)
+  deleteSourceFile: z.boolean().default(false),  // Tier 3: Delete source file (godmode - everything)
 });
 
 export const ImageDeleteResponseSchema = z.object({

@@ -38,16 +38,16 @@ export async function DELETE(
 
     // Parse delete options from request body
     let deleteOptions: AdvancedDelete = {
+      deleteVariants: false,
       deleteSourceImage: false,
-      deleteVariants: true,
       deleteSourceFile: false
     };
 
     try {
       const body = await request.json();
       deleteOptions = {
+        deleteVariants: body.deleteVariants ?? false,
         deleteSourceImage: body.deleteSourceImage ?? false,
-        deleteVariants: body.deleteVariants ?? true,
         deleteSourceFile: body.deleteSourceFile ?? false,
         reason: body.reason
       };

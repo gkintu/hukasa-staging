@@ -139,9 +139,9 @@ export async function DELETE(
 
     // Parse request body
     let deleteOptions: ImageDelete = { 
-      deleteSourceImage: false, 
-      deleteSourceFile: false, 
-      deleteVariants: true 
+      deleteVariants: false, 
+      deleteSourceImage: false,
+      deleteSourceFile: false 
     };
     
     try {
@@ -177,14 +177,22 @@ export async function DELETE(
     let deletedVariants = 0;
     let deletedSourceImage = false;
 
-    // Handle the three delete options with proper logic
-    if (deleteOptions.deleteSourceImage) {
-      // Delete source image from database (cascade will automatically delete variants)
-      await db.delete(sourceImages).where(eq(sourceImages.id, imageId));
-      deletedSourceImage = true;
-      deletedVariants = image.variants.length; // All variants deleted by cascade
+    // 3-Tier logical cascade system
+    
+    if (deleteOptions.deleteSourceFile) {
+      // Tier 3: Delete source file (godmode - everything goes)
+      
+      // 1. Delete source file from storage
+      try {
+        const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
+        const sourceFilePath = path.join(process.cwd(), uploadPath, image.originalImagePath);
+        await fs.unlink(sourceFilePath);
+        deletedFiles.push(image.originalImagePath);
+      } catch (error) {
+        console.warn(`Failed to delete source file: ${image.originalImagePath}`, error);
+      }
 
-      // Delete variant files from storage
+      // 2. Delete variant files from storage
       for (const variant of image.variants) {
         if (variant.stagedImagePath) {
           try {
@@ -198,55 +206,56 @@ export async function DELETE(
         }
       }
 
-      // Delete source file if requested
-      if (deleteOptions.deleteSourceFile) {
-        try {
-          const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
-          const sourceFilePath = path.join(process.cwd(), uploadPath, image.originalImagePath);
-          await fs.unlink(sourceFilePath);
-          deletedFiles.push(image.originalImagePath);
-        } catch (error) {
-          console.warn(`Failed to delete source file: ${image.originalImagePath}`, error);
-        }
-      }
+      // 3. Delete source image from database (cascade deletes variants)
+      await db.delete(sourceImages).where(eq(sourceImages.id, imageId));
+      deletedSourceImage = true;
+      deletedVariants = image.variants.length; // All variants deleted by cascade
 
       // Clean up empty directories
       await cleanupEmptyDirectories(image.user.id);
 
-    } else {
-      // Only delete variants (keep source image)
-      if (deleteOptions.deleteVariants) {
-        const deletedResult = await db
-          .delete(generations)
-          .where(eq(generations.sourceImageId, imageId))
-          .returning({ stagedImagePath: generations.stagedImagePath });
-        
-        deletedVariants = deletedResult.length;
-
-        // Delete variant files from storage
-        for (const variant of deletedResult) {
-          if (variant.stagedImagePath) {
-            try {
-              const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
-              const filePath = path.join(process.cwd(), uploadPath, variant.stagedImagePath);
-              await fs.unlink(filePath);
-              deletedFiles.push(variant.stagedImagePath);
-            } catch (error) {
-              console.warn(`Failed to delete variant file: ${variant.stagedImagePath}`, error);
-            }
+    } else if (deleteOptions.deleteSourceImage) {
+      // Tier 2: Delete source image from database (cascades variants, keep file)
+      
+      // 1. Delete variant files from storage
+      for (const variant of image.variants) {
+        if (variant.stagedImagePath) {
+          try {
+            const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
+            const filePath = path.join(process.cwd(), uploadPath, variant.stagedImagePath);
+            await fs.unlink(filePath);
+            deletedFiles.push(variant.stagedImagePath);
+          } catch (error) {
+            console.warn(`Failed to delete variant file: ${variant.stagedImagePath}`, error);
           }
         }
       }
 
-      // Delete source file if requested (keep source image record)
-      if (deleteOptions.deleteSourceFile) {
-        try {
-          const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
-          const sourceFilePath = path.join(process.cwd(), uploadPath, image.originalImagePath);
-          await fs.unlink(sourceFilePath);
-          deletedFiles.push(image.originalImagePath);
-        } catch (error) {
-          console.warn(`Failed to delete source file: ${image.originalImagePath}`, error);
+      // 2. Delete source image from database (cascade deletes variants)
+      await db.delete(sourceImages).where(eq(sourceImages.id, imageId));
+      deletedSourceImage = true;
+      deletedVariants = image.variants.length; // All variants deleted by cascade
+
+    } else if (deleteOptions.deleteVariants) {
+      // Tier 1: Delete variants only (keep source)
+      const deletedResult = await db
+        .delete(generations)
+        .where(eq(generations.sourceImageId, imageId))
+        .returning({ stagedImagePath: generations.stagedImagePath });
+      
+      deletedVariants = deletedResult.length;
+
+      // Delete variant files from storage
+      for (const variant of deletedResult) {
+        if (variant.stagedImagePath) {
+          try {
+            const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
+            const filePath = path.join(process.cwd(), uploadPath, variant.stagedImagePath);
+            await fs.unlink(filePath);
+            deletedFiles.push(variant.stagedImagePath);
+          } catch (error) {
+            console.warn(`Failed to delete variant file: ${variant.stagedImagePath}`, error);
+          }
         }
       }
     }
