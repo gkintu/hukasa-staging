@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
-import { Download, Trash2, Lock, RotateCcw, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Download, Trash2, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { SourceImage, MockGeneratedImage, roomTypes, interiorStyles } from "./types";
 import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog";
 

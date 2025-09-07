@@ -6,7 +6,7 @@
  */
 
 import { join } from 'node:path'
-import { FileId, UserId } from './types'
+import { UserId } from './types'
 
 export type SourceImageId = string & { readonly __brand: 'SourceImageId' }
 export type GenerationId = string & { readonly __brand: 'GenerationId' }

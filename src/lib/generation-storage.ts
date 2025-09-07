@@ -10,7 +10,7 @@ import { generations, sourceImages } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { EnhancedLocalFileService, StoreGenerationRequest } from './file-service/enhanced-local-service'
 import { FileServiceConfig, FileStorageProvider, SupportedFileType, createUserId } from './file-service/types'
-import { createSourceImageId, createGenerationId } from './file-service/storage-paths'
+import { createSourceImageId } from './file-service/storage-paths'
 
 /**
  * Generation creation request

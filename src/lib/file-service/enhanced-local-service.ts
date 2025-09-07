@@ -20,8 +20,6 @@ import {
   FileValidationResponse,
   FileOperationError,
   SupportedFileType,
-  createFileId,
-  createUserId,
   isFileOperationError
 } from './types'
 

@@ -3,7 +3,6 @@ export { ImagePreview } from './ImagePreview'
 export { UploadProgress } from './UploadProgress'
 export { UploadFeedback } from './UploadFeedback'
 export { FileManager } from './FileManager'
-export { UploadService } from './UploadService'
 
 export type { 
   UploadItem 
