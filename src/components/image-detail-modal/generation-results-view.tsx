@@ -7,12 +7,15 @@ import { Slider } from "@/components/ui/slider";
 import { Download, Trash2, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { SourceImage, MockGeneratedImage, roomTypes, interiorStyles } from "./types";
 import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog";
+import { buildStagingPrompt } from "@/lib/ai-prompt-builder";
+import type { SimpleDelete, AdvancedDelete } from '@/lib/shared/schemas/delete-schemas';
 
 interface GenerationResultsViewProps {
     sourceImage: SourceImage;
     generatedImages: MockGeneratedImage[];
-    onRegenerate: (variantCount: number) => void;
+    onRegenerate: (variantCount: number, prompt: string) => void;
     onDeleteVariant?: (variantId: string) => void;
+    onUpdateSelections?: (roomType: string, furnitureStyle: string) => void;
     roomType: string;
     furnitureStyle: string;
     defaultVariantCount?: number;
@@ -23,6 +26,7 @@ export function GenerationResultsView({
   generatedImages, 
   onRegenerate, 
   onDeleteVariant,
+  onUpdateSelections,
   roomType, 
   furnitureStyle, 
   defaultVariantCount = 3 
@@ -57,12 +61,12 @@ export function GenerationResultsView({
     setDeleteVariantId(currentVariant.id);
   };
 
-  const handleConfirmDelete = async (options: { confirm: boolean; reason?: string }) => {
+  const handleConfirmDelete = async (_options: SimpleDelete | AdvancedDelete) => {
     if (!deleteVariantId || !onDeleteVariant) return;
     
     setIsDeleting(true);
     try {
-      await onDeleteVariant(deleteVariantId);
+      onDeleteVariant(deleteVariantId);
       
       // Adjust selected thumbnail if needed
       if (selectedThumbnail >= generatedImages.length - 1) {
@@ -130,7 +134,15 @@ export function GenerationResultsView({
                     </div>
                   </div>
                   <Button 
-                    onClick={() => onRegenerate(imageCount[0])} 
+                    onClick={() => {
+                      const prompt = buildStagingPrompt({ 
+                        roomType: currentRoomType, 
+                        interiorStyle: currentFurnitureStyle 
+                      });
+                      // Update parent state to persist selections
+                      onUpdateSelections?.(currentRoomType, currentFurnitureStyle);
+                      onRegenerate(imageCount[0], prompt);
+                    }} 
                     className="w-full flex items-center justify-center gap-2"
                   >
                     <Sparkles className="h-4 w-4" />

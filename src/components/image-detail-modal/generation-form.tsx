@@ -7,11 +7,12 @@ import { Slider } from "@/components/ui/slider";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Sparkles, ChevronDown, Home, Palette } from "lucide-react";
 import { SourceImage, roomTypes, interiorStyles } from "./types";
+import { buildStagingPrompt } from "@/lib/ai-prompt-builder";
 
 interface GenerationFormProps {
     sourceImage: SourceImage;
     onClose: () => void;
-    onGenerate: (imageCount: number) => void;
+    onGenerate: (imageCount: number, prompt: string) => void;
     selectedRoomType: string;
     setSelectedRoomType: (value: string) => void;
     selectedStyle: string;
@@ -118,7 +119,13 @@ export function GenerationForm({
                             <Button variant="outline" onClick={onClose} className="px-6 hover:bg-muted/70 hover:text-foreground cursor-pointer">
                                 Cancel
                             </Button>
-                            <Button onClick={() => onGenerate(imageCount[0])} disabled={isGenerateDisabled} className="px-6 cursor-pointer">
+                            <Button onClick={() => {
+                                const prompt = buildStagingPrompt({ 
+                                    roomType: selectedRoomType, 
+                                    interiorStyle: selectedStyle 
+                                });
+                                onGenerate(imageCount[0], prompt);
+                            }} disabled={isGenerateDisabled} className="px-6 cursor-pointer">
                                 <Sparkles className="w-4 h-4 mr-2" />
                                 Generate
                             </Button>

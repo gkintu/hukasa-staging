@@ -1,9 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { SourceImage, MockGeneratedImage, mockGeneratedImages, convertRoomTypeFromEnum, convertStyleFromEnum } from "./types"
+
+interface Generation {
+  id: string;
+  stagedImagePath: string;
+}
 import { GenerationForm } from "./generation-form"
 import { GeneratingView } from "./generating-view"
 import { GenerationResultsView } from "./generation-results-view"
@@ -18,7 +23,6 @@ interface ImageDetailModalProps {
 export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailModalProps) {
   const [generationState, setGenerationState] = useState<'form' | 'generating' | 'results'>('form');
   const [generatedImages, setGeneratedImages] = useState<MockGeneratedImage[]>([]);
-  const [isLoadingExisting, setIsLoadingExisting] = useState(false);
   
   const [selectedRoomType, setSelectedRoomType] = useState<string>("")
   const [selectedStyle, setSelectedStyle] = useState<string>("")
@@ -28,24 +32,16 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
   const invalidateImageQueries = useInvalidateImageQueries()
   const invalidateProjectQueries = useInvalidateProjectQueries()
 
-  // Fetch existing generations when modal opens
-  useEffect(() => {
-    if (isOpen && sourceImage) {
-      fetchExistingGenerations();
-    }
-  }, [isOpen, sourceImage]);
-
-  const fetchExistingGenerations = async () => {
+  const fetchExistingGenerations = useCallback(async () => {
     if (!sourceImage) return;
     
-    setIsLoadingExisting(true);
     try {
       const response = await fetch(`/api/images/${sourceImage.id}/generations`);
       const data = await response.json();
       
       if (data.success && data.data.generations.length > 0) {
         // Convert database generations to MockGeneratedImage format
-        const convertedImages = data.data.generations.map((gen: any) => ({
+        const convertedImages = data.data.generations.map((gen: Generation) => ({
           id: gen.id,
           url: `/api/files/${gen.stagedImagePath.split('/').pop()?.split('.')[0]}`
         }));
@@ -64,15 +60,26 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
     } catch (error) {
       console.error('Error fetching existing generations:', error);
       setGenerationState('form');
-    } finally {
-      setIsLoadingExisting(false);
     }
-  };
+  }, [sourceImage]);
+
+  // Fetch existing generations when modal opens
+  useEffect(() => {
+    if (isOpen && sourceImage) {
+      fetchExistingGenerations();
+    }
+  }, [isOpen, sourceImage, fetchExistingGenerations]);
 
   if (!sourceImage) return null
 
-  const handleGenerate = async (imageCount: number = 3) => {
+  const handleGenerate = async (imageCount: number = 3, prompt?: string) => {
     setLastVariantCount(imageCount); // Remember the count for next time
+    
+    // Log generated prompt for debugging
+    if (prompt) {
+      console.log('🎨 Generated Prompt:', prompt);
+    }
+    
     // Validate that both room type and style are selected
     if (!selectedRoomType || !selectedStyle) {
       console.error('Generation cancelled: Room type and furniture style must be selected');
@@ -94,6 +101,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
           body: JSON.stringify({
             roomType: selectedRoomType,
             stagingStyle: selectedStyle,
+            prompt: prompt,
             mockGenerations: mockGeneratedImages.slice(0, imageCount)
           })
         });
@@ -102,7 +110,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
         
         if (data.success) {
           // Convert saved generations back to MockGeneratedImage format
-          const newGenerations = data.data.generations.map((gen: any) => ({
+          const newGenerations = data.data.generations.map((gen: Generation) => ({
             id: gen.id,
             url: `/api/files/${gen.stagedImagePath.split('/').pop()?.split('.')[0]}`
           }));
@@ -129,7 +137,19 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
         }, 2000);
       }
     } else {
-      // Placeholder for real API call
+      // Real Gemini API call implementation
+      // TODO: Implement real generation API
+      console.log('🚀 Real API Mode - Would call Gemini 2.5 Flash with:', {
+        sourceImageId: sourceImage.id,
+        prompt,
+        imageCount,
+        roomType: selectedRoomType,
+        stagingStyle: selectedStyle
+      });
+      
+      // For now, show error until real API is implemented
+      console.error('Real API not implemented yet. Set NEXT_PUBLIC_MOCK_API=true in .env.local');
+      alert('Real API not implemented yet. Please set NEXT_PUBLIC_MOCK_API=true in your .env.local file.');
       console.log("Generating staging variants:", {
         roomType: selectedRoomType,
         style: selectedStyle,
@@ -137,11 +157,6 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
       })
       // On real API success, you would call setGeneratedImages and setGenerationState('results')
     }
-  }
-
-  const handleRegenerate = (variantCount: number) => {
-    // Generate more variants directly without switching to form view
-    handleGenerate(variantCount);
   }
 
   const handleDeleteVariant = async (variantId: string) => {
@@ -208,8 +223,12 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
           <GenerationResultsView 
             sourceImage={sourceImage}
             generatedImages={generatedImages}
-            onRegenerate={handleRegenerate}
+            onRegenerate={handleGenerate}
             onDeleteVariant={handleDeleteVariant}
+            onUpdateSelections={(roomType, furnitureStyle) => {
+              setSelectedRoomType(roomType);
+              setSelectedStyle(furnitureStyle);
+            }}
             roomType={selectedRoomType}
             furnitureStyle={selectedStyle}
             defaultVariantCount={lastVariantCount}
