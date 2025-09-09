@@ -148,7 +148,7 @@ class EnhancedStorageManager {
       }
 
       // Clean up empty parent directories
-      await this.cleanupEmptyDirectories(userId, sourceImageId)
+      await this.cleanupEmptyDirectories(userId)
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         throw FileServiceErrorFactory.createAccessError(
@@ -243,7 +243,7 @@ class EnhancedStorageManager {
       await fs.unlink(filePath)
 
       // Clean up empty directories after generation deletion
-      await this.cleanupEmptyDirectories(userId, sourceImageId)
+      await this.cleanupEmptyDirectories(userId)
     } catch (error) {
       if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
         throw FileServiceErrorFactory.createAccessError(
@@ -264,7 +264,7 @@ class EnhancedStorageManager {
    * Clean up empty directories after file deletion
    * Removes empty user directories recursively: sources/, generations/, and user folder if completely empty
    */
-  async cleanupEmptyDirectories(userId: UserId, sourceImageId: SourceImageId): Promise<void> {
+  async cleanupEmptyDirectories(userId: UserId): Promise<void> {
     try {
       const userDir = join(this.config.uploadPath, userId)
       const sourcesDir = this.pathManager.getSourcesDirectory(userId)
@@ -284,7 +284,7 @@ class EnhancedStorageManager {
                 // Recursively try to remove subdirectory
                 await removeEmptyDirRecursive(itemPath)
               }
-            } catch (error) {
+            } catch {
               // Skip items that can't be accessed
             }
           }
@@ -296,7 +296,7 @@ class EnhancedStorageManager {
             return true // Successfully removed
           }
           return false // Directory not empty
-        } catch (error) {
+        } catch {
           // Directory doesn't exist or can't be accessed
           return false
         }
@@ -633,7 +633,7 @@ export class EnhancedLocalFileService extends BaseFileService {
           await this.storageManager.deleteSourceImage(userId, sourceImageId, extension)
           deleted = true
           break
-        } catch (error) {
+        } catch {
           // Try next extension
           continue
         }
@@ -660,7 +660,7 @@ export class EnhancedLocalFileService extends BaseFileService {
     }
   }
 
-  async getFileUrl(fileId: FileId, userId: UserId): Promise<FileOperationError | { success: true; url: string }> {
+  async getFileUrl(): Promise<FileOperationError | { success: true; url: string }> {
     // This would need proper implementation with database lookup in production
     return errorToOperationResult(
       FileServiceErrorFactory.createAccessError(
@@ -674,7 +674,7 @@ export class EnhancedLocalFileService extends BaseFileService {
     return this.validator.validateFile(file)
   }
 
-  async getFileMetadata(fileId: FileId, userId: UserId): Promise<FileOperationError | { success: true; metadata: FileMetadata }> {
+  async getFileMetadata(): Promise<FileOperationError | { success: true; metadata: FileMetadata }> {
     // This would need proper implementation with database lookup in production
     return errorToOperationResult(
       FileServiceErrorFactory.createAccessError(
@@ -697,7 +697,6 @@ export class EnhancedLocalFileService extends BaseFileService {
   }> {
     try {
       const sharpInstance = sharp(buffer)
-      const originalMetadata = await sharpInstance.metadata()
 
       // Apply basic optimization
       let processedInstance = sharpInstance

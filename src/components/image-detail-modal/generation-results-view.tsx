@@ -8,7 +8,6 @@ import { Download, Trash2, ChevronLeft, ChevronRight, Sparkles } from "lucide-re
 import { SourceImage, MockGeneratedImage, roomTypes, interiorStyles } from "./types";
 import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog";
 import { buildStagingPrompt } from "@/lib/ai-prompt-builder";
-import type { SimpleDelete, AdvancedDelete } from '@/lib/shared/schemas/delete-schemas';
 
 interface GenerationResultsViewProps {
     sourceImage: SourceImage;
@@ -61,7 +60,7 @@ export function GenerationResultsView({
     setDeleteVariantId(currentVariant.id);
   };
 
-  const handleConfirmDelete = async (_options: SimpleDelete | AdvancedDelete) => {
+  const handleConfirmDelete = async () => {
     if (!deleteVariantId || !onDeleteVariant) return;
     
     setIsDeleting(true);

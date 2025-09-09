@@ -339,7 +339,7 @@ async function cleanupEmptyDirectories(userId: string): Promise<void> {
               // Recursively try to remove subdirectory
               await removeEmptyDirRecursive(itemPath)
             }
-          } catch (error) {
+          } catch {
             // Skip items that can't be accessed
           }
         }
@@ -351,7 +351,7 @@ async function cleanupEmptyDirectories(userId: string): Promise<void> {
           return true // Successfully removed
         }
         return false // Directory not empty
-      } catch (error) {
+      } catch {
         // Directory doesn't exist or can't be accessed
         return false
       }
