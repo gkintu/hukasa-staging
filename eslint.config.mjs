@@ -11,6 +11,11 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
+  {
+    rules: {
+      '@next/next/no-img-element': 'off' // Using <img> for dynamic API-served images in virtual staging app
+    }
+  }
 ];
 
 export default eslintConfig;
