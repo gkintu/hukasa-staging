@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const ImageStatusSchema = z.enum(['pending', 'processing', 'completed', 'failed']);
 export const OverallStatusSchema = z.enum(['pending', 'processing', 'completed', 'failed', 'no_generations']);
 export const RoomTypeSchema = z.enum(['living_room', 'bedroom', 'kitchen', 'bathroom', 'office', 'dining_room']);
-export const StagingStyleSchema = z.enum(['modern', 'luxury', 'traditional', 'scandinavian', 'industrial', 'bohemian']);
+export const StagingStyleSchema = z.enum(['modern', 'luxury', 'scandinavian', 'industrial', 'midcentury', 'coastal', 'minimalist', 'standard']);
 export const SortOrderSchema = z.enum(['asc', 'desc']);
 
 // Base schemas

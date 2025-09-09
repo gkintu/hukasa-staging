@@ -8,7 +8,9 @@ export const roomTypeEnum = pgEnum('room_type', [
   'kitchen',
   'bathroom',
   'office',
-  'dining_room'
+  'dining_room',
+  'kids_room',
+  'home_office'
 ])
 
 export const stagingStyleEnum = pgEnum('staging_style', [
@@ -17,11 +19,9 @@ export const stagingStyleEnum = pgEnum('staging_style', [
   'scandinavian', 
   'luxury',
   'coastal',
-  'farmhouse',
   'industrial',
-  'bohemian',
   'minimalist',
-  'traditional'
+  'standard'
 ])
 
 export const operationTypeEnum = pgEnum('operation_type', [

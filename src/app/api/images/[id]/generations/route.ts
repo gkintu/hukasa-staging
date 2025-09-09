@@ -5,12 +5,49 @@ import { generations, sourceImages } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { getGenerationStorageService } from '@/lib/generation-storage'
 import { SupportedFileType } from '@/lib/file-service/types'
+import { replicate } from '@ai-sdk/replicate'
+import { experimental_generateImage as generateImage } from 'ai'
+import { buildStagingPrompt } from '@/lib/ai-prompt-builder'
+import { convertRoomTypeToEnum, convertStyleToEnum } from '@/components/image-detail-modal/types'
 
-// Helper function to simulate image buffer creation (replace with real AI generation)
+// Helper function to simulate image buffer creation (for mock mode)
 async function createMockImageBuffer(): Promise<Buffer> {
-  // Simple 1x1 PNG in base64 - replace this with actual AI generation service
+  // Simple 1x1 PNG in base64 - used for mock/development mode
   const pngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='
   return Buffer.from(pngBase64, 'base64')
+}
+
+
+// Helper function to generate image using Replicate AI (real mode)
+async function generateStageImage(prompt: string, sourceImagePath: string): Promise<Buffer> {
+  try {
+    console.log('🎨 Generating image with Replicate AI using prompt:', prompt)
+    
+    const { image } = await generateImage({
+      model: replicate.image('prunaai/flux-kontext-dev'),
+      prompt,
+      providerOptions: {
+        replicate: {
+          // Optimized settings for interior staging using flux-kontext-dev schema
+          guidance: 3.5,
+          num_inference_steps: 30, // Default for flux-kontext-dev
+          seed: -1, // Random seed for variety between generations
+          aspect_ratio: 'match_input_image',
+          output_format: 'webp', // Keep webp format
+          output_quality: 80,
+          image_size: 1024, // Base image size parameter
+          speed_mode: 'Juiced 🔥 (default)', // Full speed mode name for flux-kontext-dev
+          img_cond_path: sourceImagePath // Enable image-to-image mode
+        }
+      }
+    })
+    
+    console.log('✅ Replicate AI generation successful')
+    return Buffer.from(image.uint8Array)
+  } catch (error) {
+    console.error('❌ Replicate AI generation failed:', error)
+    throw new Error(`AI image generation failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+  }
 }
 
 export async function GET(
@@ -77,7 +114,7 @@ export async function POST(
     const userId = session.user.id
 
     const body = await request.json()
-    const { roomType, stagingStyle, mockGenerations } = body
+    const { roomType, stagingStyle, mockGenerations, imageCount } = body
 
     // Validate required fields
     if (!roomType) {
@@ -93,10 +130,28 @@ export async function POST(
         { status: 400 }
       )
     }
+
+    // Check if we're in mock mode or real API mode
+    const isMockMode = process.env.NEXT_PUBLIC_MOCK_API === 'true'
     
-    if (!mockGenerations) {
+    // Determine how many images to generate
+    let generationCount: number
+    if (isMockMode) {
+      if (!mockGenerations || !Array.isArray(mockGenerations)) {
+        return NextResponse.json(
+          { success: false, message: 'Mock generation data is required in mock mode' },
+          { status: 400 }
+        )
+      }
+      generationCount = mockGenerations.length
+    } else {
+      // Real API mode - use imageCount or fallback to mockGenerations.length if provided
+      generationCount = imageCount || (mockGenerations ? mockGenerations.length : 1)
+    }
+
+    if (generationCount <= 0 || generationCount > 4) {
       return NextResponse.json(
-        { success: false, message: 'Generation data is required' },
+        { success: false, message: 'Generation count must be between 1 and 4' },
         { status: 400 }
       )
     }
@@ -136,29 +191,63 @@ export async function POST(
     // Get the generation storage service
     const generationStorageService = await getGenerationStorageService()
     
+    // Log the generation mode for debugging
+    console.log(`🔧 Generation mode: ${isMockMode ? 'MOCK' : 'REAL'} | Count: ${generationCount}`)
+    
+    // Build AI prompt for real mode using proper prompt builder
+    const aiPrompt = isMockMode ? null : buildStagingPrompt({ 
+      roomType, 
+      interiorStyle: stagingStyle 
+    })
+    if (!isMockMode) {
+      console.log('🎨 AI Prompt:', aiPrompt)
+    }
+
     // Create new generations using the storage service
     const insertedGenerations = []
     
-    for (let index = 0; index < mockGenerations.length; index++) {
+    for (let index = 0; index < generationCount; index++) {
       const variationIndex = startingVariationIndex + index
       
-      // Create mock image data (replace with real AI generation)
-      const imageBuffer = await createMockImageBuffer()
+      console.log(`⚡ Generating variant ${variationIndex} (${index + 1}/${generationCount})...`)
       
       try {
+        // Generate image based on mode
+        let imageBuffer: Buffer
+        let mimeType: SupportedFileType
+        let jobId: string
+        const startTime = Date.now() // Track timing for both modes
+        
+        if (isMockMode) {
+          // Mock mode - use placeholder image
+          imageBuffer = await createMockImageBuffer()
+          mimeType = SupportedFileType.PNG
+          jobId = `mock-job-${Date.now()}-${index}`
+          console.log(`📝 Mock generation ${variationIndex} created`)
+        } else {
+          // Real AI mode - generate with Replicate using source image
+          imageBuffer = await generateStageImage(aiPrompt!, sourceImage.originalImagePath)
+          mimeType = SupportedFileType.WEBP // flux-kontext-dev returns WEBP
+          jobId = `replicate-job-${Date.now()}-${index}`
+          console.log(`🚀 Real AI generation ${variationIndex} completed in ${Date.now() - startTime}ms`)
+        }
+        
         // Store the generation using hierarchical storage
         const storageResult = await generationStorageService.storeGeneration({
           userId: sourceImage.userId,
           sourceImageId: imageId,
           projectId: sourceImage.projectId,
-          roomType: roomType.toLowerCase().replace(/\s+/g, '_'),
-          stagingStyle: stagingStyle.toLowerCase(),
+          roomType: convertRoomTypeToEnum(roomType),
+          stagingStyle: convertStyleToEnum(stagingStyle),
           operationType: 'stage_empty',
           variationIndex: variationIndex,
           imageBuffer: imageBuffer,
-          mimeType: SupportedFileType.PNG,
-          jobId: `mock-job-${Date.now()}-${index}`
+          mimeType: mimeType,
+          jobId: jobId
         })
+        
+        // Calculate processing time (actual for real mode, mock for mock mode)
+        const processingTime = isMockMode ? 2000 : (Date.now() - startTime)
         
         insertedGenerations.push({
           id: storageResult.generationId,
@@ -167,17 +256,31 @@ export async function POST(
           projectId: sourceImage.projectId,
           stagedImagePath: storageResult.stagedImagePath,
           variationIndex: storageResult.variationIndex,
-          roomType: roomType.toLowerCase().replace(/\s+/g, '_'),
-          stagingStyle: stagingStyle.toLowerCase(),
+          roomType: convertRoomTypeToEnum(roomType),
+          stagingStyle: convertStyleToEnum(stagingStyle),
           operationType: 'stage_empty',
           status: 'completed',
-          processingTimeMs: 2000,
+          processingTimeMs: processingTime,
           createdAt: new Date(),
           completedAt: new Date()
         })
         
+        console.log(`✅ Variant ${variationIndex} stored successfully${!isMockMode ? ` (${processingTime}ms)` : ''}`)
+        
       } catch (error) {
-        console.error(`Failed to store generation ${variationIndex}:`, error)
+        console.error(`❌ Failed to generate variant ${variationIndex}:`, error)
+        
+        // For real AI failures, add more specific error details
+        if (!isMockMode && error instanceof Error) {
+          console.error('🔴 Replicate AI Error Details:', {
+            message: error.message,
+            variationIndex,
+            roomType,
+            stagingStyle,
+            promptLength: aiPrompt?.length
+          })
+        }
+        
         // Continue with other generations even if one fails
       }
     }

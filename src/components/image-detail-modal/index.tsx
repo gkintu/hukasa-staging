@@ -137,9 +137,10 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
         }, 2000);
       }
     } else {
-      // Real Gemini API call implementation
-      // TODO: Implement real generation API
-      console.log('🚀 Real API Mode - Would call Gemini 2.5 Flash with:', {
+      // Real AI API call implementation using Replicate
+      setGenerationState('generating');
+      
+      console.log('🚀 Real AI Mode - Calling Replicate with:', {
         sourceImageId: sourceImage.id,
         prompt,
         imageCount,
@@ -147,15 +148,49 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
         stagingStyle: selectedStyle
       });
       
-      // For now, show error until real API is implemented
-      console.error('Real API not implemented yet. Set NEXT_PUBLIC_MOCK_API=true in .env.local');
-      alert('Real API not implemented yet. Please set NEXT_PUBLIC_MOCK_API=true in your .env.local file.');
-      console.log("Generating staging variants:", {
-        roomType: selectedRoomType,
-        style: selectedStyle,
-        imageUrl: sourceImage.originalImagePath,
-      })
-      // On real API success, you would call setGeneratedImages and setGenerationState('results')
+      try {
+        // Call real AI generation API
+        const response = await fetch(`/api/images/${sourceImage.id}/generations`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            roomType: selectedRoomType,
+            stagingStyle: selectedStyle,
+            prompt: prompt,
+            imageCount: imageCount // Send count directly for real API
+          })
+        });
+
+        const data = await response.json();
+        
+        if (data.success) {
+          // Convert generated AI images to display format
+          const newGenerations = data.data.generations.map((gen: Generation) => ({
+            id: gen.id,
+            url: `/api/files/${gen.stagedImagePath.split('/').pop()?.split('.')[0]}`
+          }));
+          
+          // Add new generations to existing ones
+          setGeneratedImages(prev => [...prev, ...newGenerations]);
+          setGenerationState('results');
+          
+          // ✅ Invalidate TanStack Query cache to update badge status
+          invalidateImageQueries.invalidateAll();
+          invalidateProjectQueries.invalidateAll();
+          
+          console.log(`✅ Successfully generated ${newGenerations.length} AI variants`);
+        } else {
+          console.error('❌ AI generation failed:', data.message);
+          setGenerationState('form');
+          alert(`AI Generation failed: ${data.message}`);
+        }
+      } catch (error) {
+        console.error('❌ Error calling real AI API:', error);
+        setGenerationState('form');
+        alert(`AI Generation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   }
 

@@ -134,6 +134,13 @@
       "when": 1756969891946,
       "tag": "0018_gray_blue_marvel",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1757399730737,
+      "tag": "0019_fresh_hellcat",
+      "breakpoints": true
     }
   ]
 }

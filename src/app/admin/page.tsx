@@ -1,16 +1,32 @@
 "use client"
 
 import * as React from "react"
+import dynamic from "next/dynamic"
 import { DashboardStats } from "@/components/admin/dashboard-stats"
-import { 
-  UserGrowthChart, 
-  ImageUploadChart, 
-  ActivityDistributionChart, 
-  ProcessingTimeChart 
-} from "@/components/admin/dashboard-charts"
 import { RecentActivity } from "@/components/admin/recent-activity"
 import { AppErrorBoundary, DataErrorBoundary } from "@/components/error-boundary"
 import { DashboardSuspense, SuspenseWrapper } from "@/components/loading-states"
+
+// Dynamic imports for charts to reduce bundle size
+const UserGrowthChart = dynamic(
+  () => import("@/components/admin/dashboard-charts").then(mod => ({ default: mod.UserGrowthChart })),
+  { loading: () => <div className="h-[350px] flex items-center justify-center animate-pulse">Loading chart...</div> }
+)
+
+const ImageUploadChart = dynamic(
+  () => import("@/components/admin/dashboard-charts").then(mod => ({ default: mod.ImageUploadChart })),
+  { loading: () => <div className="h-[350px] flex items-center justify-center animate-pulse">Loading chart...</div> }
+)
+
+const ActivityDistributionChart = dynamic(
+  () => import("@/components/admin/dashboard-charts").then(mod => ({ default: mod.ActivityDistributionChart })),
+  { loading: () => <div className="h-[350px] flex items-center justify-center animate-pulse">Loading chart...</div> }
+)
+
+const ProcessingTimeChart = dynamic(
+  () => import("@/components/admin/dashboard-charts").then(mod => ({ default: mod.ProcessingTimeChart })),
+  { loading: () => <div className="h-[300px] flex items-center justify-center animate-pulse">Loading chart...</div> }
+)
 
 export default function AdminDashboardPage() {
   return (

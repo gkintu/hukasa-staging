@@ -39,7 +39,7 @@ interface ImageRow {
   displayName: string | null
   fileSize: number | null
   roomType: 'living_room' | 'bedroom' | 'kitchen' | 'bathroom' | 'dining_room' | 'office' | null
-  stagingStyle: 'modern' | 'luxury' | 'traditional' | 'scandinavian' | 'industrial' | 'bohemian' | null
+  stagingStyle: 'modern' | 'luxury' | 'scandinavian' | 'industrial' | 'midcentury' | 'coastal' | 'minimalist' | 'standard' | null
   operationType: string | null
   createdAt: Date | string
   completedAt?: Date | string | null

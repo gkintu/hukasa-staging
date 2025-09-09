@@ -210,7 +210,6 @@ export function SettingsPage({ user }: SettingsPageProps) {
                 <SelectItem value="coastal">Coastal</SelectItem>
                 <SelectItem value="farmhouse">Farmhouse</SelectItem>
                 <SelectItem value="industrial">Industrial</SelectItem>
-                <SelectItem value="bohemian">Bohemian</SelectItem>
                 <SelectItem value="tropical">Tropical</SelectItem>
               </SelectContent>
             </Select>

@@ -57,7 +57,12 @@ export interface GenerationStorageResult {
 export interface StoreGenerationRequest {
   readonly sourceImageId: SourceImageId
   readonly userId: UserId
+  readonly projectId: string
   readonly variationIndex: number
+  readonly roomType: string
+  readonly stagingStyle: string
+  readonly operationType: string
+  readonly jobId?: string
   readonly imageBuffer: Buffer
   readonly mimeType: SupportedFileType
 }

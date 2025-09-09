@@ -8,12 +8,12 @@ export interface MockGeneratedImage {
 
 export const roomTypes = [
   "Living Room", "Bedroom", "Kitchen", "Dining Room", "Bathroom", 
-  "Home Office", "Kids Room", "Master Bedroom",
+  "Home Office", "Kids Room",
 ]
 
 export const interiorStyles = [
   "Modern", "Midcentury", "Scandinavian", "Luxury", "Coastal", 
-  "Farmhouse", "Industrial", "Bohemian", "Minimalist",
+  "Industrial", "Minimalist", "Standard",
 ]
 
 export const mockGeneratedImages: MockGeneratedImage[] = [
@@ -24,11 +24,11 @@ export const mockGeneratedImages: MockGeneratedImage[] = [
 
 // Utility functions to convert between UI display values and database enum values
 export const convertRoomTypeToEnum = (displayValue: string): string => {
-  return displayValue.toLowerCase().replace(' ', '_');
+  return displayValue.toLowerCase().replaceAll(' ', '_');
 };
 
 export const convertRoomTypeFromEnum = (enumValue: string): string => {
-  return enumValue.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  return enumValue.replaceAll('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
 };
 
 export const convertStyleToEnum = (displayValue: string): string => {

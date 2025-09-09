@@ -6,7 +6,7 @@
  */
 
 import { db } from '@/db'
-import { generations, sourceImages } from '@/db/schema'
+import { generations, sourceImages, roomTypeEnum, stagingStyleEnum, operationTypeEnum } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 import { EnhancedLocalFileService, StoreGenerationRequest } from './file-service/enhanced-local-service'
 import { FileServiceConfig, FileStorageProvider, SupportedFileType, createUserId } from './file-service/types'
@@ -115,7 +115,12 @@ export class GenerationStorageService {
       const storageRequest: StoreGenerationRequest = {
         sourceImageId,
         userId,
+        projectId: request.projectId,
         variationIndex: request.variationIndex,
+        roomType: request.roomType,
+        stagingStyle: request.stagingStyle,
+        operationType: request.operationType,
+        jobId: request.jobId,
         imageBuffer: request.imageBuffer,
         mimeType: request.mimeType
       }
@@ -127,20 +132,22 @@ export class GenerationStorageService {
       }
 
       // Create database record (let database generate the ID)
-      const generationRecord = await db.insert(generations).values({
+      const insertData = {
         sourceImageId: request.sourceImageId,
         userId: request.userId,
         projectId: request.projectId,
         stagedImagePath: storageResult.relativePath,
         variationIndex: request.variationIndex,
-        roomType: request.roomType,
-        stagingStyle: request.stagingStyle,
-        operationType: request.operationType,
-        status: 'completed',
+        roomType: request.roomType as typeof roomTypeEnum.enumValues[number],
+        stagingStyle: request.stagingStyle as typeof stagingStyleEnum.enumValues[number],
+        operationType: request.operationType as typeof operationTypeEnum.enumValues[number],
+        status: 'completed' as const,
         jobId: request.jobId,
         createdAt: new Date(),
         completedAt: new Date()
-      }).returning()
+      }
+      
+      const generationRecord = await db.insert(generations).values(insertData).returning()
 
       return {
         generationId: generationRecord[0].id, // Use database-generated ID
