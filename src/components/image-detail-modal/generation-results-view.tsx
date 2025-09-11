@@ -40,7 +40,7 @@ export function GenerationResultsView({
   const [isDeleting, setIsDeleting] = useState(false)
 
   const currentResult = generatedImages[selectedThumbnail]?.url;
-  const originalImageUrl = `/api/files/${sourceImage.originalImagePath.split('/').pop()?.split('.')[0]}`;
+  const originalImageUrl = `/api/images/${sourceImage.id}/file`;
 
   const handleDownload = () => {
     if (!currentResult) return;

@@ -111,7 +111,10 @@ export async function DELETE(
     };
 
     // Delete physical files based on user selection
-    const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads';
+    const uploadPath = process.env.FILE_UPLOAD_PATH
+    if (!uploadPath) {
+      throw new Error('FILE_UPLOAD_PATH environment variable is required')
+    }
 
     // Delete source image files only if deleteSourceFile is true
     if (deleteOptions.deleteSourceFile) {

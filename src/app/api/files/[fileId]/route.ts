@@ -41,7 +41,10 @@ export const GET = withAuth(async (request: NextRequest, user) => {
 
     // For now, serve files directly from the file system
     // This will be replaced with the full file service once circular imports are resolved
-    const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
+    const uploadPath = process.env.FILE_UPLOAD_PATH
+    if (!uploadPath) {
+      throw new Error('FILE_UPLOAD_PATH environment variable is required')
+    }
     const userId = user.id
     
     // Check if user is admin - they can access any user's files
@@ -422,7 +425,10 @@ export const DELETE = withAuth(async (request: NextRequest, user) => {
     }
 
     // Delete physical file - extract filename from originalImagePath
-    const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
+    const uploadPath = process.env.FILE_UPLOAD_PATH
+    if (!uploadPath) {
+      throw new Error('FILE_UPLOAD_PATH environment variable is required')
+    }
     const pathParts = foundRecord.originalImagePath.split('/')
     const physicalFilename = pathParts[pathParts.length - 1] // Get actual filename
     

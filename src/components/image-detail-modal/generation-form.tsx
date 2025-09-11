@@ -49,7 +49,7 @@ export function GenerationForm({
                 <div className="relative group">
                     <div className="relative overflow-hidden rounded-xl shadow-lg border border-border">
                         <img
-                            src={`/api/files/${sourceImage.originalImagePath.split('/').pop()?.split('.')[0]}`}
+                            src={`/api/images/${sourceImage.id}/file`}
                             alt={sourceImage.displayName || sourceImage.originalFileName}
                             className="w-full h-96 object-cover transition-transform duration-300 group-hover:scale-105"
                         />

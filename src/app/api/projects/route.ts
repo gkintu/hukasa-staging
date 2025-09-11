@@ -21,8 +21,7 @@ export async function GET(request: NextRequest) {
         createdAt: projects.createdAt,
         updatedAt: projects.updatedAt,
         sourceImageCount: sql<number>`count(distinct ${sourceImages.id})::int`,
-        stagedVersionCount: sql<number>`count(distinct ${generations.id})::int`,
-        thumbnailUrl: sql<string>`min(${sourceImages.originalImagePath})`
+        stagedVersionCount: sql<number>`count(distinct ${generations.id})::int`
       })
       .from(projects)
       .leftJoin(sourceImages, eq(projects.id, sourceImages.projectId))

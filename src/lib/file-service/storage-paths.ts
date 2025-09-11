@@ -38,24 +38,17 @@ export class StoragePathManager {
   }
 
   /**
-   * Get user's sources directory
+   * Get directory for specific source image (contains source file + generations)
    */
-  getSourcesDirectory(userId: UserId): string {
-    return join(this.getUserDirectory(userId), 'sources')
-  }
-
-  /**
-   * Get user's generations base directory
-   */
-  getGenerationsBaseDirectory(userId: UserId): string {
-    return join(this.getUserDirectory(userId), 'generations')
+  getSourceImageDirectory(userId: UserId, sourceImageId: SourceImageId): string {
+    return join(this.getUserDirectory(userId), sourceImageId)
   }
 
   /**
    * Get generations directory for specific source image
    */
   getGenerationsDirectory(userId: UserId, sourceImageId: SourceImageId): string {
-    return join(this.getGenerationsBaseDirectory(userId), sourceImageId)
+    return join(this.getSourceImageDirectory(userId, sourceImageId), 'generations')
   }
 
   // ===== SOURCE IMAGE PATHS =====
@@ -64,21 +57,21 @@ export class StoragePathManager {
    * Generate file path for source image
    */
   getSourceImagePath(userId: UserId, sourceImageId: SourceImageId, extension: string): string {
-    return join(this.getSourcesDirectory(userId), `${sourceImageId}${extension}`)
+    return join(this.getSourceImageDirectory(userId, sourceImageId), `source${extension}`)
   }
 
   /**
    * Generate relative path for source image (for database storage)
    */
   getSourceImageRelativePath(userId: UserId, sourceImageId: SourceImageId, extension: string): string {
-    return `${userId}/sources/${sourceImageId}${extension}`
+    return `${userId}/${sourceImageId}/source${extension}`
   }
 
   /**
    * Generate public URL for source image
    */
   getSourceImagePublicUrl(userId: UserId, sourceImageId: SourceImageId, extension: string): string {
-    return `${this.config.basePublicPath}/${userId}/sources/${sourceImageId}${extension}`
+    return `${this.config.basePublicPath}/${userId}/${sourceImageId}/source${extension}`
   }
 
   // ===== GENERATION PATHS =====
@@ -108,7 +101,7 @@ export class StoragePathManager {
     extension: string
   ): string {
     const filename = `variation-${variationIndex}-${generationId}${extension}`
-    return `${userId}/generations/${sourceImageId}/${filename}`
+    return `${userId}/${sourceImageId}/generations/${filename}`
   }
 
   /**
@@ -122,7 +115,7 @@ export class StoragePathManager {
     extension: string
   ): string {
     const filename = `variation-${variationIndex}-${generationId}${extension}`
-    return `${this.config.basePublicPath}/${userId}/generations/${sourceImageId}/${filename}`
+    return `${this.config.basePublicPath}/${userId}/${sourceImageId}/generations/${filename}`
   }
 
   // ===== MIGRATION UTILITIES =====

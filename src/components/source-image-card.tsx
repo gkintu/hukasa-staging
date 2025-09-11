@@ -143,7 +143,7 @@ export function SourceImageCard({
           
           <div className="aspect-video overflow-hidden rounded-t-lg bg-muted">
             <img
-              src={`/api/files/${image.originalImagePath.split('/').pop()?.split('.')[0]}`}
+              src={`/api/images/${image.id}/file`}
               alt={image.displayName || image.originalFileName}
               className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
               onError={(e) => {

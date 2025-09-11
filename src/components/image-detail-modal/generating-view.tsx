@@ -7,7 +7,7 @@ interface GeneratingViewProps {
 }
 
 export function GeneratingView({ sourceImage }: GeneratingViewProps) {
-  const originalImageUrl = `/api/files/${sourceImage.originalImagePath.split('/').pop()?.split('.')[0]}`;
+  const originalImageUrl = `/api/images/${sourceImage.id}/file`;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8">

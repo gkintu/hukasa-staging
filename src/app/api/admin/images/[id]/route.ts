@@ -184,7 +184,10 @@ export async function DELETE(
       
       // 1. Delete source file from storage
       try {
-        const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
+        const uploadPath = process.env.FILE_UPLOAD_PATH
+        if (!uploadPath) {
+          throw new Error('FILE_UPLOAD_PATH environment variable is required')
+        }
         const sourceFilePath = path.join(process.cwd(), uploadPath, image.originalImagePath);
         await fs.unlink(sourceFilePath);
         deletedFiles.push(image.originalImagePath);
@@ -196,7 +199,10 @@ export async function DELETE(
       for (const variant of image.variants) {
         if (variant.stagedImagePath) {
           try {
-            const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
+            const uploadPath = process.env.FILE_UPLOAD_PATH
+        if (!uploadPath) {
+          throw new Error('FILE_UPLOAD_PATH environment variable is required')
+        }
             const filePath = path.join(process.cwd(), uploadPath, variant.stagedImagePath);
             await fs.unlink(filePath);
             deletedFiles.push(variant.stagedImagePath);
@@ -221,7 +227,10 @@ export async function DELETE(
       for (const variant of image.variants) {
         if (variant.stagedImagePath) {
           try {
-            const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
+            const uploadPath = process.env.FILE_UPLOAD_PATH
+        if (!uploadPath) {
+          throw new Error('FILE_UPLOAD_PATH environment variable is required')
+        }
             const filePath = path.join(process.cwd(), uploadPath, variant.stagedImagePath);
             await fs.unlink(filePath);
             deletedFiles.push(variant.stagedImagePath);
@@ -249,7 +258,10 @@ export async function DELETE(
       for (const variant of deletedResult) {
         if (variant.stagedImagePath) {
           try {
-            const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
+            const uploadPath = process.env.FILE_UPLOAD_PATH
+        if (!uploadPath) {
+          throw new Error('FILE_UPLOAD_PATH environment variable is required')
+        }
             const filePath = path.join(process.cwd(), uploadPath, variant.stagedImagePath);
             await fs.unlink(filePath);
             deletedFiles.push(variant.stagedImagePath);
@@ -320,7 +332,10 @@ export async function DELETE(
  */
 async function cleanupEmptyDirectories(userId: string): Promise<void> {
   try {
-    const uploadPath = process.env.FILE_UPLOAD_PATH || './uploads'
+    const uploadPath = process.env.FILE_UPLOAD_PATH
+    if (!uploadPath) {
+      throw new Error('FILE_UPLOAD_PATH environment variable is required')
+    }
     const userDir = path.join(process.cwd(), uploadPath, userId)
     const sourcesDir = path.join(userDir, 'sources')
     const generationsDir = path.join(userDir, 'generations')

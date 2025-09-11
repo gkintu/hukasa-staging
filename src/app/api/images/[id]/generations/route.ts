@@ -9,6 +9,16 @@ import { replicate } from '@ai-sdk/replicate'
 import { experimental_generateImage as generateImage } from 'ai'
 import { buildStagingPrompt } from '@/lib/ai-prompt-builder'
 import { convertRoomTypeToEnum, convertStyleToEnum } from '@/components/image-detail-modal/types'
+import { generateSignedFileUrl } from '@/lib/signed-urls'
+
+// Get base URL for external API access (ngrok URL in dev, production domain in prod)
+// const getBaseUrl = () => {
+//   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
+//   if (!baseUrl) {
+//     throw new Error('NEXT_PUBLIC_BASE_URL environment variable is required')
+//   }
+//   return baseUrl
+// };
 
 // Helper function to simulate image buffer creation (for mock mode)
 async function createMockImageBuffer(): Promise<Buffer> {
@@ -23,8 +33,19 @@ async function generateStageImage(prompt: string, sourceImagePath: string): Prom
   try {
     console.log('🎨 Generating image with Replicate AI using prompt:', prompt)
     
+    // Convert relative path to signed URL for Replicate API
+    // sourceImagePath is like: "abc123def456ghi789jkl012/uuid-1234-5678-9abc-def012345678/source.webp"
+    // Extract fileId from the database record (we'll use a different approach)
+    const fileName = sourceImagePath.split('/').pop()?.split('.')[0]; // "abc123XYZ456"
+    if (!fileName) {
+      throw new Error(`Invalid source image path: ${sourceImagePath}`)
+    }
+    // Generate signed URL for temporary public access (1 hour expiry)
+    const publicImageUrl = generateSignedFileUrl(fileName);
+    console.log('📸 Signed URL for Replicate:', publicImageUrl)
+    
     const { image } = await generateImage({
-      model: replicate.image('prunaai/flux-kontext-dev'),
+      model: replicate.image('prunaai/flux-kontext-dev:2f311ad6069d6cb2ec28d46bb0d1da5148a983b56f4f2643d2d775d39d11e44b'),
       prompt,
       providerOptions: {
         replicate: {
@@ -37,7 +58,7 @@ async function generateStageImage(prompt: string, sourceImagePath: string): Prom
           output_quality: 80,
           image_size: 1024, // Base image size parameter
           speed_mode: 'Juiced 🔥 (default)', // Full speed mode name for flux-kontext-dev
-          img_cond_path: sourceImagePath // Enable image-to-image mode
+          img_cond_path: publicImageUrl // Enable image-to-image mode with public URL
         }
       }
     })

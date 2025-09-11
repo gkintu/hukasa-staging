@@ -43,7 +43,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
         // Convert database generations to MockGeneratedImage format
         const convertedImages = data.data.generations.map((gen: Generation) => ({
           id: gen.id,
-          url: `/api/files/${gen.stagedImagePath.split('/').pop()?.split('.')[0]}`
+          url: `/api/generations/${gen.id}/file`
         }));
         setGeneratedImages(convertedImages);
         setGenerationState('results');
@@ -112,7 +112,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
           // Convert saved generations back to MockGeneratedImage format
           const newGenerations = data.data.generations.map((gen: Generation) => ({
             id: gen.id,
-            url: `/api/files/${gen.stagedImagePath.split('/').pop()?.split('.')[0]}`
+            url: `/api/generations/${gen.id}/file`
           }));
           
           // Add new generations to existing ones (additive)
@@ -169,7 +169,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
           // Convert generated AI images to display format
           const newGenerations = data.data.generations.map((gen: Generation) => ({
             id: gen.id,
-            url: `/api/files/${gen.stagedImagePath.split('/').pop()?.split('.')[0]}`
+            url: `/api/generations/${gen.id}/file`
           }));
           
           // Add new generations to existing ones

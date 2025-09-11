@@ -59,8 +59,20 @@ export class GenerationStorageService {
       ],
       storageConfig: {
         type: 'local',
-        uploadPath: process.env.FILE_UPLOAD_PATH || './uploads',
-        publicPath: process.env.FILE_PUBLIC_PATH || '/uploads',
+        uploadPath: (() => {
+          const uploadPath = process.env.FILE_UPLOAD_PATH
+          if (!uploadPath) {
+            throw new Error('FILE_UPLOAD_PATH environment variable is required')
+          }
+          return uploadPath
+        })(),
+        publicPath: (() => {
+          const publicPath = process.env.FILE_PUBLIC_PATH
+          if (!publicPath) {
+            throw new Error('FILE_PUBLIC_PATH environment variable is required')
+          }
+          return publicPath
+        })(),
         createDirectories: true
       },
       imageProcessing: {

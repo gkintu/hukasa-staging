@@ -33,7 +33,6 @@ interface Project {
   updatedAt: string
   sourceImageCount: number
   stagedVersionCount: number
-  thumbnailUrl: string | null
 }
 
 export function Projects({ onProjectSelect }: ProjectsProps) {
@@ -303,9 +302,9 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
               <CardContent className="p-0">
                 <div className="relative">
                   <div className="aspect-video overflow-hidden rounded-t-sm bg-muted">
-                    {project.thumbnailUrl ? (
+                    {project.sourceImageCount > 0 ? (
                       <img
-                        src={`/api/files/${project.thumbnailUrl.split('/').pop()?.split('.')[0]}`}
+                        src={`/api/projects/${project.id}/thumbnail`}
                         alt={`${project.name} thumbnail`}
                         className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
                         onError={(e) => {

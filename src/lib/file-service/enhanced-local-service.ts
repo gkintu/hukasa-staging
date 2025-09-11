@@ -109,12 +109,12 @@ class EnhancedStorageManager {
     buffer: Buffer, 
     extension: string
   ): Promise<void> {
-    const sourcesDir = this.pathManager.getSourcesDirectory(userId)
+    const sourceImageDir = this.pathManager.getSourceImageDirectory(userId, sourceImageId)
     const filePath = this.pathManager.getSourceImagePath(userId, sourceImageId, extension)
 
     try {
-      // Ensure sources directory exists
-      await fs.mkdir(sourcesDir, { recursive: true })
+      // Ensure source image directory exists
+      await fs.mkdir(sourceImageDir, { recursive: true })
       
       // Write file atomically
       await fs.writeFile(filePath, buffer)
@@ -267,8 +267,6 @@ class EnhancedStorageManager {
   async cleanupEmptyDirectories(userId: UserId): Promise<void> {
     try {
       const userDir = join(this.config.uploadPath, userId)
-      const sourcesDir = this.pathManager.getSourcesDirectory(userId)
-      const userGenerationsDir = join(userDir, 'generations')
 
       // Helper function to recursively remove empty directories
       const removeEmptyDirRecursive = async (dirPath: string): Promise<boolean> => {
@@ -302,13 +300,7 @@ class EnhancedStorageManager {
         }
       }
 
-      // Clean up sources directory
-      await removeEmptyDirRecursive(sourcesDir)
-
-      // Clean up generations directory
-      await removeEmptyDirRecursive(userGenerationsDir)
-
-      // Clean up user directory if now empty
+      // Clean up user directory recursively (will remove empty source image directories)
       await removeEmptyDirRecursive(userDir)
       
     } catch (error) {
@@ -362,6 +354,13 @@ class EnhancedStorageManager {
    */
   getSourceImagePublicUrl(userId: UserId, sourceImageId: SourceImageId, extension: string): string {
     return this.pathManager.getSourceImagePublicUrl(userId, sourceImageId, extension)
+  }
+
+  /**
+   * Get source image relative path
+   */
+  getSourceImageRelativePath(userId: UserId, sourceImageId: SourceImageId, extension: string): string {
+    return this.pathManager.getSourceImageRelativePath(userId, sourceImageId, extension)
   }
 
   /**
@@ -432,9 +431,9 @@ class EnhancedStorageManager {
     )
 
     try {
-      // Ensure target directory exists
-      const sourcesDir = this.pathManager.getSourcesDirectory(parsed.userId)
-      await fs.mkdir(sourcesDir, { recursive: true })
+      // Ensure target directory exists  
+      const sourceImageDir = this.pathManager.getSourceImageDirectory(parsed.userId, sourceImageId)
+      await fs.mkdir(sourceImageDir, { recursive: true })
 
       // Move file to new location
       await fs.rename(oldFilePath, newFilePath)
@@ -548,7 +547,7 @@ export class EnhancedLocalFileService extends BaseFileService {
 
       // Generate URLs and paths
       const url = this.storageManager.getSourceImagePublicUrl(userId, sourceImageId, extension)
-      const relativePath = `${userId}/sources/${sourceImageId}${extension}`
+      const relativePath = this.storageManager.getSourceImageRelativePath(userId, sourceImageId, extension)
 
       // Create metadata response
       const fileMetadata: FileMetadata = {

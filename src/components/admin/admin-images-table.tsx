@@ -121,7 +121,7 @@ export function AdminImagesTable({
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-md bg-muted overflow-hidden">
             <img
-              src={`/api/files/${row.original.originalImagePath.split('/').pop()?.split('.')[0]}`}
+              src={`/api/images/${row.original.id}/file`}
               alt={row.original.originalFileName}
               className="w-full h-full object-cover"
               onError={(e) => {
