@@ -22,7 +22,7 @@ export function GeneratingView({ sourceImage }: GeneratingViewProps) {
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <Loader2 className="w-12 h-12 animate-spin text-white mb-4" />
           <h3 className="text-xl font-semibold text-white text-center px-4">Staging your space...</h3>
-          <p className="text-white/80 mt-2 text-center px-4">This may take a moment. Please don&apos;t close this window.</p>
+          <p className="text-white/80 mt-2 text-center px-4">Please wait.</p>
         </div>
       </div>
       <div className="flex flex-col items-center justify-center h-96 text-muted-foreground">

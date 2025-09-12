@@ -15,7 +15,7 @@ import {
   type FeedbackMessage,
   type RejectedFile
 } from '@/components/upload'
-import { X, Upload, FileImage, FolderPlus, Folder } from "lucide-react"
+import { Upload, FileImage, FolderPlus, Folder } from "lucide-react"
 import { nanoid } from 'nanoid'
 
 interface User {
@@ -235,155 +235,150 @@ export function UploadModal({ isOpen, onClose, projectId, onUploadSuccess }: Upl
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex items-center justify-between">
-            <DialogTitle className="flex items-center gap-2">
-              <Upload className="h-5 w-5" />
-              Upload Files
-            </DialogTitle>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClose}
-              disabled={isUploading}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
+      <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-hidden">
+        <DialogHeader className="border-b border-border pb-4">
+          <DialogTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Upload Files
+          </DialogTitle>
           <DialogDescription>
-            Upload room images for virtual staging. Choose a project or create a new one to organize your images.
+            Upload room images for virtual staging.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
-          {/* Project Selection - Only show if no projectId was provided */}
-          {!projectId && (
-            <div className="bg-muted/50 rounded-lg p-4 space-y-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Folder className="h-4 w-4 text-muted-foreground" />
-                <Label className="text-sm font-medium">Project Destination</Label>
-              </div>
-              
-              <div className="space-y-3">
-                {/* Create New Project Option */}
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="create-new-project"
-                    checked={createNewProject}
-                    onCheckedChange={(checked) => {
-                      setCreateNewProject(checked === true)
-                      if (checked) {
-                        setSelectedProjectId('')
-                      }
-                    }}
-                    disabled={isUploading}
-                  />
-                  <Label 
-                    htmlFor="create-new-project" 
-                    className="text-sm font-medium cursor-pointer flex items-center gap-2"
-                  >
-                    <FolderPlus className="h-4 w-4" />
-                    Create new project
-                  </Label>
+        <div className="max-h-[70vh] overflow-y-auto">
+          <div className="space-y-6 p-6">
+            {/* Project Selection - Only show if no projectId was provided */}
+            {!projectId && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Folder className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-sm font-medium">Project Destination</Label>
                 </div>
-
-                {/* New Project Name Input */}
-                {createNewProject && (
-                  <div className="ml-6 space-y-2">
-                    <Input
-                      placeholder="Enter project name (e.g., Johnson House Staging)"
-                      value={newProjectName}
-                      onChange={(e) => setNewProjectName(e.target.value)}
+                
+                <div className="space-y-4">
+                  {/* Create New Project Option */}
+                  <div className="flex items-center space-x-3">
+                    <Checkbox
+                      id="create-new-project"
+                      checked={createNewProject}
+                      onCheckedChange={(checked) => {
+                        setCreateNewProject(checked === true)
+                        if (checked) {
+                          setSelectedProjectId('')
+                        }
+                      }}
                       disabled={isUploading}
-                      maxLength={100}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      A new project will be created with this name
-                    </p>
-                  </div>
-                )}
-
-                {/* Existing Project Selection */}
-                {!createNewProject && (
-                  <div className="space-y-2">
-                    <Select
-                      value={selectedProjectId}
-                      onValueChange={setSelectedProjectId}
-                      disabled={isUploading || loadingProjects}
+                    <Label 
+                      htmlFor="create-new-project" 
+                      className="text-sm cursor-pointer flex items-center gap-2"
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder={loadingProjects ? "Loading projects..." : "Select existing project or skip to use Unassigned"} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {projects.map((project) => (
-                          <SelectItem key={project.id} value={project.id}>
-                            <div className="flex items-center gap-2">
-                              <span>{project.name}</span>
-                              <span className="text-xs text-muted-foreground">
-                                ({project.sourceImageCount} images)
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <p className="text-xs text-muted-foreground">
-                      {selectedProjectId 
-                        ? "Images will be added to the selected project" 
-                        : "Skip selection to add images to Unassigned folder for organizing later"
-                      }
-                    </p>
+                      <FolderPlus className="h-4 w-4" />
+                      Create new project
+                    </Label>
                   </div>
-                )}
+
+                  {/* New Project Name Input */}
+                  {createNewProject && (
+                    <div className="ml-6">
+                      <Input
+                        placeholder="Project name (e.g., Johnson House Staging)"
+                        value={newProjectName}
+                        onChange={(e) => setNewProjectName(e.target.value)}
+                        disabled={isUploading}
+                        maxLength={100}
+                        className="mb-2"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        A new project will be created with this name
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Existing Project Selection */}
+                  {!createNewProject && (
+                    <div className="space-y-2">
+                      <Select
+                        value={selectedProjectId}
+                        onValueChange={setSelectedProjectId}
+                        disabled={isUploading || loadingProjects}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={loadingProjects ? "Loading projects..." : "Select existing project (optional)"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {projects.map((project) => (
+                            <SelectItem key={project.id} value={project.id}>
+                              <div className="flex items-center gap-2">
+                                <span>{project.name}</span>
+                                <span className="text-xs text-muted-foreground">
+                                  ({project.sourceImageCount} images)
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedProjectId 
+                          ? "Images will be added to the selected project" 
+                          : "Leave empty to add to Unassigned folder"
+                        }
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
+            )}
+
+            {/* Dropzone - Main focal point */}
+            <DropzoneCard
+              onFilesAccepted={handleFilesAccepted}
+              onFilesRejected={handleFilesRejected}
+              maxFiles={5}
+              maxSize={10 * 1024 * 1024}
+            />
+
+            {/* Upload Progress */}
+            {uploads.length > 0 && (
+              <UploadProgress uploads={uploads} />
+            )}
+
+            {/* Feedback Messages */}
+            <UploadFeedback
+              messages={feedbackMessages}
+              rejectedFiles={rejectedFiles}
+              onDismiss={handleDismissMessage}
+              onRetryRejected={handleRetryRejected}
+            />
+
+            {/* Tips */}
+            <div className="bg-muted/30 rounded-lg p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <FileImage className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Upload Tips</span>
+              </div>
+              <ul className="text-xs text-muted-foreground space-y-1">
+                <li>• High-resolution images (1200x800px+) work best</li>
+                <li>• Formats: JPG, PNG, WEBP, HEIC, TIFF, BMP</li>
+                <li>• Max 10MB per file, up to 5 files at once</li>
+                <li>• Empty or minimal furniture gives better results</li>
+              </ul>
             </div>
-          )}
-
-          {/* Feedback Messages */}
-          <UploadFeedback
-            messages={feedbackMessages}
-            rejectedFiles={rejectedFiles}
-            onDismiss={handleDismissMessage}
-            onRetryRejected={handleRetryRejected}
-          />
-
-          {/* Upload Progress */}
-          {uploads.length > 0 && (
-            <UploadProgress uploads={uploads} />
-          )}
-
-          {/* Dropzone */}
-          <DropzoneCard
-            onFilesAccepted={handleFilesAccepted}
-            onFilesRejected={handleFilesRejected}
-            maxFiles={5}
-            maxSize={10 * 1024 * 1024}
-          />
-
-          {/* Tips */}
-          <div className="bg-muted/50 rounded-lg p-4">
-            <h4 className="font-semibold mb-2 flex items-center gap-2">
-              <FileImage className="h-4 w-4" />
-              Upload Tips
-            </h4>
-            <ul className="text-sm text-muted-foreground space-y-1">
-              <li>• Use high-resolution images (minimum 1200x800px) for best results</li>
-              <li>• Supported formats: JPG, PNG, WEBP, HEIC, TIFF, BMP</li>
-              <li>• Maximum file size: 10MB per image</li>
-              <li>• Upload up to 5 images at once</li>
-              <li>• Empty or minimally furnished rooms work best</li>
-            </ul>
           </div>
+        </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-2">
+        {/* Bottom Action Bar */}
+        <div className="border-t border-border p-4">
+          <div className="flex justify-end">
             <Button
               variant="outline"
               onClick={handleClose}
               disabled={isUploading}
+              className="min-w-20"
             >
-              {uploads.some(u => u.status === 'completed') ? 'Done' : 'Cancel'}
+              {uploads.some(u => u.status === 'completed') ? 'Done' : isUploading ? 'Uploading...' : 'Cancel'}
             </Button>
           </div>
         </div>
