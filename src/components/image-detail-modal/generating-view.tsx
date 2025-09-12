@@ -15,14 +15,18 @@ export function GeneratingView({ sourceImage }: GeneratingViewProps) {
         <img
           src={originalImageUrl}
           alt={sourceImage.displayName || sourceImage.originalFileName}
-          className="w-full h-96 object-cover blur-lg"
+          className="w-full h-96 object-cover blur-sm"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-black/40" />
+        {/* Spinner overlay on the image */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <Loader2 className="w-12 h-12 animate-spin text-white mb-4" />
+          <h3 className="text-xl font-semibold text-white text-center px-4">Staging your space...</h3>
+          <p className="text-white/80 mt-2 text-center px-4">This may take a moment. Please don&apos;t close this window.</p>
+        </div>
       </div>
-      <div className="flex flex-col items-center justify-center h-96">
-        <Loader2 className="w-12 h-12 animate-spin text-accent mb-4" />
-        <h3 className="text-xl font-semibold text-foreground">Staging your space...</h3>
-        <p className="text-muted-foreground mt-2">This may take a moment. Please don&apos;t close this window.</p>
+      <div className="flex flex-col items-center justify-center h-96 text-muted-foreground">
+        <p className="text-center">Your AI-staged result will appear here shortly.</p>
       </div>
     </div>
   );

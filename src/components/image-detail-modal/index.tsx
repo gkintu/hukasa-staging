@@ -37,6 +37,12 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
   const fetchExistingGenerations = useCallback(async () => {
     if (!sourceImage) return;
     
+    // Check if a generation is currently in progress
+    if (generateImagesMutation.isPending) {
+      setGenerationState('generating');
+      return;
+    }
+    
     try {
       const response = await fetch(`/api/images/${sourceImage.id}/generations`);
       const data = await response.json();
@@ -63,7 +69,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
       console.error('Error fetching existing generations:', error);
       setGenerationState('form');
     }
-  }, [sourceImage]);
+  }, [sourceImage, generateImagesMutation.isPending]);
 
   // Fetch existing generations when modal opens
   useEffect(() => {
@@ -87,6 +93,9 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
       console.error('Generation cancelled: Room type and furniture style must be selected');
       return;
     }
+
+    // Switch to generating view immediately when starting generation
+    setGenerationState('generating');
 
     // Use the optimistic mutation hook
     generateImagesMutation.mutate({
@@ -113,6 +122,8 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
         // Stay on current view if we have results, otherwise go back to form
         if (generatedImages.length === 0) {
           setGenerationState('form');
+        } else {
+          setGenerationState('results');
         }
       }
     });
