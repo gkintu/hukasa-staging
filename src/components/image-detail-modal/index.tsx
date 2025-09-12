@@ -3,16 +3,17 @@
 import { useState, useEffect, useCallback } from "react"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
-import { SourceImage, MockGeneratedImage, mockGeneratedImages, convertRoomTypeFromEnum, convertStyleFromEnum } from "./types"
+import { SourceImage, MockGeneratedImage, convertRoomTypeFromEnum, convertStyleFromEnum } from "./types"
 
 interface Generation {
   id: string;
-  stagedImagePath: string;
+  stagedImagePath: string | null;
 }
 import { GenerationForm } from "./generation-form"
 import { GeneratingView } from "./generating-view"
 import { GenerationResultsView } from "./generation-results-view"
 import { useInvalidateImageQueries, useInvalidateProjectQueries } from "@/lib/shared/hooks/use-images"
+import { useGenerateImages } from "@/lib/shared/hooks/use-generate-images"
 
 interface ImageDetailModalProps {
   isOpen: boolean
@@ -28,9 +29,10 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
   const [selectedStyle, setSelectedStyle] = useState<string>("")
   const [lastVariantCount, setLastVariantCount] = useState<number>(3)
   
-  // TanStack Query invalidation hooks
+  // TanStack Query hooks
   const invalidateImageQueries = useInvalidateImageQueries()
   const invalidateProjectQueries = useInvalidateProjectQueries()
+  const generateImagesMutation = useGenerateImages()
 
   const fetchExistingGenerations = useCallback(async () => {
     if (!sourceImage) return;
@@ -83,115 +85,37 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
     // Validate that both room type and style are selected
     if (!selectedRoomType || !selectedStyle) {
       console.error('Generation cancelled: Room type and furniture style must be selected');
-      // TODO: Show user-friendly error message (toast notification or alert)
       return;
     }
 
-    // Use NEXT_PUBLIC_MOCK_API env var to toggle mock flow
-    if (process.env.NEXT_PUBLIC_MOCK_API === 'true') {
-      setGenerationState('generating');
-      
-      try {
-        // Save mock generations to database
-        const response = await fetch(`/api/images/${sourceImage.id}/generations`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            roomType: selectedRoomType,
-            stagingStyle: selectedStyle,
-            prompt: prompt,
-            mockGenerations: mockGeneratedImages.slice(0, imageCount)
-          })
-        });
-
-        const data = await response.json();
+    // Use the optimistic mutation hook
+    generateImagesMutation.mutate({
+      sourceImageId: sourceImage.id,
+      roomType: selectedRoomType,
+      stagingStyle: selectedStyle,
+      imageCount: imageCount
+    }, {
+      onSuccess: (data) => {
+        // Convert API response to display format
+        const newGenerations = data.data.generations.map((gen: Generation) => ({
+          id: gen.id,
+          url: `/api/generations/${gen.id}/file`
+        }));
         
-        if (data.success) {
-          // Convert saved generations back to MockGeneratedImage format
-          const newGenerations = data.data.generations.map((gen: Generation) => ({
-            id: gen.id,
-            url: `/api/generations/${gen.id}/file`
-          }));
-          
-          // Add new generations to existing ones (additive)
-          setGeneratedImages(prev => [...prev, ...newGenerations]);
-          setGenerationState('results');
-          
-          // ✅ Invalidate TanStack Query cache to update badge status immediately
-          invalidateImageQueries.invalidateAll();
-          invalidateProjectQueries.invalidateAll();
-        } else {
-          console.error('Failed to save generations:', data.message);
-          setGenerationState('form');
-          // TODO: Show user-friendly error message with data.message
-          alert(`Generation failed: ${data.message}`);
-        }
-      } catch (error) {
-        console.error('Error saving generations:', error);
-        // Fallback to old mock behavior
-        setTimeout(() => {
-          setGeneratedImages(prev => [...prev, ...mockGeneratedImages.slice(0, imageCount)]);
-          setGenerationState('results');
-        }, 2000);
-      }
-    } else {
-      // Real AI API call implementation using Replicate
-      setGenerationState('generating');
-      
-      console.log('🚀 Real AI Mode - Calling Replicate with:', {
-        sourceImageId: sourceImage.id,
-        prompt,
-        imageCount,
-        roomType: selectedRoomType,
-        stagingStyle: selectedStyle
-      });
-      
-      try {
-        // Call real AI generation API
-        const response = await fetch(`/api/images/${sourceImage.id}/generations`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            roomType: selectedRoomType,
-            stagingStyle: selectedStyle,
-            prompt: prompt,
-            imageCount: imageCount // Send count directly for real API
-          })
-        });
-
-        const data = await response.json();
+        // Add new generations to existing ones
+        setGeneratedImages(prev => [...prev, ...newGenerations]);
+        setGenerationState('results');
         
-        if (data.success) {
-          // Convert generated AI images to display format
-          const newGenerations = data.data.generations.map((gen: Generation) => ({
-            id: gen.id,
-            url: `/api/generations/${gen.id}/file`
-          }));
-          
-          // Add new generations to existing ones
-          setGeneratedImages(prev => [...prev, ...newGenerations]);
-          setGenerationState('results');
-          
-          // ✅ Invalidate TanStack Query cache to update badge status
-          invalidateImageQueries.invalidateAll();
-          invalidateProjectQueries.invalidateAll();
-          
-          console.log(`✅ Successfully generated ${newGenerations.length} AI variants`);
-        } else {
-          console.error('❌ AI generation failed:', data.message);
+        console.log(`✅ Successfully generated ${newGenerations.length} variants`);
+      },
+      onError: (error) => {
+        console.error('❌ Generation failed:', error);
+        // Stay on current view if we have results, otherwise go back to form
+        if (generatedImages.length === 0) {
           setGenerationState('form');
-          alert(`AI Generation failed: ${data.message}`);
         }
-      } catch (error) {
-        console.error('❌ Error calling real AI API:', error);
-        setGenerationState('form');
-        alert(`AI Generation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       }
-    }
+    });
   }
 
   const handleDeleteVariant = async (variantId: string) => {
@@ -251,6 +175,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
             setSelectedStyle={setSelectedStyle}
             previousVariantCount={lastVariantCount}
             autoExpandAdvanced={generatedImages.length > 0}
+            isGenerating={generateImagesMutation.isPending}
           />
         )}
         {generationState === 'generating' && <GeneratingView sourceImage={sourceImage} />}
@@ -267,6 +192,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
             roomType={selectedRoomType}
             furnitureStyle={selectedStyle}
             defaultVariantCount={lastVariantCount}
+            isGenerating={generateImagesMutation.isPending}
           />
         )}
       </DialogContent>

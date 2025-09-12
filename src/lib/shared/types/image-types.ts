@@ -2,11 +2,21 @@
 
 export interface GeneratedVariant {
   id: string
+  sourceImageId: string
+  userId: string
+  projectId: string
   stagedImagePath: string | null
   variationIndex: number
-  status: string
-  completedAt: Date | null
+  roomType: 'living_room' | 'bedroom' | 'kitchen' | 'bathroom' | 'office' | 'dining_room' | 'kids_room' | 'home_office'
+  stagingStyle: 'modern' | 'midcentury' | 'scandinavian' | 'luxury' | 'coastal' | 'industrial' | 'minimalist' | 'standard'
+  operationType: 'stage_empty' | 'remove_furniture'
+  status: 'pending' | 'processing' | 'completed' | 'failed'
+  jobId: string | null
   errorMessage: string | null
+  processingTimeMs: number | null
+  aiGenerationParams: any | null
+  createdAt: Date
+  completedAt: Date | null
 }
 
 // Base source image interface (matches database schema with nullable fields from LEFT JOIN)

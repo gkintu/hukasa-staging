@@ -18,6 +18,7 @@ interface GenerationResultsViewProps {
     roomType: string;
     furnitureStyle: string;
     defaultVariantCount?: number;
+    isGenerating?: boolean;
 }
 
 export function GenerationResultsView({ 
@@ -28,7 +29,8 @@ export function GenerationResultsView({
   onUpdateSelections,
   roomType, 
   furnitureStyle, 
-  defaultVariantCount = 3 
+  defaultVariantCount = 3,
+  isGenerating = false
 }: GenerationResultsViewProps) {
   const [selectedThumbnail, setSelectedThumbnail] = useState(0)
   const [imageCount, setImageCount] = useState([defaultVariantCount])
@@ -155,10 +157,11 @@ export function GenerationResultsView({
                       onUpdateSelections?.(currentRoomType, currentFurnitureStyle);
                       onRegenerate(imageCount[0], prompt);
                     }} 
+                    disabled={isGenerating}
                     className="w-full flex items-center justify-center gap-2"
                   >
-                    <Sparkles className="h-4 w-4" />
-                    Generate {imageCount[0]} more
+                    <Sparkles className={`h-4 w-4 ${isGenerating ? 'animate-spin' : ''}`} />
+                    {isGenerating ? 'Generating...' : `Generate ${imageCount[0]} more`}
                   </Button>
                 </div>
                 

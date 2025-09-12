@@ -19,6 +19,7 @@ interface GenerationFormProps {
     setSelectedStyle: (value: string) => void;
     previousVariantCount?: number;
     autoExpandAdvanced?: boolean;
+    isGenerating?: boolean;
 }
 
 export function GenerationForm({ 
@@ -30,11 +31,12 @@ export function GenerationForm({
     selectedStyle, 
     setSelectedStyle,
     previousVariantCount = 3,
-    autoExpandAdvanced = false
+    autoExpandAdvanced = false,
+    isGenerating = false
 }: GenerationFormProps) {
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(autoExpandAdvanced)
     const [imageCount, setImageCount] = useState([previousVariantCount])
-    const isGenerateDisabled = !selectedRoomType || !selectedStyle
+    const isGenerateDisabled = !selectedRoomType || !selectedStyle || isGenerating
 
     return (
         <div className="relative">
@@ -126,8 +128,8 @@ export function GenerationForm({
                                 });
                                 onGenerate(imageCount[0], prompt);
                             }} disabled={isGenerateDisabled} className="px-6 cursor-pointer">
-                                <Sparkles className="w-4 h-4 mr-2" />
-                                Generate
+                                <Sparkles className={`w-4 h-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} />
+                                {isGenerating ? 'Generating...' : 'Generate'}
                             </Button>
                         </div>
                     </div>
