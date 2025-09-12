@@ -240,7 +240,8 @@ export async function POST(
         const startTime = Date.now() // Track timing for both modes
         
         if (isMockMode) {
-          // Mock mode - use placeholder image
+          // Mock mode - simulate AI processing delay (5 seconds)
+          await new Promise(resolve => setTimeout(resolve, 5000))
           imageBuffer = await createMockImageBuffer()
           mimeType = SupportedFileType.PNG
           jobId = `mock-job-${Date.now()}-${index}`

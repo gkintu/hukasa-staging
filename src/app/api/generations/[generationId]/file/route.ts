@@ -16,6 +16,7 @@ export const GET = withAuth(async (request: NextRequest, user) => {
   const url = new URL(request.url)
   const pathSegments = url.pathname.split('/')
   const generationId = pathSegments[pathSegments.length - 2] // [generationId]/file
+  const isDownload = url.searchParams.get('download') === 'true'
   
   if (!generationId) {
     return NextResponse.json(
@@ -94,12 +95,18 @@ export const GET = withAuth(async (request: NextRequest, user) => {
     const mimeType = getMimeTypeFromExtension(`.${extension}`)
 
     // Set response headers optimized for image serving
-    const headers = {
+    const headers: Record<string, string> = {
       'Content-Type': mimeType,
       'Content-Length': stats.size.toString(),
       'Cache-Control': 'private, max-age=86400', // Cache for 24 hours
       'ETag': `"${generation.id}"`,
       'Last-Modified': stats.mtime.toUTCString(),
+    }
+
+    // Add download header if requested
+    if (isDownload) {
+      const filename = `${sourceImage.displayName || 'image'}-variant-${generation.variationIndex}${extension ? '.' + extension : ''}`
+      headers['Content-Disposition'] = `attachment; filename="${filename}"`
     }
 
     return new NextResponse(new Uint8Array(fileBuffer), { headers })

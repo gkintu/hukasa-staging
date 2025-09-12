@@ -52,6 +52,14 @@ export function GenerationResultsView({
     link.click();
   };
 
+  const handleDownloadOriginal = () => {
+    // Create download link for original image
+    const downloadUrl = `${originalImageUrl}?download=true`;
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.click();
+  };
+
   const handleDeleteVariant = () => {
     const currentVariant = generatedImages[selectedThumbnail];
     if (!currentVariant || !onDeleteVariant) return;
@@ -90,12 +98,17 @@ export function GenerationResultsView({
             {/* Left Panel */}
             <div className="lg:col-span-2">
               <h2 className="text-lg font-semibold mb-4 text-foreground">Original</h2>
-              <div className="rounded-lg overflow-hidden border border-border mb-4">
+              <div className="relative mb-4 group rounded-lg overflow-hidden border border-border">
                 <img
                   src={originalImageUrl}
                   alt="Original room"
                   className="w-full h-48 object-cover"
                 />
+                <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <Button size="icon" variant="secondary" aria-label="Download original image" onClick={handleDownloadOriginal}>
+                    <Download className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
               <div className="space-y-4">
                 <div>

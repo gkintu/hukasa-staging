@@ -15,6 +15,7 @@ export const GET = withAuth(async (request: NextRequest, user) => {
   const url = new URL(request.url)
   const pathSegments = url.pathname.split('/')
   const id = pathSegments[pathSegments.length - 2] // [id]/file
+  const isDownload = url.searchParams.get('download') === 'true'
   
   // Validate id format
   if (!id) {
@@ -86,12 +87,18 @@ export const GET = withAuth(async (request: NextRequest, user) => {
     const mimeType = getMimeTypeFromExtension(actualExtension)
 
     // Set response headers
-    const headers = {
+    const headers: Record<string, string> = {
       'Content-Type': mimeType,
       'Content-Length': stats.size.toString(),
       'Cache-Control': 'private, max-age=3600',
       'ETag': `"${id}"`,
       'Last-Modified': stats.mtime.toUTCString(),
+    }
+
+    // Add download header if requested
+    if (isDownload) {
+      const filename = sourceImage.displayName || `image-${id}${actualExtension}`
+      headers['Content-Disposition'] = `attachment; filename="${filename}"`
     }
 
     return new NextResponse(new Uint8Array(fileBuffer), { headers })
