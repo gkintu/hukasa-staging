@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/breadcrumb"
 import { usePathname } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { SearchCommand } from "@/components/search-command"
 import { useScrollHidden } from "@/hooks/use-scroll-effects"
 import { cn } from "@/lib/utils"
 
@@ -97,11 +96,6 @@ export function AdminHeader() {
       </div>
       
       <div className="ml-auto flex items-center gap-2 px-4">
-        {/* Global admin search */}
-        <div className="relative hidden md:block">
-          <SearchCommand variant="admin" />
-        </div>
-        
         {/* Theme toggle */}
         <ThemeToggle />
       </div>

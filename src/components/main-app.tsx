@@ -196,8 +196,6 @@ export function MainApp({ user }: MainAppProps) {
           projectName={projectParam ? `Project ${projectParam}` : undefined}
           imageName={selectedImageForModal?.displayName || selectedImageForModal?.originalFileName || undefined}
           onNavigate={handleHeaderNavigation}
-          showSearch={true}
-          onUploadClick={() => setShowUploadModal(true)}
           onSettingsClick={() => setActiveView("settings")}
         />
 

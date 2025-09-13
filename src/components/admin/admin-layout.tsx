@@ -16,7 +16,6 @@ import {
 import { AdminSidebar } from "./admin-sidebar"
 import { AdminHeader } from "./admin-header"
 import { AdminNavUser } from "./admin-nav-user"
-import { SearchProvider } from "@/lib/search-provider"
 import { ConfigProvider } from "@/lib/config-provider"
 import { RouteErrorBoundary } from "@/components/error-boundary"
 import { AdminQueryProvider } from "./admin-query-provider"
@@ -42,19 +41,11 @@ export async function AdminLayout({ children }: AdminLayoutProps) {
   // The SidebarProvider will handle cookie-based state after hydration
   const defaultOpen = false
 
-  // Sample searchable data for admin - in real app this would come from API
-  const adminSearchData = [
-    { id: '1', title: 'User Management', subtitle: 'Manage all users', type: 'user' as const, url: '/admin/users' },
-    { id: '2', title: 'Image Gallery', subtitle: 'View all uploaded images', type: 'image' as const, url: '/admin/images' },
-    { id: '3', title: 'Audit Logs', subtitle: 'System activity logs', type: 'audit' as const, url: '/admin/audit' },
-    { id: '4', title: 'System Settings', subtitle: 'Configure platform', type: 'project' as const, url: '/admin/settings' },
-  ]
 
   return (
     <AdminQueryProvider>
       <RouteErrorBoundary>
         <ConfigProvider>
-          <SearchProvider searchableData={adminSearchData}>
             <SidebarProvider defaultOpen={defaultOpen}>
             <Sidebar collapsible="icon" variant="inset">
               <SidebarHeader>
@@ -102,7 +93,6 @@ export async function AdminLayout({ children }: AdminLayoutProps) {
                 </div>
               </SidebarInset>
           </SidebarProvider>
-        </SearchProvider>
       </ConfigProvider>
     </RouteErrorBoundary>
     </AdminQueryProvider>

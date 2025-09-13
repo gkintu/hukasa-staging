@@ -11,19 +11,16 @@ import {
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { SearchCommand } from "@/components/search-command"
 import { useScrollHidden } from "@/hooks/use-scroll-effects"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { Upload, Settings } from "lucide-react"
+import { Settings } from "lucide-react"
 
 interface MainAppHeaderProps {
   activeView: string
   projectName?: string
   imageName?: string
   onNavigate: (view: string) => void
-  showSearch?: boolean
-  onUploadClick?: () => void
   onSettingsClick?: () => void
 }
 
@@ -32,8 +29,6 @@ export function MainAppHeader({
   projectName, 
   imageName, 
   onNavigate,
-  showSearch = false,
-  onUploadClick,
   onSettingsClick
 }: MainAppHeaderProps) {
   // Generate dynamic breadcrumbs based on current view and context
@@ -129,24 +124,7 @@ export function MainAppHeader({
       </div>
       
       <div className="ml-auto flex items-center gap-2 px-4">
-        {/* Global search */}
-        {showSearch && (
-          <div className="relative hidden md:block">
-            <SearchCommand variant="main" />
-          </div>
-        )}
-        
         {/* Action buttons */}
-        {onUploadClick && (
-          <Button
-            onClick={onUploadClick}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
-          >
-            <Upload className="h-4 w-4" />
-            Upload Files
-          </Button>
-        )}
-        
         {onSettingsClick && (
           <Button
             variant="ghost"
