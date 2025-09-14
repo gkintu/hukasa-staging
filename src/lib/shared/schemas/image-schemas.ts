@@ -17,9 +17,14 @@ export const BasicImageSchema = z.object({
     id: z.string().uuid(),
     stagedImagePath: z.string().nullable(),
     variationIndex: z.number().int(),
+    roomType: z.string(),
+    stagingStyle: z.string(),
+    operationType: z.string(),
     status: z.string(),
-    completedAt: z.date().nullable(),
+    jobId: z.string().nullable(),
     errorMessage: z.string().nullable(),
+    processingTimeMs: z.number().nullable(),
+    completedAt: z.date().nullable(),
   })),
 });
 

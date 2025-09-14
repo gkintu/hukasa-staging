@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, integer, pgEnum, uuid } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, boolean, integer, pgEnum, uuid, index } from 'drizzle-orm/pg-core'
 import { relations } from 'drizzle-orm'
 
 // Enums for room types, staging styles, operation types, and status
@@ -84,6 +84,10 @@ export const users = pgTable('users', {
   updatedAt: timestamp('updated_at')
     .$defaultFn(() => new Date())
     .notNull()
+}, (table) => {
+  return {
+    emailIdx: index('idx_users_email').on(table.email)
+  }
 })
 
 // Projects table
@@ -93,6 +97,10 @@ export const projects = pgTable('projects', {
   name: text('name').notNull(), // User-defined project name
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
+}, (table) => {
+  return {
+    userIdIdx: index('idx_projects_user_id').on(table.userId)
+  }
 })
 
 // Source Images table - stores original uploaded images
@@ -107,6 +115,11 @@ export const sourceImages = pgTable('source_images', {
   isFavorited: boolean('is_favorited').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull()
+}, (table) => {
+  return {
+    userIdIdx: index('idx_source_images_user_id').on(table.userId),
+    projectIdIdx: index('idx_source_images_project_id').on(table.projectId)
+  }
 })
 
 // Generations table - stores AI-generated staging results based on source images
@@ -126,6 +139,11 @@ export const generations = pgTable('generations', {
   processingTimeMs: integer('processing_time_ms'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   completedAt: timestamp('completed_at')
+}, (table) => {
+  return {
+    sourceImageIdIdx: index('idx_generations_source_image_id').on(table.sourceImageId),
+    userIdIdx: index('idx_generations_user_id').on(table.userId)
+  }
 })
 
 // Admin actions audit table
@@ -142,6 +160,10 @@ export const adminActions = pgTable('admin_actions', {
   userAgent: text('user_agent'),
   metadata: text('metadata'), // JSON string for additional context
   createdAt: timestamp('created_at').defaultNow().notNull()
+}, (table) => {
+  return {
+    adminIdIdx: index('idx_admin_actions_admin_id').on(table.adminId)
+  }
 })
 
 // System settings table
@@ -224,6 +246,10 @@ export const sessions = pgTable('sessions', {
   ipAddress: text('ip_address'),
   userAgent: text('user_agent'),
   userId: text('user_id').references(() => users.id).notNull()
+}, (table) => {
+  return {
+    userIdIdx: index('idx_sessions_user_id').on(table.userId)
+  }
 })
 
 export const accounts = pgTable('accounts', {

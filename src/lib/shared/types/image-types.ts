@@ -1,5 +1,6 @@
 // Centralized image type definitions to avoid conflicts across components
 
+// Full database variant structure
 export interface GeneratedVariant {
   id: string
   sourceImageId: string
@@ -14,8 +15,23 @@ export interface GeneratedVariant {
   jobId: string | null
   errorMessage: string | null
   processingTimeMs: number | null
-  aiGenerationParams: any | null
+  aiGenerationParams: Record<string, unknown> | null
   createdAt: Date
+  completedAt: Date | null
+}
+
+// Simplified variant structure as returned by API endpoints
+export interface VariantSummary {
+  id: string
+  stagedImagePath: string | null
+  variationIndex: number
+  roomType: string
+  stagingStyle: string
+  operationType: string
+  status: string
+  jobId: string | null
+  errorMessage: string | null
+  processingTimeMs: number | null
   completedAt: Date | null
 }
 
@@ -30,7 +46,7 @@ export interface SourceImage {
   stagingStyle: string | null  // Nullable when no generations exist  
   operationType: string | null  // Nullable when no generations exist
   createdAt: Date
-  variants: GeneratedVariant[]
+  variants: VariantSummary[]
 }
 
 // Extended interface for components that need project context

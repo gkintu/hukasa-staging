@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge"
-import { GeneratedVariant } from "@/lib/shared/types/image-types"
+import { GeneratedVariant, VariantSummary } from "@/lib/shared/types/image-types"
 import { Loader2 } from "lucide-react"
 
 /**
@@ -14,7 +14,7 @@ export type UploadStatus = 'pending' | 'uploading' | 'completed' | 'failed'
 export type ProgressStatus = 'pending' | 'in_progress' | 'completed' | 'failed' | 'cancelled'
 
 // Generation variant status badge with optimistic updates support
-export function getVariantStatusBadge(variants: GeneratedVariant[]) {
+export function getVariantStatusBadge(variants: GeneratedVariant[] | VariantSummary[]) {
   const completedCount = variants.filter(v => v.status === 'completed').length
   const processingCount = variants.filter(v => v.status === 'processing').length
   const pendingCount = variants.filter(v => v.status === 'pending').length

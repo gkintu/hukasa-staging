@@ -102,10 +102,10 @@ export async function GET(request: NextRequest) {
           stagingStyle: row.stagingStyle,
           operationType: row.operationType,
           status: row.status,
-          completedAt: row.completedAt,
-          errorMessage: row.errorMessage,
           jobId: row.jobId,
-          processingTimeMs: row.processingTimeMs
+          errorMessage: row.errorMessage,
+          processingTimeMs: row.processingTimeMs,
+          completedAt: row.completedAt
         })
       }
     }

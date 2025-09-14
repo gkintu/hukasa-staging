@@ -22,6 +22,16 @@ interface FileStats {
   monthlyUploads: number
 }
 
+interface RecentActivity {
+  id: string
+  type: 'upload' | 'completion' | 'processing'
+  message: string
+  subtitle: string
+  timestamp: string
+  status: 'success' | 'processing'
+  relativeTime: string
+}
+
 export function Dashboard({ user }: DashboardProps) {
   const [stats, setStats] = useState<FileStats>({
     totalFiles: 0,
@@ -29,15 +39,18 @@ export function Dashboard({ user }: DashboardProps) {
     activeProjects: 0,
     monthlyUploads: 0
   })
+  const [recentActivities, setRecentActivities] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)
+  const [activitiesLoading, setActivitiesLoading] = useState(true)
 
   useEffect(() => {
-    async function fetchStats() {
+    async function fetchData() {
       try {
-        const response = await fetch('/api/files')
-        const data = await response.json()
-        if (data.success) {
-          const files = data.files || []
+        // Fetch stats
+        const statsResponse = await fetch('/api/files')
+        const statsData = await statsResponse.json()
+        if (statsData.success) {
+          const files = statsData.files || []
           const currentMonth = new Date().getMonth()
           const currentYear = new Date().getFullYear()
           
@@ -53,14 +66,22 @@ export function Dashboard({ user }: DashboardProps) {
             monthlyUploads: monthlyFiles.length
           })
         }
+        
+        // Fetch recent activities
+        const activitiesResponse = await fetch('/api/recent-activity')
+        const activitiesData = await activitiesResponse.json()
+        if (activitiesData.success) {
+          setRecentActivities(activitiesData.activities || [])
+        }
       } catch (error) {
-        console.error('Error fetching stats:', error)
+        console.error('Error fetching dashboard data:', error)
       } finally {
         setLoading(false)
+        setActivitiesLoading(false)
       }
     }
 
-    fetchStats()
+    fetchData()
   }, [])
 
   if (loading) {
@@ -157,29 +178,48 @@ export function Dashboard({ user }: DashboardProps) {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Living room staging completed</p>
-                  <p className="text-xs text-muted-foreground">2 hours ago</p>
-                </div>
+            {activitiesLoading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <div key={i} className="flex items-center space-x-4">
+                    <div className="w-2 h-2 bg-muted rounded-full animate-pulse"></div>
+                    <div className="flex-1 space-y-2">
+                      <div className="h-4 bg-muted rounded animate-pulse"></div>
+                      <div className="h-3 bg-muted rounded w-2/3 animate-pulse"></div>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">New images uploaded</p>
-                  <p className="text-xs text-muted-foreground">5 hours ago</p>
-                </div>
+            ) : recentActivities.length > 0 ? (
+              <div className="space-y-4">
+                {recentActivities.map((activity) => (
+                  <div key={activity.id} className="flex items-center space-x-4">
+                    <div className={`w-2 h-2 rounded-full ${
+                      activity.status === 'success' 
+                        ? activity.type === 'upload' 
+                          ? 'bg-blue-500' 
+                          : 'bg-green-500'
+                        : 'bg-orange-500'
+                    }`}></div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium">{activity.message}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {activity.subtitle}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {activity.relativeTime}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">Bedroom staging in progress</p>
-                  <p className="text-xs text-muted-foreground">1 day ago</p>
-                </div>
+            ) : (
+              <div className="text-center py-8">
+                <Calendar className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
+                <p className="text-sm text-muted-foreground mb-1">No recent activity</p>
+                <p className="text-xs text-muted-foreground">Upload some images to get started!</p>
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
 

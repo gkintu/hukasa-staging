@@ -92,6 +92,7 @@ export async function GET(
         stagingStyle: generations.stagingStyle,
         operationType: generations.operationType,
         generationStatus: generations.status,
+        jobId: generations.jobId,
         processingTimeMs: generations.processingTimeMs,
         errorMessage: generations.errorMessage,
         completedAt: generations.completedAt
@@ -129,10 +130,13 @@ export async function GET(
         id: string
         stagedImagePath: string | null
         variationIndex: number
+        roomType: string
+        stagingStyle: string
+        operationType: string
         status: string
-        isFavorited: boolean
-        processingTimeMs: number | null
+        jobId: string | null
         errorMessage: string | null
+        processingTimeMs: number | null
         completedAt: Date | null
       }>
     }>()
@@ -165,10 +169,13 @@ export async function GET(
           id: image.generationId,
           stagedImagePath: image.stagedImagePath,
           variationIndex: image.variationIndex || 0,
+          roomType: image.roomType || '',
+          stagingStyle: image.stagingStyle || '',
+          operationType: image.operationType || '',
           status: image.generationStatus || 'pending',
-          isFavorited: image.isFavorited,
-          processingTimeMs: image.processingTimeMs,
+          jobId: image.jobId,
           errorMessage: image.errorMessage,
+          processingTimeMs: image.processingTimeMs,
           completedAt: image.completedAt
         })
       }

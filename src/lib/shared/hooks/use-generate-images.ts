@@ -10,7 +10,7 @@ import {
   invalidateProjectQueries 
 } from '../utils/query-keys';
 import { toast } from './use-toast';
-import type { GeneratedVariant } from '../types/image-types';
+import type { GeneratedVariant, SourceImage } from '../types/image-types';
 
 interface GenerateImagesRequest {
   sourceImageId: string;
@@ -27,11 +27,22 @@ interface GenerateImagesResponse {
   };
 }
 
+interface GenerationRequestBody {
+  roomType: string;
+  stagingStyle: string;
+  imageCount: number;
+  mockGenerations?: { id: string; url: string }[];
+}
+
+// A type for the query data that we will be optimistically updating
+// It can be a single image or an array of images
+type OptimisticImageData = SourceImage | SourceImage[];
+
 // API call function
 async function generateImages(request: GenerateImagesRequest): Promise<GenerateImagesResponse> {
   // Check if we're in mock mode and prepare mock data if needed
   const isMockMode = process.env.NEXT_PUBLIC_MOCK_API === 'true';
-  let requestBody: any = {
+  const requestBody: GenerationRequestBody = {
     roomType: request.roomType,
     stagingStyle: request.stagingStyle,
     imageCount: request.imageCount,
@@ -107,26 +118,27 @@ export function useGenerateImages(
       const previousImageData = queryClient.getQueryData(imageKeys.detail(sourceImageId));
       
       // Optimistically update the cache
-      queryClient.setQueryData(imageKeys.detail(sourceImageId), (old: any) => {
-        if (!old) return old;
-        
-        // Create optimistic variants
-        const optimisticVariants = createOptimisticVariants(sourceImageId, imageCount);
-        
-        // Add optimistic variants to existing variants
-        return {
-          ...old,
-          variants: [...(old.variants || []), ...optimisticVariants]
-        };
-      });
+      queryClient.setQueryData(
+        imageKeys.detail(sourceImageId), 
+        (old?: OptimisticImageData): OptimisticImageData | undefined => {
+          if (!old || Array.isArray(old)) return old;
+          
+          const optimisticVariants = createOptimisticVariants(sourceImageId, imageCount);
+          
+          return {
+            ...old,
+            variants: [...(old.variants || []), ...optimisticVariants]
+          };
+        }
+      );
       
       // Also update any list queries that might include this image
       queryClient.setQueriesData(
         { queryKey: imageKeys.lists(), exact: false },
-        (old: any) => {
+        (old?: OptimisticImageData): OptimisticImageData | undefined => {
           if (!old || !Array.isArray(old)) return old;
           
-          return old.map((image: any) => {
+          return old.map((image: SourceImage) => {
             if (image.id === sourceImageId) {
               const optimisticVariants = createOptimisticVariants(sourceImageId, imageCount);
               return {
@@ -142,12 +154,12 @@ export function useGenerateImages(
       // Also update project detail queries
       queryClient.setQueriesData(
         { queryKey: projectKeys.details(), exact: false },
-        (old: any) => {
+        (old?: { images: SourceImage[] }): { images: SourceImage[] } | undefined => {
           if (!old?.images || !Array.isArray(old.images)) return old;
           
           return {
             ...old,
-            images: old.images.map((image: any) => {
+            images: old.images.map((image: SourceImage) => {
               if (image.id === sourceImageId) {
                 const optimisticVariants = createOptimisticVariants(sourceImageId, imageCount);
                 return {
@@ -167,7 +179,7 @@ export function useGenerateImages(
       return { previousImageData, sourceImageId };
     },
     
-    onError: (error, _variables, context) => {
+    onError: (error: Error, _variables, context) => {
       // Rollback optimistic update
       if (context?.previousImageData) {
         queryClient.setQueryData(
@@ -188,20 +200,23 @@ export function useGenerateImages(
       const { sourceImageId } = variables;
       
       // Update the cache with real data from server
-      queryClient.setQueryData(imageKeys.detail(sourceImageId), (old: any) => {
-        if (!old) return old;
-        
-        // Replace optimistic variants with real ones
-        const realVariants = data.data.generations;
-        const nonOptimisticVariants = (old.variants || []).filter(
-          (variant: GeneratedVariant) => !variant.id.startsWith('optimistic-')
-        );
-        
-        return {
-          ...old,
-          variants: [...nonOptimisticVariants, ...realVariants]
-        };
-      });
+      queryClient.setQueryData(
+        imageKeys.detail(sourceImageId), 
+        (old?: SourceImage): SourceImage | undefined => {
+          if (!old) return old;
+          
+          // Replace optimistic variants with real ones
+          const realVariants = data.data.generations;
+          const nonOptimisticVariants = (old.variants || []).filter(
+            (variant: GeneratedVariant) => !variant.id.startsWith('optimistic-')
+          );
+          
+          return {
+            ...old,
+            variants: [...nonOptimisticVariants, ...realVariants]
+          };
+        }
+      );
       
       // Success feedback
       const count = data.data.generations.length;
@@ -241,7 +256,7 @@ export function useIsGenerating() {
 export function useGenerationProgress(sourceImageId: string) {
   const queryClient = useQueryClient();
   
-  const imageData = queryClient.getQueryData(imageKeys.detail(sourceImageId)) as any;
+  const imageData = queryClient.getQueryData<SourceImage>(imageKeys.detail(sourceImageId));
   const variants = imageData?.variants || [];
   
   const processingCount = variants.filter((v: GeneratedVariant) => 
