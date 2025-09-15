@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -29,7 +29,7 @@ export function useAuthSSE() {
     }
   }
 
-  const handleBanEvent = useCallback(async () => {
+  const handleBanEvent = async () => {
     console.log('[Auth SSE] User has been banned, logging out...')
 
     // Clear all cached data
@@ -48,9 +48,9 @@ export function useAuthSSE() {
 
     // Redirect to suspended page
     router.push('/account-suspended')
-  }, [queryClient, router])
+  }
 
-  const connect = useCallback(() => {
+  const connect = () => {
     if (eventSourceRef.current?.readyState === EventSource.OPEN) {
       return // Already connected
     }
@@ -120,7 +120,7 @@ export function useAuthSSE() {
         }
       }
     }
-  }, [handleBanEvent, queryClient])
+  }
 
   useEffect(() => {
     // Start SSE connection
@@ -128,7 +128,7 @@ export function useAuthSSE() {
 
     // Cleanup on unmount
     return cleanup
-  }, [connect])
+  }, [])
 
   // Expose reconnect function for manual retry
   const reconnect = () => {

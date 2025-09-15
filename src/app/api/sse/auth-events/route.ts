@@ -92,10 +92,8 @@ export async function GET(request: NextRequest) {
   await startListening()
 
   // Create SSE stream
-  let streamController: ReadableStreamDefaultController<Uint8Array>
   const stream = new ReadableStream({
     start(controller) {
-      streamController = controller
       console.log(`[SSE] User ${userId} connected`)
 
       // Add this controller to user's connections
@@ -118,7 +116,7 @@ export async function GET(request: NextRequest) {
             type: 'HEARTBEAT',
             timestamp: Date.now()
           })}\n\n`)
-        } catch {
+        } catch (error) {
           console.log(`[SSE] User ${userId} connection closed`)
           clearInterval(heartbeat)
         }
@@ -129,7 +127,7 @@ export async function GET(request: NextRequest) {
       console.log(`[SSE] User ${userId} disconnected`)
       // Clean up user connections
       const connections = userConnections.get(userId) || []
-      const updatedConnections = connections.filter((c) => c !== streamController)
+      const updatedConnections = connections.filter((c) => c !== controller)
 
       if (updatedConnections.length === 0) {
         userConnections.delete(userId)
