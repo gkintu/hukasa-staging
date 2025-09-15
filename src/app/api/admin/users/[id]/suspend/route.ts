@@ -10,14 +10,14 @@ export async function POST(
 ) {
   try {
     // Validate admin session
-    const session = await validateApiSession(request)
-    if (!session) {
+    const sessionResult = await validateApiSession(request)
+    if (!sessionResult.success || !sessionResult.user) {
       return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
 
     // Check admin role
     const adminUser = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id)
+      where: eq(users.id, sessionResult.user!.id)
     })
 
     if (!adminUser || adminUser.role !== 'admin') {
@@ -37,7 +37,7 @@ export async function POST(
     }
 
     // Prevent admin from suspending themselves
-    if (userId === session.user.id) {
+    if (userId === sessionResult.user!.id) {
       return Response.json({ 
         success: false, 
         message: 'Cannot suspend your own account' 
@@ -64,7 +64,7 @@ export async function POST(
     // Log admin action
     await db.insert(adminActions).values({
       action: suspend ? 'SUSPEND_USER' : 'UNSUSPEND_USER',
-      adminId: session.user.id,
+      adminId: sessionResult.user!.id,
       targetUserId: userId,
       targetResourceType: 'user',
       targetResourceId: userId,

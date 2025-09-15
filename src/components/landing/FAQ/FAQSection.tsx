@@ -20,7 +20,7 @@ const faqs = [
   },
   {
     question: "What photo formats are supported?",
-    answer: "We support JPEG, PNG, and HEIC formats. For best results, upload high-resolution photos with good lighting and clear views of the empty rooms."
+    answer: "We support JPEG, PNG, WEBP, and TIFF formats. For best results, upload high-resolution photos with good lighting and clear views of the empty rooms."
   },
   {
     question: "Can I use staged photos for MLS listings?",

@@ -148,6 +148,34 @@
       "when": 1757823339022,
       "tag": "0020_old_quasimodo",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1757918506379,
+      "tag": "0021_giant_the_spike",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1757918706123,
+      "tag": "0022_sudden_tusk",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1757918716563,
+      "tag": "0023_blushing_rattler",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1757918842845,
+      "tag": "0024_common_kulan_gath",
+      "breakpoints": true
     }
   ]
 }

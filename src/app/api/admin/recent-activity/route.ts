@@ -7,14 +7,14 @@ import { validateApiSession } from '@/lib/auth-utils'
 export async function GET(request: NextRequest) {
   try {
     // Validate admin session
-    const session = await validateApiSession(request)
-    if (!session) {
+    const sessionResult = await validateApiSession(request)
+    if (!sessionResult.success || !sessionResult.user) {
       return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
 
     // Check admin role
     const user = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id)
+      where: eq(users.id, sessionResult.user!.id)
     })
 
     if (!user || user.role !== 'admin') {

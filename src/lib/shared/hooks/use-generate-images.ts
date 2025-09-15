@@ -10,7 +10,7 @@ import {
   invalidateProjectQueries 
 } from '../utils/query-keys';
 import { toast } from './use-toast';
-import type { GeneratedVariant, SourceImage } from '../types/image-types';
+import type { GeneratedVariant, SourceImage, VariantSummary } from '../types/image-types';
 
 interface GenerateImagesRequest {
   sourceImageId: string;
@@ -208,7 +208,7 @@ export function useGenerateImages(
           // Replace optimistic variants with real ones
           const realVariants = data.data.generations;
           const nonOptimisticVariants = (old.variants || []).filter(
-            (variant: GeneratedVariant) => !variant.id.startsWith('optimistic-')
+            (variant: VariantSummary) => !variant.id.startsWith('optimistic-')
           );
           
           return {
@@ -259,15 +259,15 @@ export function useGenerationProgress(sourceImageId: string) {
   const imageData = queryClient.getQueryData<SourceImage>(imageKeys.detail(sourceImageId));
   const variants = imageData?.variants || [];
   
-  const processingCount = variants.filter((v: GeneratedVariant) => 
+  const processingCount = variants.filter((v: VariantSummary) =>
     v.status === 'processing' || v.id.startsWith('optimistic-')
   ).length;
   
-  const completedCount = variants.filter((v: GeneratedVariant) => 
+  const completedCount = variants.filter((v: VariantSummary) =>
     v.status === 'completed'
   ).length;
   
-  const failedCount = variants.filter((v: GeneratedVariant) => 
+  const failedCount = variants.filter((v: VariantSummary) =>
     v.status === 'failed'
   ).length;
   

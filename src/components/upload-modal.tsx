@@ -361,7 +361,7 @@ export function UploadModal({ isOpen, onClose, projectId, onUploadSuccess }: Upl
               </div>
               <ul className="text-xs text-muted-foreground space-y-1">
                 <li>• High-resolution images (1200x800px+) work best</li>
-                <li>• Formats: JPG, PNG, WEBP, HEIC, TIFF, BMP</li>
+                <li>• Formats: JPG, PNG, WEBP, TIFF</li>
                 <li>• Max 10MB per file, up to 5 files at once</li>
                 <li>• Empty or minimal furniture gives better results</li>
               </ul>

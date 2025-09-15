@@ -11,13 +11,11 @@ import { sourceImages, projects } from '@/db/schema'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = [
-  'image/jpeg', 
-  'image/jpg', 
-  'image/png', 
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
   'image/webp',
-  'image/heic',
-  'image/tiff', 
-  'image/bmp'
+  'image/tiff'
 ]
 const MAX_FILES = 5
 
@@ -30,9 +28,7 @@ function createEnhancedFileService(): EnhancedLocalFileService {
       SupportedFileType.JPEG,
       SupportedFileType.PNG,
       SupportedFileType.WEBP,
-      SupportedFileType.HEIC,
-      SupportedFileType.TIFF,
-      SupportedFileType.BMP
+      SupportedFileType.TIFF
     ],
     storageConfig: {
       type: 'local',
@@ -41,10 +37,10 @@ function createEnhancedFileService(): EnhancedLocalFileService {
       createDirectories: true
     },
     imageProcessing: {
-      quality: { jpeg: 85, webp: 80, png: 6 },
-      maxDimensions: { width: 4096, height: 4096 },
-      enableOptimization: true,
+      quality: { jpeg: 100, webp: 100, png: 0 }, // Not used - EnhancedLocalFileService skips compression
+      enableOptimization: false, // Not used - EnhancedLocalFileService skips compression
       preserveMetadata: false
+      // maxDimensions removed - 10MB file size limit already controls image dimensions naturally
     }
   }
   return new EnhancedLocalFileService(config)
@@ -199,8 +195,8 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
       }
 
       try {
-        // Generate a unique source image ID for hierarchical storage (used for filename only)
-        const sourceImageId = createSourceImageId(nanoid())
+        // Generate a unique source image ID for hierarchical storage
+        const sourceImageId = createSourceImageId(nanoid(11))
         
         // Use enhanced file service for hierarchical storage
         const uploadResult = await fileService.uploadSourceImage(

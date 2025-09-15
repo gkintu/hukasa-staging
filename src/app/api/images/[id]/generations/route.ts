@@ -192,10 +192,16 @@ export async function POST(
     }
 
     const sourceImage = sourceImageResult[0]
-    
+
     if (sourceImage.userId !== userId) {
       return NextResponse.json({ success: false, message: 'Access denied' }, { status: 403 })
     }
+
+    // Extract storage directory ID from originalImagePath for hierarchical storage
+    // Path format: "userId/storageId/source.ext"
+    const pathParts = sourceImage.originalImagePath.split('/')
+    const storageImageId = pathParts.length >= 2 ? pathParts[1] : imageId
+    console.log(`📁 Using storage directory: ${storageImageId} (from path: ${sourceImage.originalImagePath})`)
 
     // Get the current highest variation index for this source image
     const maxVariationResult = await db
@@ -257,7 +263,7 @@ export async function POST(
         // Store the generation using hierarchical storage
         const storageResult = await generationStorageService.storeGeneration({
           userId: sourceImage.userId,
-          sourceImageId: imageId,
+          sourceImageId: storageImageId,
           projectId: sourceImage.projectId,
           roomType: convertRoomTypeToEnum(roomType),
           stagingStyle: convertStyleToEnum(stagingStyle),

@@ -10,14 +10,14 @@ export async function GET(
 ) {
   try {
     // Validate admin session
-    const session = await validateApiSession(request)
-    if (!session) {
+    const sessionResult = await validateApiSession(request)
+    if (!sessionResult.success || !sessionResult.user) {
       return Response.json({ success: false, message: 'Unauthorized' }, { status: 401 })
     }
 
     // Check admin role
     const adminUser = await db.query.users.findFirst({
-      where: eq(users.id, session.user.id)
+      where: eq(users.id, sessionResult.user!.id)
     })
 
     if (!adminUser || adminUser.role !== 'admin') {
@@ -140,7 +140,7 @@ export async function GET(
     // Log admin action
     await db.insert(adminActions).values({
       action: 'VIEW_USER_PROFILE',
-      adminId: session.user.id,
+      adminId: sessionResult.user!.id,
       targetUserId: userId,
       targetResourceType: 'user_profile',
       targetResourceId: userId,

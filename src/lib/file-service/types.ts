@@ -21,9 +21,7 @@ export enum SupportedFileType {
   JPEG = 'image/jpeg',
   PNG = 'image/png',
   WEBP = 'image/webp',
-  HEIC = 'image/heic',    // iPhone/modern mobile photos
-  TIFF = 'image/tiff',    // Professional photography
-  BMP = 'image/bmp'       // Legacy Windows format
+  TIFF = 'image/tiff'     // Professional photography
 }
 
 // File metadata interface
@@ -114,7 +112,7 @@ export interface ImageProcessingConfig {
     webp: number
     png: number
   }
-  readonly maxDimensions: {
+  readonly maxDimensions?: {
     width: number
     height: number
   }

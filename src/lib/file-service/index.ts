@@ -91,16 +91,8 @@ export {
   createDefaultFileService
 } from './factory'
 
-// Implementations
-export { LocalFileService } from './implementations/local-file-service'
-
-// Register default implementations
-import { LocalFileService } from './implementations/local-file-service'
-import { FileServiceFactory } from './factory'
-import { FileStorageProvider } from './types'
-
-// Register LocalFileService for LOCAL provider
-FileServiceFactory.registerImplementation(FileStorageProvider.LOCAL, LocalFileService)
+// Note: LocalFileService removed - using EnhancedLocalFileService directly in upload routes
+// Factory pattern kept for future cloud providers
 
 // Convenience functions for common operations
 export const getFileServiceConfig = () => {

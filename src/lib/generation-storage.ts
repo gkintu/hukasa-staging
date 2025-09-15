@@ -53,9 +53,7 @@ export class GenerationStorageService {
         SupportedFileType.JPEG,
         SupportedFileType.PNG,
         SupportedFileType.WEBP,
-        SupportedFileType.HEIC,
-        SupportedFileType.TIFF,
-        SupportedFileType.BMP
+        SupportedFileType.TIFF
       ],
       storageConfig: {
         type: 'local',
@@ -77,15 +75,12 @@ export class GenerationStorageService {
       },
       imageProcessing: {
         quality: {
-          jpeg: 85,
-          webp: 80,
-          png: 6
+          jpeg: 100, // Not used - AI variants stored as-is
+          webp: 100, // Not used - AI variants stored as-is
+          png: 0     // Not used - AI variants stored as-is
         },
-        maxDimensions: {
-          width: 2048,
-          height: 2048
-        },
-        enableOptimization: true,
+        // maxDimensions removed - file size limits control dimensions naturally
+        enableOptimization: false, // Not used - AI variants stored as-is
         preserveMetadata: false
       }
     }

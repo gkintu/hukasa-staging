@@ -364,7 +364,7 @@ export class ConfigValidator {
       )
     }
 
-    if (config.maxDimensions.width <= 0 || config.maxDimensions.height <= 0) {
+    if (config.maxDimensions && (config.maxDimensions.width <= 0 || config.maxDimensions.height <= 0)) {
       throw FileServiceErrorFactory.createSystemError(
         FileServiceErrorCode.CONFIGURATION_ERROR,
         'Image max dimensions must be greater than 0'

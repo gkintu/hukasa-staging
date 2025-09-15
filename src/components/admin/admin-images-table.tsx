@@ -121,13 +121,16 @@ export function AdminImagesTable({
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-md bg-muted overflow-hidden">
             <img
-              src={`/api/images/${row.original.id}/file`}
+              src={`/api/admin/images/${row.original.id}/file`}
               alt={row.original.originalFileName}
               className="w-full h-full object-cover"
               onError={(e) => {
                 const target = e.target as HTMLImageElement
-                target.style.display = 'none'
-                target.parentElement!.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></div>'
+                const parent = target.parentElement
+                if (parent) {
+                  target.style.display = 'none'
+                  parent.innerHTML = '<div class="w-full h-full flex items-center justify-center"><svg class="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg></div>'
+                }
               }}
             />
           </div>

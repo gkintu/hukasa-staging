@@ -140,7 +140,7 @@ export default function AdminImagesPage() {
             <Input
               placeholder="Search images, users, projects..."
               className="w-80 pl-8"
-              value={searchQuery}
+              value={searchQuery || ''}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>

@@ -105,7 +105,7 @@ export const projects = pgTable('projects', {
 
 // Source Images table - stores original uploaded images
 export const sourceImages = pgTable('source_images', {
-  id: uuid('id').defaultRandom().primaryKey(),
+  id: text('id').primaryKey(), // Nanoid instead of UUID for clean URLs
   userId: text('user_id').references(() => users.id).notNull(),
   projectId: uuid('project_id').references(() => projects.id).notNull(),
   originalImagePath: text('original_image_path').notNull(), // Relative path: "uploads/uuid-filename.jpg"
@@ -125,7 +125,7 @@ export const sourceImages = pgTable('source_images', {
 // Generations table - stores AI-generated staging results based on source images
 export const generations = pgTable('generations', {
   id: uuid('id').defaultRandom().primaryKey(),
-  sourceImageId: uuid('source_image_id').references(() => sourceImages.id, { onDelete: 'cascade' }).notNull(),
+  sourceImageId: text('source_image_id').references(() => sourceImages.id, { onDelete: 'cascade' }).notNull(),
   userId: text('user_id').references(() => users.id).notNull(),
   projectId: uuid('project_id').references(() => projects.id).notNull(),
   stagedImagePath: text('staged_image_path'), // Relative path: "uploads/staged-uuid-filename.jpg"

@@ -23,6 +23,7 @@ import {
   isFileOperationError
 } from './types'
 
+
 import {
   StoragePathManager,
   createStoragePathManager,
@@ -393,12 +394,8 @@ class EnhancedStorageManager {
         return '.png'
       case SupportedFileType.WEBP:
         return '.webp'
-      case SupportedFileType.HEIC:
-        return '.heic'
       case SupportedFileType.TIFF:
         return '.tiff'
-      case SupportedFileType.BMP:
-        return '.bmp'
       default:
         throw new Error(`Unsupported MIME type: ${mimeType}`)
     }
@@ -695,36 +692,12 @@ export class EnhancedLocalFileService extends BaseFileService {
     }
   }> {
     try {
-      const sharpInstance = sharp(buffer)
+      let processedBuffer = buffer
 
-      // Apply basic optimization
-      let processedInstance = sharpInstance
+      // Store original buffer for all supported formats to preserve quality for AI processing
+      console.log(`⚡ Processing ${mimeType} image (${(buffer.length / 1024 / 1024).toFixed(2)}MB) - storing original for AI processing`)
+      processedBuffer = buffer
 
-      switch (mimeType) {
-        case SupportedFileType.JPEG:
-          processedInstance = sharpInstance.jpeg({ quality: 85, mozjpeg: true })
-          break
-        case SupportedFileType.PNG:
-          processedInstance = sharpInstance.png({ compressionLevel: 6 })
-          break
-        case SupportedFileType.WEBP:
-          processedInstance = sharpInstance.webp({ quality: 80 })
-          break
-        case SupportedFileType.HEIC:
-          // Convert HEIC to JPEG for compatibility
-          processedInstance = sharpInstance.jpeg({ quality: 90, mozjpeg: true })
-          break
-        case SupportedFileType.TIFF:
-          // Keep as TIFF for professional use cases
-          processedInstance = sharpInstance.tiff({ compression: 'lzw' })
-          break
-        case SupportedFileType.BMP:
-          // Convert BMP to PNG for web compatibility
-          processedInstance = sharpInstance.png({ compressionLevel: 6 })
-          break
-      }
-
-      const processedBuffer = await processedInstance.toBuffer()
       const finalMetadata = await sharp(processedBuffer).metadata()
 
       return {
@@ -752,6 +725,8 @@ export class EnhancedLocalFileService extends BaseFileService {
         return '.png'
       case SupportedFileType.WEBP:
         return '.webp'
+      case SupportedFileType.TIFF:
+        return '.tiff'
       default:
         throw new Error(`Unsupported MIME type: ${mimeType}`)
     }
