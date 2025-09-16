@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { SourceImage, MockGeneratedImage, convertRoomTypeFromEnum, convertStyleFromEnum } from "./types"
 
@@ -183,10 +183,15 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
       <DialogContent className="sm:max-w-4xl max-h-[95vh] overflow-hidden bg-background border-border p-0">
         <VisuallyHidden>
           <DialogTitle>
-            {generationState === 'form' ? 'Generate Staging Variants' : 
-             generationState === 'generating' ? 'Generating Variants' : 
+            {generationState === 'form' ? 'Generate Staging Variants' :
+             generationState === 'generating' ? 'Generating Variants' :
              'Generation Results'}
           </DialogTitle>
+          <DialogDescription>
+            {generationState === 'form' ? 'Configure and generate AI-powered staging variants for your image' :
+             generationState === 'generating' ? 'AI is processing your image to create staging variants' :
+             'View and manage your generated staging variants'}
+          </DialogDescription>
         </VisuallyHidden>
         {generationState === 'form' && (
           <GenerationForm 
