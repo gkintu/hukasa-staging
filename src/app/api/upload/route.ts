@@ -207,8 +207,9 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
         )
 
         if (uploadResult.success) {
-          // Insert into source_images table (let database generate the ID)
+          // Insert into source_images table using the generated sourceImageId
           const insertedImage = await db.insert(sourceImages).values({
+            id: sourceImageId, // Use the generated nanoid
             userId: session.user.id,
             projectId: projectId,
             originalImagePath: uploadResult.relativePath,
@@ -218,7 +219,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
           }).returning()
 
           uploadResults.push({
-            id: insertedImage[0].id, // Use database-generated UUID
+            id: insertedImage[0].id, // Use the generated nanoid
             fileName: uploadResult.metadata.originalName, // Use original name for display
             originalFileName: file.name,
             fileSize: uploadResult.metadata.size,

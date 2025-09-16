@@ -189,6 +189,24 @@ class EnhancedStorageManager {
       // Write generation file
       await fs.writeFile(filePath, request.imageBuffer)
 
+      // Verify file was written successfully and is accessible
+      try {
+        await fs.access(filePath, fs.constants.F_OK | fs.constants.R_OK)
+        const stats = await fs.stat(filePath)
+        if (stats.size === 0) {
+          throw new Error('File was written but has zero size')
+        }
+        if (stats.size !== request.imageBuffer.length) {
+          throw new Error(`File size mismatch: expected ${request.imageBuffer.length}, got ${stats.size}`)
+        }
+      } catch (verifyError) {
+        // Clean up potentially corrupted file
+        try {
+          await fs.unlink(filePath)
+        } catch {}
+        throw new Error(`File verification failed: ${verifyError instanceof Error ? verifyError.message : 'Unknown error'}`)
+      }
+
       // Generate paths for response
       const relativePath = this.pathManager.getGenerationRelativePath(
         request.userId,

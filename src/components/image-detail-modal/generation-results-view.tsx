@@ -5,14 +5,22 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Download, Trash2, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
-import { SourceImage, MockGeneratedImage, roomTypes, interiorStyles } from "./types";
+import { SourceImage, MockGeneratedImage, roomTypes, interiorStyles, convertRoomTypeFromEnum, convertStyleFromEnum } from "./types";
+
+interface GenerationData {
+  id: string;
+  roomType: string;
+  stagingStyle: string;
+  variationIndex: number;
+}
 import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog";
 import { buildStagingPrompt } from "@/lib/ai-prompt-builder";
 
 interface GenerationResultsViewProps {
     sourceImage: SourceImage;
     generatedImages: MockGeneratedImage[];
-    onRegenerate: (variantCount: number, prompt: string) => void;
+    generationsData?: GenerationData[];
+    onRegenerate: (variantCount: number, prompt: string, roomType?: string, furnitureStyle?: string) => void;
     onDeleteVariant?: (variantId: string) => void;
     onUpdateSelections?: (roomType: string, furnitureStyle: string) => void;
     roomType: string;
@@ -21,14 +29,15 @@ interface GenerationResultsViewProps {
     isGenerating?: boolean;
 }
 
-export function GenerationResultsView({ 
-  sourceImage, 
-  generatedImages, 
-  onRegenerate, 
+export function GenerationResultsView({
+  sourceImage,
+  generatedImages,
+  generationsData = [],
+  onRegenerate,
   onDeleteVariant,
   onUpdateSelections,
-  roomType, 
-  furnitureStyle, 
+  roomType,
+  furnitureStyle,
   defaultVariantCount = 3,
   isGenerating = false
 }: GenerationResultsViewProps) {
@@ -147,15 +156,16 @@ export function GenerationResultsView({
                       {imageCount[0]} variant{imageCount[0] !== 1 ? "s" : ""} selected
                     </div>
                   </div>
-                  <Button 
+                  <Button
                     onClick={() => {
-                      const prompt = buildStagingPrompt({ 
-                        roomType: currentRoomType, 
-                        interiorStyle: currentFurnitureStyle 
+                      const prompt = buildStagingPrompt({
+                        roomType: currentRoomType,
+                        interiorStyle: currentFurnitureStyle
                       });
                       // Update parent state to persist selections
                       onUpdateSelections?.(currentRoomType, currentFurnitureStyle);
-                      onRegenerate(imageCount[0], prompt);
+                      // Pass the current selections directly to ensure they're used
+                      onRegenerate(imageCount[0], prompt, currentRoomType, currentFurnitureStyle);
                     }} 
                     disabled={isGenerating}
                     className="w-full flex items-center justify-center gap-2"
@@ -171,16 +181,26 @@ export function GenerationResultsView({
             {/* Right Panel */}
             <div className="lg:col-span-3">
               <h2 className="text-lg font-semibold text-foreground mb-4">
-                Result ({currentFurnitureStyle}, {currentRoomType})
+                Result ({generationsData[selectedThumbnail] ?
+                  `${convertStyleFromEnum(generationsData[selectedThumbnail].stagingStyle)}, ${convertRoomTypeFromEnum(generationsData[selectedThumbnail].roomType)}` :
+                  `${currentFurnitureStyle}, ${currentRoomType}`
+                })
               </h2>
               <div className="relative mb-4 group rounded-lg overflow-hidden border border-border">
                 <img
                   src={currentResult}
-                  alt={`Staged variation — ${currentFurnitureStyle} ${currentRoomType}`}
+                  alt={generationsData[selectedThumbnail] ?
+                    `Staged variation — ${convertStyleFromEnum(generationsData[selectedThumbnail].stagingStyle)} ${convertRoomTypeFromEnum(generationsData[selectedThumbnail].roomType)}` :
+                    `Staged variation — ${currentFurnitureStyle} ${currentRoomType}`}
                   className="w-full h-96 object-cover"
                 />
                 <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/50 to-transparent">
-                    <p className="text-white text-xs font-mono">{currentFurnitureStyle} • {currentRoomType}</p>
+                    <p className="text-white text-xs font-mono">
+                      {generationsData[selectedThumbnail] ?
+                        `Variant ${generationsData[selectedThumbnail].variationIndex} • ${convertStyleFromEnum(generationsData[selectedThumbnail].stagingStyle)} • ${convertRoomTypeFromEnum(generationsData[selectedThumbnail].roomType)}` :
+                        `${currentFurnitureStyle} • ${currentRoomType}`
+                      }
+                    </p>
                 </div>
                 <div className="absolute bottom-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                   <Button size="icon" variant="secondary" aria-label="Download image" onClick={handleDownload}><Download className="h-4 w-4" /></Button>

@@ -116,7 +116,7 @@ export async function GET(request: NextRequest) {
             type: 'HEARTBEAT',
             timestamp: Date.now()
           })}\n\n`)
-        } catch (error) {
+        } catch {
           console.log(`[SSE] User ${userId} connection closed`)
           clearInterval(heartbeat)
         }

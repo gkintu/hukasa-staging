@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useRouter } from 'next/navigation'
 import { toast } from 'sonner'
@@ -29,28 +29,27 @@ export function useAuthSSE() {
     }
   }
 
-  const handleBanEvent = async () => {
-    console.log('[Auth SSE] User has been banned, logging out...')
+  const connect = useCallback(() => {
+    const handleBanEvent = async () => {
+      console.log('[Auth SSE] User has been banned, logging out...')
 
-    // Clear all cached data
-    queryClient.clear()
+      // Clear all cached data
+      queryClient.clear()
 
-    // Show notification
-    toast.error('Your account has been suspended. You will be logged out.')
+      // Show notification
+      toast.error('Your account has been suspended. You will be logged out.')
 
-    // Force logout by clearing session and redirecting
-    // Note: You might need to adjust this based on your auth implementation
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' })
-    } catch (error) {
-      console.error('[Auth SSE] Error during logout:', error)
+      // Force logout by clearing session and redirecting
+      // Note: You might need to adjust this based on your auth implementation
+      try {
+        await fetch('/api/auth/logout', { method: 'POST' })
+      } catch (error) {
+        console.error('[Auth SSE] Error during logout:', error)
+      }
+
+      // Redirect to suspended page
+      router.push('/account-suspended')
     }
-
-    // Redirect to suspended page
-    router.push('/account-suspended')
-  }
-
-  const connect = () => {
     if (eventSourceRef.current?.readyState === EventSource.OPEN) {
       return // Already connected
     }
@@ -120,7 +119,7 @@ export function useAuthSSE() {
         }
       }
     }
-  }
+  }, [queryClient, router])
 
   useEffect(() => {
     // Start SSE connection
@@ -128,7 +127,7 @@ export function useAuthSSE() {
 
     // Cleanup on unmount
     return cleanup
-  }, [])
+  }, [connect])
 
   // Expose reconnect function for manual retry
   const reconnect = () => {

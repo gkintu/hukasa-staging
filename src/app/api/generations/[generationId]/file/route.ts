@@ -105,14 +105,15 @@ export const GET = withAuth(async (request: NextRequest, user) => {
 
     // Add download header if requested
     if (isDownload) {
-      const filename = `${sourceImage.displayName || 'image'}-variant-${generation.variationIndex}${extension ? '.' + extension : ''}`
+      const filename = `${generation.roomType}_${generation.variationIndex}_${generation.stagingStyle}${extension ? '.' + extension : ''}`
       headers['Content-Disposition'] = `attachment; filename="${filename}"`
     }
 
     return new NextResponse(new Uint8Array(fileBuffer), { headers })
     
   } catch (error) {
-    console.error('Generation file serving error:', error)
+    console.error(`[Gen File Error] Generation ${generationId}:`, error)
+    console.error(`[Gen File Error] Stack trace:`, error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

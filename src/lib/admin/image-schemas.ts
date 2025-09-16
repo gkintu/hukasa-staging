@@ -49,7 +49,7 @@ export const ImageVariantSchema = z.object({
 });
 
 export const ImageDetailSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1), // Source images use nanoid
   projectId: z.string().uuid(),
   projectName: z.string(),
   originalImagePath: z.string(),
@@ -73,7 +73,7 @@ export const ImageDetailSchema = z.object({
 
 // Image list response schema (grouped by source image)
 export const ImageListItemSchema = z.object({
-  id: z.string().uuid(),
+  id: z.string().min(1), // Source images use nanoid
   projectId: z.string().uuid(),
   projectName: z.string(),
   originalImagePath: z.string(),

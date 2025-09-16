@@ -18,7 +18,7 @@ import fs from 'fs/promises';
 import path from 'path';
 
 const ParamsSchema = z.object({
-  id: z.string().uuid()
+  id: z.string().min(1) // Source images use nanoid, not UUID
 });
 
 export async function GET(

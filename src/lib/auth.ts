@@ -14,6 +14,14 @@ export const auth = betterAuth({
     },
     usePlural: true, // Since our tables use plural names
   }),
+  session: {
+    expiresIn: 60 * 60 * 24 * 7, // 7 days in seconds
+    updateAge: 60 * 60 * 24, // Refresh session if it's older than 1 day
+    cookieCache: {
+      enabled: true,
+      maxAge: 60 * 60 * 24 * 7, // 7 days cache duration
+    },
+  },
   socialProviders: {
     google: {
       clientId: process.env.GOOGLE_CLIENT_ID as string,

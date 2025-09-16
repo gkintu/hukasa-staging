@@ -8,6 +8,9 @@ import { SourceImage, MockGeneratedImage, convertRoomTypeFromEnum, convertStyleF
 interface Generation {
   id: string;
   stagedImagePath: string | null;
+  roomType: string;
+  stagingStyle: string;
+  variationIndex: number;
 }
 import { GenerationForm } from "./generation-form"
 import { GeneratingView } from "./generating-view"
@@ -24,6 +27,7 @@ interface ImageDetailModalProps {
 export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailModalProps) {
   const [generationState, setGenerationState] = useState<'form' | 'generating' | 'results'>('form');
   const [generatedImages, setGeneratedImages] = useState<MockGeneratedImage[]>([]);
+  const [generationsData, setGenerationsData] = useState<Generation[]>([]);
   
   const [selectedRoomType, setSelectedRoomType] = useState<string>("")
   const [selectedStyle, setSelectedStyle] = useState<string>("")
@@ -48,6 +52,9 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
       const data = await response.json();
       
       if (data.success && data.data.generations.length > 0) {
+        // Store full generation data
+        setGenerationsData(data.data.generations);
+
         // Convert database generations to MockGeneratedImage format
         const convertedImages = data.data.generations.map((gen: Generation) => ({
           id: gen.id,
@@ -55,7 +62,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
         }));
         setGeneratedImages(convertedImages);
         setGenerationState('results');
-        
+
         // Set the room type and style from the most recent generation
         const mostRecent = data.data.generations[0];
         setSelectedRoomType(convertRoomTypeFromEnum(mostRecent.roomType));
@@ -64,6 +71,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
         // No existing generations, show form
         setGenerationState('form');
         setGeneratedImages([]);
+        setGenerationsData([]);
       }
     } catch (error) {
       console.error('Error fetching existing generations:', error);
@@ -80,16 +88,20 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
 
   if (!sourceImage) return null
 
-  const handleGenerate = async (imageCount: number = 3, prompt?: string) => {
+  const handleGenerate = async (imageCount: number = 3, prompt?: string, roomType?: string, stagingStyle?: string) => {
     setLastVariantCount(imageCount); // Remember the count for next time
-    
+
     // Log generated prompt for debugging
     if (prompt) {
       console.log('🎨 Generated Prompt:', prompt);
     }
-    
+
+    // Use provided parameters or fall back to selected state
+    const finalRoomType = roomType || selectedRoomType;
+    const finalStagingStyle = stagingStyle || selectedStyle;
+
     // Validate that both room type and style are selected
-    if (!selectedRoomType || !selectedStyle) {
+    if (!finalRoomType || !finalStagingStyle) {
       console.error('Generation cancelled: Room type and furniture style must be selected');
       return;
     }
@@ -100,8 +112,8 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
     // Use the optimistic mutation hook
     generateImagesMutation.mutate({
       sourceImageId: sourceImage.id,
-      roomType: selectedRoomType,
-      stagingStyle: selectedStyle,
+      roomType: finalRoomType,
+      stagingStyle: finalStagingStyle,
       imageCount: imageCount
     }, {
       onSuccess: (data) => {
@@ -160,6 +172,7 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
     setTimeout(() => {
       setGenerationState('form');
       setGeneratedImages([]);
+      setGenerationsData([]);
       setSelectedRoomType("");
       setSelectedStyle("");
     }, 300);
@@ -191,9 +204,10 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
         )}
         {generationState === 'generating' && <GeneratingView sourceImage={sourceImage} />}
         {generationState === 'results' && (
-          <GenerationResultsView 
+          <GenerationResultsView
             sourceImage={sourceImage}
             generatedImages={generatedImages}
+            generationsData={generationsData}
             onRegenerate={handleGenerate}
             onDeleteVariant={handleDeleteVariant}
             onUpdateSelections={(roomType, furnitureStyle) => {
