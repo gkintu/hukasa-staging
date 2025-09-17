@@ -37,7 +37,7 @@ export function ImageDetailPage({ imageId, user }: ImageDetailPageProps) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [generationState, setGenerationState] = useState<'form' | 'generating' | 'results'>('form')
+  const [generationState, setGenerationState] = useState<'form' | 'generating' | 'results' | 'loading'>('loading')
   const [generatedImages, setGeneratedImages] = useState<MockGeneratedImage[]>([])
   const [generationsData, setGenerationsData] = useState<Generation[]>([])
 
@@ -226,6 +226,20 @@ export function ImageDetailPage({ imageId, user }: ImageDetailPageProps) {
     }
   }
 
+  const getBackButtonText = () => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const projectParam = urlParams.get('project')
+    const allImagesParam = urlParams.get('allImages')
+
+    if (projectParam) {
+      return "Back to Project"
+    } else if (allImagesParam) {
+      return "Back to All Images"
+    } else {
+      return "Back"
+    }
+  }
+
   const handleBack = () => {
     // Try to determine where to go back to based on URL parameters
     const urlParams = new URLSearchParams(window.location.search)
@@ -303,8 +317,9 @@ export function ImageDetailPage({ imageId, user }: ImageDetailPageProps) {
       <div className="border-b border-border">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={handleBack}>
-              <ChevronLeft className="h-5 w-5" />
+            <Button variant="ghost" onClick={handleBack} className="gap-2">
+              <ChevronLeft className="h-4 w-4" />
+              {getBackButtonText()}
             </Button>
             <div>
               <h1 className="text-xl font-semibold">
@@ -322,6 +337,14 @@ export function ImageDetailPage({ imageId, user }: ImageDetailPageProps) {
 
       {/* Content */}
       <div className="flex-1">
+        {generationState === 'loading' && (
+          <div className="p-8 flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading generation data...</p>
+            </div>
+          </div>
+        )}
         {generationState === 'form' && (
           <GenerationForm
             sourceImage={sourceImage}

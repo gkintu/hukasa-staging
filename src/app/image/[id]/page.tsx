@@ -5,12 +5,13 @@ import { ImageDetailPage } from "@/components/image-detail-page"
 import { SharedQueryProvider } from "@/lib/shared/providers/query-provider"
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
 export default async function ImagePage({ params }: PageProps) {
+  const { id } = await params
   const sessionResult = await validateServerSession(await headers())
 
   // Handle suspended users
@@ -25,7 +26,7 @@ export default async function ImagePage({ params }: PageProps) {
 
   return (
     <SharedQueryProvider>
-      <ImageDetailPage imageId={params.id} user={sessionResult.user} />
+      <ImageDetailPage imageId={id} user={sessionResult.user} />
     </SharedQueryProvider>
   )
 }
