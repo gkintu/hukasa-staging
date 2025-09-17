@@ -149,7 +149,7 @@ export function MainApp({ user }: MainAppProps) {
           <main className="flex-1 overflow-auto p-4" role="main">
           {/* Show specific views based on URL parameters, otherwise show view based on activeView */}
           {projectParam ? (
-            <ProjectDetail 
+            <ProjectDetail
               ref={projectDetailRef}
               projectId={projectParam}
               onBack={handleBackToProjects}
@@ -157,24 +157,30 @@ export function MainApp({ user }: MainAppProps) {
               onUploadMore={handleUploadClick}
             />
           ) : unassignedParam ? (
-            <AllImages 
+            <AllImages
               ref={unassignedImagesRef}
               onImageSelect={handleImageSelect}
               unassignedOnly={true}
+            />
+          ) : allImagesParam ? (
+            <AllImages
+              ref={allImagesRef}
+              onImageSelect={handleImageSelect}
+              onUploadClick={handleUploadClick}
             />
           ) : (
             <>
               {activeView === "dashboard" && <Dashboard user={user} />}
               {activeView === "allImages" && (
-                <AllImages 
+                <AllImages
                   ref={allImagesRef}
                   onImageSelect={handleImageSelect}
                   onUploadClick={handleUploadClick}
                 />
               )}
               {activeView === "projects" && (
-                <Projects 
-                  user={user} 
+                <Projects
+                  user={user}
                   onProjectSelect={handleProjectSelect}
                 />
               )}
