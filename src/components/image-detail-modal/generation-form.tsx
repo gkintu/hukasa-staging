@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -20,6 +19,7 @@ interface GenerationFormProps {
     previousVariantCount?: number;
     autoExpandAdvanced?: boolean;
     isGenerating?: boolean;
+    showHeader?: boolean;
 }
 
 export function GenerationForm({ 
@@ -28,11 +28,12 @@ export function GenerationForm({
     onGenerate, 
     selectedRoomType, 
     setSelectedRoomType, 
-    selectedStyle, 
+    selectedStyle,
     setSelectedStyle,
     previousVariantCount = 3,
     autoExpandAdvanced = false,
-    isGenerating = false
+    isGenerating = false,
+    showHeader = true
 }: GenerationFormProps) {
     const [isAdvancedOpen, setIsAdvancedOpen] = useState(autoExpandAdvanced)
     const [imageCount, setImageCount] = useState([previousVariantCount])
@@ -40,20 +41,22 @@ export function GenerationForm({
 
     return (
         <div className="relative">
-            <div className="bg-muted/30 px-8 py-6 border-b border-border">
-                <DialogHeader className="space-y-0">
-                <DialogTitle className="text-lg font-semibold">Generate Staging Variants</DialogTitle>
-                </DialogHeader>
-            </div>
+            {showHeader && (
+                <div className="bg-muted/30 px-8 py-6 border-b border-border">
+                    <div className="space-y-0">
+                        <h2 className="text-lg font-semibold">Generate Staging Variants</h2>
+                    </div>
+                </div>
+            )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8 max-h-[calc(95vh-120px)] overflow-y-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
                 {/* Left Column: Image */}
                 <div className="relative group">
                     <div className="relative overflow-hidden rounded-xl shadow-lg border border-border">
                         <img
                             src={`/api/images/${sourceImage.id}/file`}
                             alt={sourceImage.displayName || sourceImage.originalFileName}
-                            className="w-full h-96 object-cover transition-transform duration-300 group-hover:scale-105"
+                            className="w-full h-[500px] object-cover transition-transform duration-300 group-hover:scale-105"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
                     </div>

@@ -10,12 +10,12 @@ export function GeneratingView({ sourceImage }: GeneratingViewProps) {
   const originalImageUrl = `/api/images/${sourceImage.id}/file`;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-8 p-8">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       <div className="relative overflow-hidden rounded-xl shadow-lg border border-border">
         <img
           src={originalImageUrl}
           alt={sourceImage.displayName || sourceImage.originalFileName}
-          className="w-full h-96 object-cover blur-sm"
+          className="w-full h-[500px] object-cover blur-sm"
         />
         <div className="absolute inset-0 bg-black/40" />
         {/* Spinner overlay on the image */}
@@ -25,7 +25,7 @@ export function GeneratingView({ sourceImage }: GeneratingViewProps) {
           <p className="text-white/80 mt-2 text-center px-4">Please wait.</p>
         </div>
       </div>
-      <div className="flex flex-col items-center justify-center h-96 text-muted-foreground">
+      <div className="flex flex-col items-center justify-center h-[500px] text-muted-foreground">
         <p className="text-center">Your AI-staged result will appear here shortly.</p>
       </div>
     </div>

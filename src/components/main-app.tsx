@@ -15,7 +15,6 @@ import { ProjectDetail, ProjectDetailRef } from "@/components/project-detail"
 import { SettingsPage } from "@/components/settings-page"
 import { Help } from "@/components/help"
 import { UploadModal } from "@/components/upload-modal"
-import { ImageDetailModal } from "@/components/image-detail-modal"
 
 interface User {
   id: string
@@ -46,7 +45,6 @@ export function MainApp({ user }: MainAppProps) {
   
   const [activeView, setActiveView] = useState<"dashboard" | "allImages" | "projects" | "settings" | "help">("dashboard")
   const [showUploadModal, setShowUploadModal] = useState(false)
-  const [selectedImageForModal, setSelectedImageForModal] = useState<SourceImage | SourceImageWithProject | null>(null)
   
   // Refs for refreshing components
   const allImagesRef = useRef<AllImagesRef>(null)
@@ -55,46 +53,8 @@ export function MainApp({ user }: MainAppProps) {
   
   // Get URL parameters
   const projectParam = searchParams.get('project')
-  const imageParam = searchParams.get('image')
   const allImagesParam = searchParams.get('allImages')
   const unassignedParam = searchParams.get('unassigned')
-  
-  useEffect(() => {
-    // If there's an image parameter, we should be showing the modal
-    if (imageParam && !selectedImageForModal) {
-      const fetchImageData = async () => {
-        try {
-          if (projectParam) {
-            // Fetch from specific project
-            const response = await fetch(`/api/projects/${projectParam}`)
-            const data = await response.json()
-            if (data.success) {
-              const sourceImage = data.sourceImages.find((img: SourceImage) => img.id === imageParam)
-              if (sourceImage) {
-                setSelectedImageForModal(sourceImage)
-              }
-            }
-          } else if (allImagesParam || unassignedParam) {
-            // Fetch from all images
-            const response = await fetch('/api/images')
-            const data = await response.json()
-            if (data.success) {
-              const sourceImage = data.sourceImages.find((img: SourceImageWithProject) => img.id === imageParam)
-              if (sourceImage) {
-                setSelectedImageForModal(sourceImage)
-              }
-            }
-          }
-        } catch (error) {
-          console.error('Error fetching image data:', error)
-        }
-      }
-      fetchImageData()
-    } else if (!imageParam && selectedImageForModal) {
-      // Close modal if no image parameter
-      setSelectedImageForModal(null)
-    }
-  }, [imageParam, selectedImageForModal, projectParam, allImagesParam, unassignedParam])
 
   const handleSidebarNavigation = (view: "dashboard" | "allImages" | "projects" | "help") => {
     setActiveView(view)
@@ -129,37 +89,25 @@ export function MainApp({ user }: MainAppProps) {
   }
 
   const handleImageSelect: ImageSelectHandler = (imageId: string, sourceImage) => {
-    // Open image detail modal
-    setSelectedImageForModal(sourceImage)
+    // Navigate to dedicated image page
     const currentProject = searchParams.get('project')
     const currentAllImages = searchParams.get('allImages')
     const currentUnassigned = searchParams.get('unassigned')
-    
+
+    let imageUrl = `/image/${imageId}`
+
+    // Preserve context in URL parameters for proper back navigation
     if (currentProject) {
-      router.push(`/?project=${currentProject}&image=${imageId}`)
+      imageUrl += `?project=${currentProject}`
     } else if (currentAllImages) {
-      router.push(`/?allImages=true&image=${imageId}`)
+      imageUrl += `?allImages=true`
     } else if (currentUnassigned) {
-      router.push(`/?unassigned=true&image=${imageId}`)
+      imageUrl += `?unassigned=true`
     }
+
+    router.push(imageUrl)
   }
 
-  const handleCloseImageModal = () => {
-    setSelectedImageForModal(null)
-    const currentProject = searchParams.get('project')
-    const currentAllImages = searchParams.get('allImages')
-    const currentUnassigned = searchParams.get('unassigned')
-    
-    if (currentProject) {
-      router.push(`/?project=${currentProject}`)
-    } else if (currentAllImages) {
-      router.push('/?allImages=true')
-    } else if (currentUnassigned) {
-      router.push('/?unassigned=true')
-    } else {
-      router.push('/')
-    }
-  }
 
   const handleUploadClick = () => {
     setShowUploadModal(true)
@@ -186,15 +134,14 @@ export function MainApp({ user }: MainAppProps) {
       />
       
       <SidebarInset>
-          <MainAppHeader 
+          <MainAppHeader
           activeView={
-            projectParam ? "project" : 
+            projectParam ? "project" :
             unassignedParam ? "unassigned" :
             allImagesParam ? "allImages" :
             activeView
           }
           projectName={projectParam ? `Project ${projectParam}` : undefined}
-          imageName={selectedImageForModal?.displayName || selectedImageForModal?.originalFileName || undefined}
           onNavigate={handleHeaderNavigation}
           onSettingsClick={() => setActiveView("settings")}
         />
@@ -238,17 +185,11 @@ export function MainApp({ user }: MainAppProps) {
           </main>
         </SidebarInset>
 
-        <UploadModal 
-          isOpen={showUploadModal} 
+        <UploadModal
+          isOpen={showUploadModal}
           onClose={() => setShowUploadModal(false)}
           projectId={searchParams.get('project') || undefined}
           onUploadSuccess={handleUploadSuccess}
-        />
-        
-        <ImageDetailModal
-          isOpen={!!selectedImageForModal}
-          onClose={handleCloseImageModal}
-          sourceImage={selectedImageForModal}
         />
     </SidebarProvider>
   )
