@@ -92,8 +92,10 @@ export async function GET(request: NextRequest) {
   await startListening()
 
   // Create SSE stream
+  let streamController: ReadableStreamDefaultController | null = null
   const stream = new ReadableStream({
     start(controller) {
+      streamController = controller
       console.log(`[SSE] User ${userId} connected`)
 
       // Add this controller to user's connections
@@ -127,7 +129,7 @@ export async function GET(request: NextRequest) {
       console.log(`[SSE] User ${userId} disconnected`)
       // Clean up user connections
       const connections = userConnections.get(userId) || []
-      const updatedConnections = connections.filter((c) => c !== controller)
+      const updatedConnections = connections.filter((c) => c !== streamController)
 
       if (updatedConnections.length === 0) {
         userConnections.delete(userId)

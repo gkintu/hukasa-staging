@@ -118,7 +118,7 @@ export async function GET(
 
     // Add download header if requested
     if (isDownload) {
-      const filename = sourceImage.display_name || `image-${id}${actualExtension}`
+      const filename = sourceImage.displayName || `image-${id}${actualExtension}`
       headers['Content-Disposition'] = `attachment; filename="${filename}"`
     }
 
