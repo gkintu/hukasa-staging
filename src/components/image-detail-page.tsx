@@ -1,7 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
+import { useMutationState } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, Home } from "lucide-react"
 import { GenerationForm } from "@/components/image-detail-modal/generation-form"
@@ -49,6 +50,22 @@ export function ImageDetailPage({ imageId, user }: ImageDetailPageProps) {
   const invalidateImageQueries = useInvalidateImageQueries()
   const invalidateProjectQueries = useInvalidateProjectQueries()
   const generateImagesMutation = useGenerateImages()
+
+  // Use useMutationState to track ongoing generations globally across navigation
+  const pendingGenerations = useMutationState({
+    filters: {
+      mutationKey: ['generateImages'],
+      status: 'pending'
+    },
+    select: (mutation) => mutation.state.variables
+  })
+
+  // Check if this specific image has a pending generation
+  const isThisImageGenerating = useMemo(() => {
+    return pendingGenerations.some(
+      (variables: any) => variables?.sourceImageId === imageId
+    )
+  }, [pendingGenerations, imageId])
 
   // Fetch image data
   const fetchImageData = useCallback(async () => {
@@ -98,8 +115,8 @@ export function ImageDetailPage({ imageId, user }: ImageDetailPageProps) {
   const fetchExistingGenerations = useCallback(async () => {
     if (!sourceImage) return;
 
-    // Check if a generation is currently in progress
-    if (generateImagesMutation.isPending) {
+    // Check if a generation is currently in progress (local OR global)
+    if (generateImagesMutation.isPending || isThisImageGenerating) {
       setGenerationState('generating');
       return;
     }
@@ -134,19 +151,19 @@ export function ImageDetailPage({ imageId, user }: ImageDetailPageProps) {
       console.error('Error fetching existing generations:', error);
       setGenerationState('form');
     }
-  }, [sourceImage, generateImagesMutation.isPending]);
+  }, [sourceImage, generateImagesMutation.isPending, isThisImageGenerating]);
 
   // Load image data on mount
   useEffect(() => {
     fetchImageData()
   }, [fetchImageData])
 
-  // Fetch existing generations when image is loaded
+  // Fetch existing generations when image is loaded OR when generation state changes
   useEffect(() => {
     if (sourceImage) {
       fetchExistingGenerations();
     }
-  }, [sourceImage, fetchExistingGenerations]);
+  }, [sourceImage, fetchExistingGenerations, isThisImageGenerating]);
 
   const handleGenerate = async (imageCount: number = 3, prompt?: string, roomType?: string, stagingStyle?: string) => {
     setLastVariantCount(imageCount); // Remember the count for next time

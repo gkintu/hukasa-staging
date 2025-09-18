@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
+import { useMutationState } from "@tanstack/react-query"
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden"
 import { SourceImage, MockGeneratedImage, convertRoomTypeFromEnum, convertStyleFromEnum } from "./types"
@@ -38,11 +39,27 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
   const invalidateProjectQueries = useInvalidateProjectQueries()
   const generateImagesMutation = useGenerateImages()
 
+  // Use useMutationState to track ongoing generations globally across navigation
+  const pendingGenerations = useMutationState({
+    filters: {
+      mutationKey: ['generateImages'],
+      status: 'pending'
+    },
+    select: (mutation) => mutation.state.variables
+  })
+
+  // Check if this specific image has a pending generation
+  const isThisImageGenerating = useMemo(() => {
+    return pendingGenerations.some(
+      (variables: any) => variables?.sourceImageId === sourceImage?.id
+    )
+  }, [pendingGenerations, sourceImage?.id])
+
   const fetchExistingGenerations = useCallback(async () => {
     if (!sourceImage) return;
     
-    // Check if a generation is currently in progress
-    if (generateImagesMutation.isPending) {
+    // Check if a generation is currently in progress (local OR global)
+    if (generateImagesMutation.isPending || isThisImageGenerating) {
       setGenerationState('generating');
       return;
     }
@@ -77,14 +94,14 @@ export function ImageDetailModal({ isOpen, onClose, sourceImage }: ImageDetailMo
       console.error('Error fetching existing generations:', error);
       setGenerationState('form');
     }
-  }, [sourceImage, generateImagesMutation.isPending]);
+  }, [sourceImage, generateImagesMutation.isPending, isThisImageGenerating]);
 
   // Fetch existing generations when modal opens
   useEffect(() => {
     if (isOpen && sourceImage) {
       fetchExistingGenerations();
     }
-  }, [isOpen, sourceImage, fetchExistingGenerations]);
+  }, [isOpen, sourceImage, fetchExistingGenerations, isThisImageGenerating]);
 
   if (!sourceImage) return null
 

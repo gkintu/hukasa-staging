@@ -106,6 +106,7 @@ export function useGenerateImages(
   const queryClient = useQueryClient();
 
   return useMutation({
+    mutationKey: ['generateImages'],
     mutationFn: generateImages,
     
     onMutate: async (variables) => {
