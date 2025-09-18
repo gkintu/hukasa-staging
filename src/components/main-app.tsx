@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useRef, useCallback } from "react"
+import { useState, useRef, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
 import { MainAppSidebar } from "@/components/main-app-sidebar"
 import { MainAppHeader } from "@/components/main-app-header"
@@ -28,7 +28,7 @@ interface MainAppProps {
 }
 
 // Define types for the image detail modal
-import { SourceImage, SourceImageWithProject, type ImageSelectHandler } from '@/lib/shared/types/image-types'
+import { type ImageSelectHandler } from '@/lib/shared/types/image-types'
 
 function getCookie(name: string): string | null {
   if (typeof document === "undefined") return null
@@ -88,7 +88,7 @@ export function MainApp({ user }: MainAppProps) {
     router.push('/')
   }
 
-  const handleImageSelect: ImageSelectHandler = (imageId: string, sourceImage) => {
+  const handleImageSelect: ImageSelectHandler = (imageId: string) => {
     // Navigate to dedicated image page
     const currentProject = searchParams.get('project')
     const currentAllImages = searchParams.get('allImages')

@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation"
 import { useMutationState } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, Home } from "lucide-react"
-import { GenerationForm } from "@/components/image-detail-modal/generation-form"
-import { GeneratingView } from "@/components/image-detail-modal/generating-view"
-import { GenerationResultsView } from "@/components/image-detail-modal/generation-results-view"
+import { GenerationForm } from "@/components/image-generation/generation-form"
+import { GeneratingView } from "@/components/image-generation/generating-view"
+import { GenerationResultsView } from "@/components/image-generation/generation-results-view"
 import { useInvalidateImageQueries, useInvalidateProjectQueries } from "@/lib/shared/hooks/use-images"
 import { useGenerateImages } from "@/lib/shared/hooks/use-generate-images"
-import { SourceImage, MockGeneratedImage, convertRoomTypeFromEnum, convertStyleFromEnum } from "@/components/image-detail-modal/types"
+import { SourceImage, MockGeneratedImage, convertRoomTypeFromEnum, convertStyleFromEnum } from "@/components/image-generation/types"
 
 interface Generation {
   id: string;
@@ -29,10 +29,10 @@ interface User {
 
 interface ImageDetailPageProps {
   imageId: string
-  user: User
+  user?: User
 }
 
-export function ImageDetailPage({ imageId, user }: ImageDetailPageProps) {
+export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
   const router = useRouter()
   const [sourceImage, setSourceImage] = useState<SourceImage | null>(null)
   const [loading, setLoading] = useState(true)
@@ -63,7 +63,10 @@ export function ImageDetailPage({ imageId, user }: ImageDetailPageProps) {
   // Check if this specific image has a pending generation
   const isThisImageGenerating = useMemo(() => {
     return pendingGenerations.some(
-      (variables: any) => variables?.sourceImageId === imageId
+      (variables: unknown) => {
+        const vars = variables as { sourceImageId?: string }
+        return vars?.sourceImageId === imageId
+      }
     )
   }, [pendingGenerations, imageId])
 

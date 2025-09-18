@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Download, Trash2, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { SourceImage, MockGeneratedImage, roomTypes, interiorStyles, convertRoomTypeFromEnum, convertStyleFromEnum } from "./types";

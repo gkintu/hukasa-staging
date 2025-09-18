@@ -8,7 +8,7 @@ import { SupportedFileType } from '@/lib/file-service/types'
 import { replicate } from '@ai-sdk/replicate'
 import { experimental_generateImage as generateImage } from 'ai'
 import { buildStagingPrompt } from '@/lib/ai-prompt-builder'
-import { convertRoomTypeToEnum, convertStyleToEnum } from '@/components/image-detail-modal/types'
+import { convertRoomTypeToEnum, convertStyleToEnum } from '@/components/image-generation/types'
 import { generateSignedFileUrl } from '@/lib/signed-urls'
 
 // Get base URL for external API access (ngrok URL in dev, production domain in prod)
