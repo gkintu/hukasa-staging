@@ -96,13 +96,15 @@ export function MainAppHeader({
         <Separator orientation="vertical" className="mr-2 h-4" />
         <Breadcrumb>
           <BreadcrumbList>
-            {breadcrumbs.map((breadcrumb, index) => (
-              <BreadcrumbItem key={`${breadcrumb.path}-${index}`} className="hidden md:block">
-                {breadcrumb.isLast ? (
-                  <BreadcrumbPage>{breadcrumb.label}</BreadcrumbPage>
-                ) : (
-                  <>
-                    <BreadcrumbLink 
+            {breadcrumbs.flatMap((breadcrumb, index) => {
+              const items = []
+
+              items.push(
+                <BreadcrumbItem key={`${breadcrumb.path}-${index}`} className="hidden md:block">
+                  {breadcrumb.isLast ? (
+                    <BreadcrumbPage>{breadcrumb.label}</BreadcrumbPage>
+                  ) : (
+                    <BreadcrumbLink
                       href="#"
                       onClick={(e) => {
                         e.preventDefault()
@@ -112,13 +114,18 @@ export function MainAppHeader({
                     >
                       {breadcrumb.label}
                     </BreadcrumbLink>
-                    {index < breadcrumbs.length - 1 && (
-                      <BreadcrumbSeparator className="hidden md:block" />
-                    )}
-                  </>
-                )}
-              </BreadcrumbItem>
-            ))}
+                  )}
+                </BreadcrumbItem>
+              )
+
+              if (index < breadcrumbs.length - 1) {
+                items.push(
+                  <BreadcrumbSeparator key={`separator-${index}`} className="hidden md:block" />
+                )
+              }
+
+              return items
+            })}
           </BreadcrumbList>
         </Breadcrumb>
       </div>
