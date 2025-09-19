@@ -141,7 +141,7 @@ export function SourceImageCard({
             </div>
           )}
           
-          <div className="aspect-video overflow-hidden rounded-t-lg bg-muted">
+          <div className="aspect-video overflow-hidden rounded-t-md bg-muted">
             <img
               src={`/api/images/${image.id}/file`}
               alt={image.displayName || image.originalFileName}

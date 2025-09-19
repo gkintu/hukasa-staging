@@ -61,8 +61,10 @@ export function useDeleteImage(
         queryClient.removeQueries({ queryKey: invalidateImageQueries.adminDetail(variables.id) })
       } else {
         // Main app context - invalidate main app queries
-        queryClient.invalidateQueries({ queryKey: invalidateImageQueries.all() })
-        queryClient.invalidateQueries({ queryKey: invalidateImageQueries.lists() })
+        queryClient.invalidateQueries({
+          queryKey: ['images'],
+          exact: false
+        })
         queryClient.removeQueries({ queryKey: invalidateImageQueries.detail(variables.id) })
       }
 

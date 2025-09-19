@@ -135,7 +135,7 @@ export function useGenerateImages(
       
       // Also update any list queries that might include this image
       queryClient.setQueriesData(
-        { queryKey: imageKeys.lists(), exact: false },
+        { queryKey: ['images', 'list'], exact: false },
         (old?: OptimisticImageData): OptimisticImageData | undefined => {
           if (!old || !Array.isArray(old)) return old;
           
@@ -154,7 +154,7 @@ export function useGenerateImages(
       
       // Also update project detail queries
       queryClient.setQueriesData(
-        { queryKey: projectKeys.details(), exact: false },
+        { queryKey: ['projects'], exact: false },
         (old?: { images: SourceImage[] }): { images: SourceImage[] } | undefined => {
           if (!old?.images || !Array.isArray(old.images)) return old;
           
@@ -190,8 +190,14 @@ export function useGenerateImages(
       }
       
       // Also rollback list queries
-      queryClient.invalidateQueries({ queryKey: imageKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: projectKeys.details() });
+      queryClient.invalidateQueries({
+        queryKey: ['images', 'list'],
+        exact: false
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['projects'],
+        exact: false
+      });
       
       console.error('Generation error:', error);
       toast.error(error.message || 'Failed to generate images');
@@ -222,10 +228,17 @@ export function useGenerateImages(
       // Success feedback
       const count = data.data.generations.length;
       toast.success(`Successfully generated ${count} variant${count !== 1 ? 's' : ''}!`);
-      
-      // Invalidate related queries to ensure consistency
-      queryClient.invalidateQueries({ queryKey: invalidateImageQueries.lists() });
-      queryClient.invalidateQueries({ queryKey: invalidateProjectQueries.all() });
+
+      // 🔥 FIX: Invalidate related queries to ensure consistency
+      // Use partial matching to catch all image list queries regardless of filters
+      queryClient.invalidateQueries({
+        queryKey: ['images', 'list'],
+        exact: false // ✅ This catches ALL image list queries!
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['projects'],
+        exact: false // ✅ This catches ALL project queries!
+      });
     },
     
     onSettled: (_data, _error, variables) => {

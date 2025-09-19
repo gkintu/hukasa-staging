@@ -2,6 +2,7 @@
 
 import { useState, useRef, useCallback } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
+import { useQueryClient } from "@tanstack/react-query"
 import { MainAppSidebar } from "@/components/main-app-sidebar"
 import { MainAppHeader } from "@/components/main-app-header"
 import {
@@ -113,16 +114,22 @@ export function MainApp({ user }: MainAppProps) {
     setShowUploadModal(true)
   }
 
+  const queryClient = useQueryClient()
+
   const handleUploadSuccess = useCallback(() => {
-    // Refresh the appropriate view based on current state
-    if (projectParam) {
-      projectDetailRef.current?.refreshProject()
-    } else if (unassignedParam) {
-      unassignedImagesRef.current?.refreshImages()
-    } else if (allImagesParam || activeView === "allImages") {
-      allImagesRef.current?.refreshImages()
-    }
-  }, [projectParam, unassignedParam, allImagesParam, activeView])
+    // ✅ NEW: Unified cache invalidation - all views update automatically!
+    // This invalidates ALL image list caches (dashboard, all images, project detail, unassigned)
+    queryClient.invalidateQueries({
+      queryKey: ['images', 'list'],
+      exact: false // ✅ Catches ALL image list queries regardless of filters!
+    })
+
+    // Also invalidate project lists since image counts may have changed
+    queryClient.invalidateQueries({
+      queryKey: ['projects'],
+      exact: false // ✅ Catches ALL project queries!
+    })
+  }, [queryClient])
 
   const defaultOpen = getCookie("sidebar_state") !== "false"
 

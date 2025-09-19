@@ -35,10 +35,11 @@ export function useImageList(
   return useQuery({
     queryKey: imageKeys.list(query),
     queryFn: () => fetchMainImageList(query),
-    staleTime: 1000 * 30, // 30 seconds for real-time updates
-    refetchInterval: 1000 * 60, // Background refetch every minute
-    refetchIntervalInBackground: true, // Keep refetching even when tab not focused
-    refetchOnWindowFocus: true, // Always refetch when user returns to tab
+    staleTime: Infinity, // Never consider data stale (only refetch on invalidation)
+    refetchInterval: false, // ❌ NO automatic polling
+    refetchIntervalInBackground: false, // ❌ NO background polling
+    refetchOnWindowFocus: false, // ❌ NO refetch when returning to tab
+    refetchOnReconnect: true, // ✅ YES - refetch when internet reconnects (good UX)
     ...options,
   });
 }
@@ -51,7 +52,9 @@ export function useImageDetail(
     queryKey: imageKeys.detail(id),
     queryFn: () => fetchMainImageDetail(id),
     enabled: !!id,
-    staleTime: 1000 * 60 * 10, // 10 minutes (same as admin)
+    staleTime: Infinity, // Never consider data stale (only refetch on invalidation)
+    refetchOnWindowFocus: false, // ❌ NO refetch when returning to tab
+    refetchOnReconnect: true, // ✅ YES - refetch when internet reconnects
     ...options,
   });
 }
@@ -64,7 +67,9 @@ export function useProjectList(
   return useQuery({
     queryKey: projectKeys.lists(),
     queryFn: fetchProjectList,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: Infinity, // Never consider data stale (only refetch on invalidation)
+    refetchOnWindowFocus: false, // ❌ NO refetch when returning to tab
+    refetchOnReconnect: true, // ✅ YES - refetch when internet reconnects
     ...options,
   });
 }
@@ -77,10 +82,11 @@ export function useProjectDetail(
     queryKey: projectKeys.detail(projectId),
     queryFn: () => fetchProjectDetail(projectId),
     enabled: !!projectId,
-    staleTime: 1000 * 30, // 30 seconds for real-time updates
-    refetchInterval: 1000 * 90, // Background refetch every 90 seconds  
-    refetchIntervalInBackground: true, // Keep refetching in background
-    refetchOnWindowFocus: true, // Always refetch when user returns to tab
+    staleTime: Infinity, // Never consider data stale (only refetch on invalidation)
+    refetchInterval: false, // ❌ NO automatic polling
+    refetchIntervalInBackground: false, // ❌ NO background polling
+    refetchOnWindowFocus: false, // ❌ NO refetch when returning to tab
+    refetchOnReconnect: true, // ✅ YES - refetch when internet reconnects
     ...options,
   });
 }
@@ -97,13 +103,17 @@ export function useRenameImage(
     onSuccess: (data, variables) => {
       toast.success('Image renamed successfully');
       
-      // Invalidate image queries (same pattern as admin)
-      queryClient.invalidateQueries({ queryKey: invalidateImageQueries.all() });
-      queryClient.invalidateQueries({ queryKey: invalidateImageQueries.lists() });
-      queryClient.invalidateQueries({ queryKey: invalidateImageQueries.detail(variables.id) });
-      
+      // Invalidate image queries with proper partial matching
+      queryClient.invalidateQueries({
+        queryKey: ['images'],
+        exact: false
+      });
+
       // Also invalidate project queries since images belong to projects
-      queryClient.invalidateQueries({ queryKey: invalidateProjectQueries.all() });
+      queryClient.invalidateQueries({
+        queryKey: ['projects'],
+        exact: false
+      });
     },
     onError: (error) => {
       console.error('Rename image error:', error);
@@ -119,16 +129,25 @@ export function useInvalidateImageQueries() {
 
   return {
     invalidateAll: () => {
-      queryClient.invalidateQueries({ queryKey: invalidateImageQueries.all() });
+      queryClient.invalidateQueries({
+        queryKey: ['images'],
+        exact: false
+      });
     },
     invalidateLists: () => {
-      queryClient.invalidateQueries({ queryKey: invalidateImageQueries.lists() });
+      queryClient.invalidateQueries({
+        queryKey: ['images', 'list'],
+        exact: false
+      });
     },
     invalidateImage: (id: string) => {
       queryClient.invalidateQueries({ queryKey: invalidateImageQueries.detail(id) });
     },
     refetchLists: () => {
-      queryClient.refetchQueries({ queryKey: invalidateImageQueries.lists() });
+      queryClient.refetchQueries({
+        queryKey: ['images', 'list'],
+        exact: false
+      });
     },
   };
 }

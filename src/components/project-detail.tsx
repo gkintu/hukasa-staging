@@ -8,7 +8,7 @@ import { ChevronLeft, Image as ImageIcon, Upload, Trash2 } from "lucide-react"
 import { SourceImageCard } from "@/components/source-image-card"
 import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog"
 import { useSimpleDeleteImage } from "@/lib/shared/hooks/use-delete-image"
-import { useProjectDetail, useRenameImage } from "@/lib/shared/hooks/use-images"
+import { useImageList, useRenameImage } from "@/lib/shared/hooks/use-images"
 import { useImageSelection } from "@/lib/shared/hooks/use-row-selection"
 
 interface ProjectDetailProps {
@@ -33,15 +33,19 @@ export interface ProjectDetailRef {
 import { SourceImage, type ImageSelectHandler } from '@/lib/shared/types/image-types'
 
 export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(function ProjectDetail({ projectId, onBack, onImageSelect, onUploadMore }, ref) {
-  // TanStack Query state (replacing manual useState)
-  const { 
-    data, 
-    isLoading: loading, 
-    refetch 
-  } = useProjectDetail(projectId)
-  
-  const project = data?.project || null
-  const sourceImages = data?.images || []
+  // Use unified cache - images filtered by projectId (shares cache with AllImages and Dashboard!)
+  const {
+    data: sourceImages = [],
+    isLoading: loading,
+    refetch
+  } = useImageList({ projectId })
+
+  // Get project info from the first image (they all have the same project info)
+  const project = sourceImages.length > 0 ? {
+    id: sourceImages[0].projectId,
+    name: sourceImages[0].projectName || 'Project',
+    createdAt: sourceImages[0].createdAt || new Date().toISOString()
+  } : null
 
   const [deleteImageId, setDeleteImageId] = useState<string | null>(null)
   const [deleteImageName, setDeleteImageName] = useState<string>('')
@@ -53,7 +57,7 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
   // Use the rename mutation hook
   const renameMutation = useRenameImage()
 
-  // Expose refresh function via ref (now uses TanStack Query refetch)
+  // Expose refresh function via ref (now uses unified cache refetch)
   useImperativeHandle(ref, () => ({
     refreshProject: async () => {
       await refetch()
@@ -163,24 +167,13 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
     )
   }
 
-  if (!project) {
-    return (
-      <div className="p-8 animate-fade-in">
-        <div className="flex items-center mb-8">
-          <Button variant="ghost" onClick={onBack} className="mr-4">
-            <ChevronLeft className="h-4 w-4 mr-2" />
-            Back to Projects
-          </Button>
-        </div>
-        <div className="text-center py-16">
-          <h3 className="text-xl font-semibold mb-3">Project not found</h3>
-          <p className="text-muted-foreground">This project may have been deleted or you don&apos;t have access to it.</p>
-        </div>
-      </div>
-    )
+  if (!loading && sourceImages.length === 0) {
+    // If not loading and no images, try to get project info from API
+    // For now, show a generic project header since we don't have project metadata
+    // In the future, we could add a separate useProject hook if needed
   }
 
-  if (sourceImages.length === 0) {
+  if (!loading && sourceImages.length === 0) {
     return (
       <div className="p-8 animate-fade-in">
         <div className="flex items-center justify-between mb-8">
@@ -190,11 +183,11 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
               Back to Projects
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">{project.name}</h1>
-              <p className="text-muted-foreground">Created {formatDate(new Date(project.createdAt))}</p>
+              <h1 className="text-3xl font-bold text-foreground">Project</h1>
+              <p className="text-muted-foreground">No images yet</p>
             </div>
           </div>
-          <Button 
+          <Button
             onClick={onUploadMore}
             className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
           >
@@ -209,7 +202,7 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
           <p className="text-muted-foreground mb-8 max-w-md mx-auto">
             Upload some images to get started with AI virtual staging for this project.
           </p>
-          <Button 
+          <Button
             onClick={onUploadMore}
             size="lg"
             className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
@@ -231,10 +224,10 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
             Back to Projects
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-foreground">{project.name}</h1>
+            <h1 className="text-3xl font-bold text-foreground">{project?.name || 'Project'}</h1>
             <p className="text-muted-foreground">
-              {sourceImages.length} {sourceImages.length === 1 ? 'image' : 'images'} • 
-              Created {formatDate(new Date(project.createdAt))}
+              {sourceImages.length} {sourceImages.length === 1 ? 'image' : 'images'}
+              {project?.createdAt && ` • Created ${formatDate(new Date(project.createdAt))}`}
             </p>
           </div>
         </div>

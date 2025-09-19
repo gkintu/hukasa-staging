@@ -207,6 +207,10 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
         setGeneratedImages(prev => [...prev, ...newGenerations]);
         setGenerationState('results');
 
+        // 🔥 FIX: Invalidate caches so badge counts update INSTANTLY!
+        invalidateImageQueries.invalidateAll()
+        invalidateProjectQueries.invalidateAll()
+
         console.log(`✅ Successfully generated ${newGenerations.length} variants`);
       },
       onError: (error) => {
@@ -232,6 +236,9 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
       if (data.success) {
         // Remove the deleted variant from state
         setGeneratedImages(prev => prev.filter(img => img.id !== variantId));
+
+        // 🔥 FIX: Also remove from generationsData to keep arrays in sync
+        setGenerationsData(prev => prev.filter(gen => gen.id !== variantId));
 
         // Invalidate cache to update badge status
         invalidateImageQueries.invalidateAll();

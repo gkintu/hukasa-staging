@@ -20,7 +20,7 @@ interface GenerationResultsViewProps {
     generatedImages: MockGeneratedImage[];
     generationsData?: GenerationData[];
     onRegenerate: (variantCount: number, prompt: string, roomType?: string, furnitureStyle?: string) => void;
-    onDeleteVariant?: (variantId: string) => void;
+    onDeleteVariant?: (variantId: string) => Promise<void>;
     onUpdateSelections?: (roomType: string, furnitureStyle: string) => void;
     roomType: string;
     furnitureStyle: string;
@@ -80,14 +80,38 @@ export function GenerationResultsView({
 
   const handleConfirmDelete = async () => {
     if (!deleteVariantId || !onDeleteVariant) return;
-    
+
     setIsDeleting(true);
     try {
-      onDeleteVariant(deleteVariantId);
-      
-      // Adjust selected thumbnail if needed
-      if (selectedThumbnail >= generatedImages.length - 1) {
-        setSelectedThumbnail(Math.max(0, generatedImages.length - 2));
+      // 🔥 FIX: Await the parent deletion to ensure state is updated
+      // Following TanStack Query best practices - await parent state changes
+      await onDeleteVariant(deleteVariantId);
+
+      // 🔥 FIX: Adjust selected thumbnail AFTER deletion is complete
+      // This ensures we're working with the updated generatedImages array
+      // Find the current index of the deleted item
+      const deletedIndex = generatedImages.findIndex(img => img.id === deleteVariantId);
+
+      if (deletedIndex !== -1) {
+        // If we're deleting the currently selected thumbnail
+        if (deletedIndex === selectedThumbnail) {
+          // If there will be images after deletion (array length > 1)
+          if (generatedImages.length > 1) {
+            // If this is the last image, select the previous one
+            if (deletedIndex === generatedImages.length - 1) {
+              setSelectedThumbnail(Math.max(0, deletedIndex - 1));
+            }
+            // Otherwise keep the same index (next image will slide into this position)
+          } else {
+            // This was the only image, reset to 0
+            setSelectedThumbnail(0);
+          }
+        }
+        // If we're deleting an image before the selected one, adjust index down
+        else if (deletedIndex < selectedThumbnail) {
+          setSelectedThumbnail(selectedThumbnail - 1);
+        }
+        // If deleting after selected, no adjustment needed
       }
     } finally {
       setIsDeleting(false);
