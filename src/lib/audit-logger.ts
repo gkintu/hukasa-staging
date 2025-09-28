@@ -15,15 +15,16 @@ export const AdminActions = {
   // User management
   VIEW_USER: 'view_user',
   SEARCH_USERS: 'search_users',
-  
+
   // Image management
   DELETE_USER_IMAGE: 'delete_user_image',
   BATCH_DELETE_IMAGES: 'batch_delete_images',
   VIEW_ALL_IMAGES: 'view_all_images',
-  
+
   // System actions
   ACCESS_ADMIN_DASHBOARD: 'access_admin_dashboard',
-  VIEW_AUDIT_LOGS: 'view_audit_logs'
+  VIEW_AUDIT_LOGS: 'view_audit_logs',
+  UPDATE_SETTINGS: 'update_settings'
 } as const
 
 export type AdminAction = typeof AdminActions[keyof typeof AdminActions]

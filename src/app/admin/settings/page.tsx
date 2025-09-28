@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
-import { Save, Shield, Bell, Database, Globe } from "lucide-react"
+import { useState, useEffect } from "react"
+import { Save, Shield, Bell, Database, Globe, Megaphone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
+import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -39,16 +40,69 @@ export default function AdminSettingsPage() {
     adminEmailAlerts: true,
     userReportNotifications: true,
     systemMaintenanceMode: false,
+
+    // Announcement Settings
+    announcementMessage: "",
+    announcementType: "info" as "info" | "success" | "warning" | "error",
+    announcementActive: false,
   })
 
   const [isSaving, setIsSaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    async function loadAnnouncementSettings() {
+      try {
+        const response = await fetch('/api/admin/announcements')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.data) {
+            setSettings(prev => ({
+              ...prev,
+              announcementMessage: data.data.message || "",
+              announcementType: data.data.type || "info",
+              announcementActive: data.data.isActive || false,
+            }))
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load announcement settings:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    loadAnnouncementSettings()
+  }, [])
 
   const handleSave = async () => {
     setIsSaving(true)
-    // TODO: Save to API
-    setTimeout(() => {
+    try {
+      // Save announcement settings
+      const announcementResponse = await fetch('/api/admin/announcements', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: settings.announcementMessage,
+          type: settings.announcementType,
+          isActive: settings.announcementActive,
+        }),
+      })
+
+      if (!announcementResponse.ok) {
+        throw new Error('Failed to save announcement settings')
+      }
+
+      // TODO: Save other settings to API
+
+    } catch (error) {
+      console.error('Failed to save settings:', error)
+      // TODO: Show error toast
+    } finally {
       setIsSaving(false)
-    }, 1000)
+    }
   }
 
   const updateSetting = (key: string, value: string | number | boolean) => {
@@ -304,6 +358,79 @@ export default function AdminSettingsPage() {
                 onCheckedChange={(checked) => updateSetting('systemMaintenanceMode', checked)}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Announcements */}
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Megaphone className="h-5 w-5" />
+              Site-wide Announcements
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <Label>Show Announcement</Label>
+                <p className="text-xs text-muted-foreground">
+                  Display a banner announcement to all users
+                </p>
+              </div>
+              <Switch
+                checked={settings.announcementActive}
+                onCheckedChange={(checked) => updateSetting('announcementActive', checked)}
+              />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-2">
+              <Label htmlFor="announcementType">Announcement Type</Label>
+              <Select
+                value={settings.announcementType}
+                onValueChange={(value) => updateSetting('announcementType', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="info">Info (Blue)</SelectItem>
+                  <SelectItem value="success">Success (Green)</SelectItem>
+                  <SelectItem value="warning">Warning (Yellow)</SelectItem>
+                  <SelectItem value="error">Error (Red)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="announcementMessage">Announcement Message</Label>
+              <Textarea
+                id="announcementMessage"
+                placeholder="Enter your announcement message..."
+                value={settings.announcementMessage}
+                onChange={(e) => updateSetting('announcementMessage', e.target.value)}
+                rows={3}
+                maxLength={500}
+              />
+              <p className="text-xs text-muted-foreground">
+                {settings.announcementMessage.length}/500 characters. HTML is supported for links and formatting.
+              </p>
+            </div>
+
+            {settings.announcementActive && settings.announcementMessage && (
+              <div className="p-4 border rounded-lg bg-muted/50">
+                <p className="text-sm font-medium mb-2">Preview:</p>
+                <div className={`p-3 rounded-md border ${
+                  settings.announcementType === 'info' ? 'border-blue-200 bg-blue-50 text-blue-800' :
+                  settings.announcementType === 'success' ? 'border-green-200 bg-green-50 text-green-800' :
+                  settings.announcementType === 'warning' ? 'border-yellow-200 bg-yellow-50 text-yellow-800' :
+                  'border-red-200 bg-red-50 text-red-800'
+                }`}>
+                  <span dangerouslySetInnerHTML={{ __html: settings.announcementMessage }} />
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

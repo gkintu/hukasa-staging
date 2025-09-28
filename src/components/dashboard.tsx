@@ -4,13 +4,11 @@ import React, { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Upload, Image, Video, X, FolderOpen, Clock } from "lucide-react"
+import { Upload, Image, Clock } from "lucide-react"
 import { SourceImageCard } from "@/components/source-image-card"
 import { useImageList } from "@/lib/shared/hooks/use-images"
-import type { SourceImageWithProject } from "@/lib/shared/types/image-types"
 import { useRouter } from "next/navigation"
 
 interface User {
@@ -24,15 +22,6 @@ interface DashboardProps {
   user: User
 }
 
-interface RecentProject {
-  id: string
-  name: string
-  thumbnail?: string
-  imageCount: number
-  status: 'completed' | 'processing' | 'pending'
-  updatedAt: string
-}
-
 interface ProcessingItem {
   id: string
   name: string
@@ -44,7 +33,6 @@ export function Dashboard({ user }: DashboardProps) {
   const router = useRouter()
   const [processingItems, setProcessingItems] = useState<ProcessingItem[]>([])
   const [selectedProject, setSelectedProject] = useState<string>("")
-  const [showAnnouncement, setShowAnnouncement] = useState(true)
 
   // ✅ Use TanStack Query for recent images (shared cache with All Images)
   // Use the SAME query as AllImages component: { unassignedOnly: false }
@@ -144,26 +132,6 @@ export function Dashboard({ user }: DashboardProps) {
           Ready to create stunning virtual staging for your listings
         </p>
       </div>
-
-      {/* Announcements */}
-      {showAnnouncement && (
-        <Alert className="mb-6 border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950">
-          <Video className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <AlertDescription className="flex items-center justify-between">
-            <span className="text-blue-800 dark:text-blue-200">
-              <strong>New Feature:</strong> Video staging is now available! Transform your static images into dynamic property tours.
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAnnouncement(false)}
-              className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Images */}

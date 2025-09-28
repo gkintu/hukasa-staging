@@ -16,6 +16,7 @@ import { ProjectDetail, ProjectDetailRef } from "@/components/project-detail"
 import { SettingsPage } from "@/components/settings-page"
 import { Help } from "@/components/help"
 import { UploadModal } from "@/components/upload-modal"
+import { AnnouncementBanner } from "@/components/announcement-banner"
 
 interface User {
   id: string
@@ -154,6 +155,7 @@ export function MainApp({ user }: MainAppProps) {
         />
 
           <main className="flex-1 overflow-auto p-4" role="main">
+            <AnnouncementBanner />
           {/* Show specific views based on URL parameters, otherwise show view based on activeView */}
           {projectParam ? (
             <ProjectDetail
