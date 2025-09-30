@@ -7,23 +7,32 @@ interface GeneratingViewProps {
 }
 
 export function GeneratingView({ sourceImage }: GeneratingViewProps) {
-  const originalImageUrl = `/api/images/${sourceImage.id}/file`;
+  const originalImageUrl = sourceImage.signedUrl;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       <div className="relative overflow-hidden rounded-xl shadow-lg border border-border">
-        <img
-          src={originalImageUrl}
-          alt={sourceImage.displayName || sourceImage.originalFileName}
-          className="w-full h-[500px] object-cover blur-sm"
-        />
-        <div className="absolute inset-0 bg-black/40" />
-        {/* Spinner overlay on the image */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <Loader2 className="w-12 h-12 animate-spin text-white mb-4" />
-          <h3 className="text-xl font-semibold text-white text-center px-4">Staging your space...</h3>
-          <p className="text-white/80 mt-2 text-center px-4">Please wait.</p>
-        </div>
+        {originalImageUrl ? (
+          <>
+            <img
+              src={originalImageUrl}
+              alt={sourceImage.displayName || sourceImage.originalFileName}
+              className="w-full h-[500px] object-cover blur-sm"
+            />
+            <div className="absolute inset-0 bg-black/40" />
+            {/* Spinner overlay on the image */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <Loader2 className="w-12 h-12 animate-spin text-white mb-4" />
+              <h3 className="text-xl font-semibold text-white text-center px-4">Staging your space...</h3>
+              <p className="text-white/80 mt-2 text-center px-4">Please wait.</p>
+            </div>
+          </>
+        ) : (
+          <div className="w-full h-[500px] bg-muted flex flex-col items-center justify-center">
+            <Loader2 className="w-12 h-12 animate-spin text-muted-foreground mb-4" />
+            <div className="text-muted-foreground text-center">Loading image...</div>
+          </div>
+        )}
       </div>
       <div className="flex flex-col items-center justify-center h-[500px] text-muted-foreground">
         <p className="text-center">Your AI-staged result will appear here shortly.</p>

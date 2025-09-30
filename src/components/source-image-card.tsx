@@ -142,15 +142,21 @@ export function SourceImageCard({
           )}
           
           <div className="aspect-video overflow-hidden rounded-t-md bg-muted">
-            <img
-              src={`/api/images/${image.id}/file`}
-              alt={image.displayName || image.originalFileName}
-              className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement
-                target.style.display = 'none'
-              }}
-            />
+            {image.signedUrl ? (
+              <img
+                src={image.signedUrl}
+                alt={image.displayName || image.originalFileName}
+                className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.style.display = 'none'
+                }}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <div className="text-muted-foreground">Loading...</div>
+              </div>
+            )}
           </div>
           
           <div className="absolute top-2 right-2">

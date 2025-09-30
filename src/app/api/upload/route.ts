@@ -8,6 +8,7 @@ import { nanoid } from 'nanoid'
 import { getOrCreateUnassignedProject } from '@/lib/unassigned-project'
 import { db } from '@/db'
 import { sourceImages, projects } from '@/db/schema'
+import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = [
@@ -279,6 +280,11 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
     } else {
       message = 'All uploads failed.'
       status = 400
+    }
+
+    // Invalidate user's image metadata cache if any uploads succeeded
+    if (hasSuccesses) {
+      await valkey.del(CacheKeys.userImagesMetadata(session.user.id))
     }
 
     return NextResponse.json(

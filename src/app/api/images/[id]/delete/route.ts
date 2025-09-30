@@ -3,6 +3,7 @@ import { validateApiSession } from '@/lib/auth-utils'
 import { db } from '@/db'
 import { sourceImages } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
 
 export async function DELETE(
   request: NextRequest,
@@ -39,10 +40,13 @@ export async function DELETE(
       .delete(sourceImages)
       .where(eq(sourceImages.id, imageId))
 
+    // Invalidate user's image metadata cache
+    await valkey.del(CacheKeys.userImagesMetadata(userId))
+
     console.log(`Soft delete: Removed image ${imageId} from database, files preserved for recovery`)
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       message: 'Image deleted successfully',
       data: {
         imageId,

@@ -3,6 +3,7 @@ import { validateApiSession } from '@/lib/auth-utils'
 import { db } from '@/db'
 import { sourceImages, projects } from '@/db/schema'
 import { eq, and, inArray } from 'drizzle-orm'
+import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
 
 interface MoveImagesRequest {
   imageIds: string[]
@@ -102,6 +103,9 @@ export async function POST(request: NextRequest) {
       ))
 
     const targetProjectName = projectNames.find(p => p.id === targetProjectId)?.name || 'Unknown Project'
+
+    // Invalidate user's image metadata cache (project associations changed)
+    await valkey.del(CacheKeys.userImagesMetadata(userId))
 
     return NextResponse.json({
       success: true,

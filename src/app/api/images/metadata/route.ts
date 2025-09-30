@@ -4,7 +4,6 @@ import { db } from '@/db'
 import { sourceImages, projects, generations } from '@/db/schema'
 import { eq, desc } from 'drizzle-orm'
 import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
-import { signUrl } from '@/lib/signed-urls'
 
 export async function GET(request: NextRequest) {
   try {
@@ -17,7 +16,7 @@ export async function GET(request: NextRequest) {
 
     // Cache-first pattern: Try cache, fallback to database
     const sourceImagesArray = await valkey.getOrSet(
-      CacheKeys.userImages(userId),
+      CacheKeys.userImagesMetadata(userId), // Different cache key for metadata only
       async () => {
         // Database fallback - fetch and process data
         const userSourceImages = await db
@@ -120,25 +119,12 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    // Generate signed URLs for direct file access (6-hour expiry)
-    const expiresAt = Date.now() + (6 * 60 * 60 * 1000) // 6 hours
-    const signedImages = sourceImagesArray.map(image => ({
-      ...image,
-      signedUrl: signUrl(image.originalImagePath, userId, expiresAt),
-      variants: image.variants.map(variant => ({
-        ...variant,
-        signedUrl: variant.stagedImagePath
-          ? signUrl(variant.stagedImagePath, userId, expiresAt)
-          : null
-      }))
-    }))
-
     return NextResponse.json({
       success: true,
-      sourceImages: signedImages
+      sourceImages: sourceImagesArray
     })
   } catch (error) {
-    console.error('Error fetching all images:', error)
+    console.error('Error fetching image metadata:', error)
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })
   }
 }

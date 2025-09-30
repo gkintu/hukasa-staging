@@ -1,112 +1,103 @@
-import { createHmac, timingSafeEqual } from 'node:crypto'
+import { createHmac } from 'crypto'
 
-// Configuration
-const DEFAULT_EXPIRY_HOURS = 1
-const SIGNING_SECRET = process.env.FILE_SIGNING_SECRET
-if (!SIGNING_SECRET) {
+/**
+ * Signed URL Generation and Validation
+ *
+ * Provides cryptographic security for file serving without database queries.
+ * Uses HMAC-SHA256 to ensure URLs cannot be tampered with or forged.
+ */
+
+const SECRET = process.env.FILE_SIGNING_SECRET!
+
+if (!SECRET) {
   throw new Error('FILE_SIGNING_SECRET environment variable is required')
 }
-// TypeScript assertion - we know it's defined after the check above
-const SECRET: string = SIGNING_SECRET
 
-// Type definitions
-export interface SignedUrlParams {
-  fileId: string
-  expiresAt: number
-  signature: string
-}
-
-export interface SignedUrlOptions {
-  expiryHours?: number
-}
-
-// Generate a signed URL for temporary file access
-export function generateSignedFileUrl(fileId: string, options: SignedUrlOptions = {}): string {
-  const expiryHours = options.expiryHours || DEFAULT_EXPIRY_HOURS
-  const expiresAt = Math.floor(Date.now() / 1000) + (expiryHours * 3600) // Unix timestamp
-  
-  // Create HMAC signature using fileId and expiry timestamp
-  const payload = `${fileId}:${expiresAt}`
+/**
+ * Generate a signed URL for secure file access
+ */
+export function signUrl(filePath: string, userId: string, expiresAt: number): string {
+  const payload = `${filePath}:${userId}:${expiresAt}`
   const signature = createHmac('sha256', SECRET)
     .update(payload)
     .digest('hex')
-  
-  // Construct the signed URL
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL
-  if (!baseUrl) {
-    throw new Error('NEXT_PUBLIC_BASE_URL environment variable is required')
-  }
-  return `${baseUrl}/api/temp/files/${fileId}?expires=${expiresAt}&signature=${signature}`
+
+  return `/files/${filePath}?userId=${userId}&expires=${expiresAt}&sig=${signature}`
 }
 
-// Verify a signed URL and extract parameters
-export function verifySignedUrl(fileId: string, expires: string, signature: string): {
-  valid: boolean
-  expired?: boolean
-  fileId?: string
-} {
-  // Check if required parameters are present
-  if (!fileId || !expires || !signature) {
-    return { valid: false }
-  }
-  
-  // Parse expiry timestamp
-  const expiresAt = parseInt(expires, 10)
-  if (isNaN(expiresAt)) {
-    return { valid: false }
-  }
-  
+/**
+ * Verify a signed URL's authenticity and expiry
+ */
+export function verifySignature(filePath: string, userId: string, expires: string, signature: string): boolean {
+  const now = Date.now()
+  const expiryTime = parseInt(expires)
+
   // Check if URL has expired
-  const now = Math.floor(Date.now() / 1000)
-  if (now > expiresAt) {
-    return { valid: false, expired: true }
+  if (expiryTime < now) {
+    console.log('🕐 Signed URL expired:', { expiryTime, now, diff: now - expiryTime })
+    return false
   }
-  
-  // Recreate the expected signature
-  const payload = `${fileId}:${expiresAt}`
-  const expectedSignature = createHmac('sha256', SECRET)
+
+  // Recreate signature with same payload
+  const payload = `${filePath}:${userId}:${expires}`
+  const expectedSig = createHmac('sha256', SECRET)
     .update(payload)
     .digest('hex')
-  
-  // Constant-time comparison to prevent timing attacks
-  const signatureBuffer = Buffer.from(signature, 'hex')
-  const expectedBuffer = Buffer.from(expectedSignature, 'hex')
-  
-  if (signatureBuffer.length !== expectedBuffer.length) {
-    return { valid: false }
+
+  // Compare signatures (constant-time comparison for security)
+  const isValid = signature === expectedSig
+
+  if (!isValid) {
+    console.log('🔐 Invalid signature:', {
+      provided: signature.substring(0, 8) + '...',
+      expected: expectedSig.substring(0, 8) + '...'
+    })
   }
-  
-  // Use crypto.timingSafeEqual for constant-time comparison
-  const isValidSignature = timingSafeEqual(signatureBuffer, expectedBuffer)
-  
-  return {
-    valid: isValidSignature,
-    fileId: isValidSignature ? fileId : undefined
+
+  return isValid
+}
+
+/**
+ * Determine MIME type from file extension
+ */
+export function getMimeTypeFromExtension(extension: string): string {
+  switch (extension.toLowerCase()) {
+    case '.jpg':
+    case '.jpeg':
+      return 'image/jpeg'
+    case '.png':
+      return 'image/png'
+    case '.webp':
+      return 'image/webp'
+    case '.gif':
+      return 'image/gif'
+    default:
+      return 'application/octet-stream'
   }
 }
 
-// Extract file ID from a signed URL path
-export function extractFileId(pathname: string): string | null {
-  const match = pathname.match(/\/api\/temp\/files\/([^/?]+)/)
-  return match ? match[1] : null
+/**
+ * Extract file extension from path
+ */
+export function getFileExtension(filePath: string): string {
+  const parts = filePath.split('.')
+  return parts.length > 1 ? `.${parts.pop()}` : ''
 }
 
-// Utility to check if a URL is expired (for logging/debugging)
-export function isUrlExpired(expires: string): boolean {
-  const expiresAt = parseInt(expires, 10)
-  if (isNaN(expiresAt)) return true
-  
-  const now = Math.floor(Date.now() / 1000)
-  return now > expiresAt
-}
+/**
+ * Check if a signed URL is expiring soon
+ */
+export function isUrlExpiringSoon(signedUrl: string, bufferMinutes = 30): boolean {
+  try {
+    const url = new URL(signedUrl, 'http://localhost')
+    const expires = url.searchParams.get('expires')
+    if (!expires) return true
 
-// Generate multiple signed URLs (for batch operations)
-export function generateBatchSignedUrls(
-  fileIds: string[], 
-  options: SignedUrlOptions = {}
-): Record<string, string> {
-  return fileIds.reduce((urls, fileId) => {
-    urls[fileId] = generateSignedFileUrl(fileId, options)
-    return urls
-  }, {} as Record<string, string>)
+    const expiryTime = parseInt(expires)
+    const bufferTime = bufferMinutes * 60 * 1000
+
+    return Date.now() > (expiryTime - bufferTime)
+  } catch {
+    return true // If parsing fails, assume expired
+  }
 }

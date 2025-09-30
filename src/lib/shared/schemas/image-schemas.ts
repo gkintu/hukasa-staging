@@ -13,6 +13,7 @@ export const BasicImageSchema = z.object({
   stagingStyle: z.string().nullable(),
   operationType: z.string().nullable(),
   createdAt: z.date(),
+  signedUrl: z.string().nullable(),
   variants: z.array(z.object({
     id: z.string().uuid(),
     stagedImagePath: z.string().nullable(),
@@ -25,6 +26,7 @@ export const BasicImageSchema = z.object({
     errorMessage: z.string().nullable(),
     processingTimeMs: z.number().nullable(),
     completedAt: z.date().nullable(),
+    signedUrl: z.string().nullable(),
   })),
 });
 

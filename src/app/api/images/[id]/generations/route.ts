@@ -9,7 +9,8 @@ import { replicate } from '@ai-sdk/replicate'
 import { experimental_generateImage as generateImage } from 'ai'
 import { buildStagingPrompt } from '@/lib/ai-prompt-builder'
 import { convertRoomTypeToEnum, convertStyleToEnum } from '@/components/image-generation/types'
-import { generateSignedFileUrl } from '@/lib/signed-urls'
+import { signUrl } from '@/lib/signed-urls'
+import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
 
 // Get base URL for external API access (ngrok URL in dev, production domain in prod)
 // const getBaseUrl = () => {
@@ -29,7 +30,7 @@ async function createMockImageBuffer(): Promise<Buffer> {
 
 
 // Helper function to generate image using Replicate AI (real mode)
-async function generateStageImage(prompt: string, sourceImagePath: string): Promise<Buffer> {
+async function generateStageImage(prompt: string, sourceImagePath: string, userId: string): Promise<Buffer> {
   try {
     console.log('🎨 Generating image with Replicate AI using prompt:', prompt)
     
@@ -40,8 +41,11 @@ async function generateStageImage(prompt: string, sourceImagePath: string): Prom
     if (!fileName) {
       throw new Error(`Invalid source image path: ${sourceImagePath}`)
     }
-    // Generate signed URL for temporary public access (1 hour expiry)
-    const publicImageUrl = generateSignedFileUrl(fileName);
+    // For AI generation, we need a publicly accessible URL
+    // Since this is inside the generation function, we need to get userId from the context
+    // This will be fixed when sourceImage is available in the scope
+    const expiresAt = Date.now() + (1 * 60 * 60 * 1000) // 1 hour
+    const publicImageUrl = signUrl(sourceImagePath, userId, expiresAt);
     console.log('📸 Signed URL for Replicate:', publicImageUrl)
     
     const { image } = await generateImage({
@@ -106,10 +110,19 @@ export async function GET(
       .where(eq(generations.sourceImageId, imageId))
       .orderBy(desc(generations.createdAt))
 
+    // Generate signed URLs for generation images (6-hour expiry)
+    const expiresAt = Date.now() + (6 * 60 * 60 * 1000) // 6 hours
+    const signedGenerations = imageGenerations.map(generation => ({
+      ...generation,
+      signedUrl: generation.stagedImagePath
+        ? signUrl(generation.stagedImagePath, userId, expiresAt)
+        : null
+    }))
+
     return NextResponse.json({
       success: true,
       data: {
-        generations: imageGenerations
+        generations: signedGenerations
       }
     })
   } catch (error) {
@@ -254,7 +267,7 @@ export async function POST(
           console.log(`📝 Mock generation ${variationIndex} created`)
         } else {
           // Real AI mode - generate with Replicate using source image
-          imageBuffer = await generateStageImage(aiPrompt!, sourceImage.originalImagePath)
+          imageBuffer = await generateStageImage(aiPrompt!, sourceImage.originalImagePath, sourceImage.userId)
           mimeType = SupportedFileType.WEBP // flux-kontext-dev returns WEBP
           jobId = `replicate-job-${Date.now()}-${index}`
           console.log(`🚀 Real AI generation ${variationIndex} completed in ${Date.now() - startTime}ms`)
@@ -313,10 +326,28 @@ export async function POST(
       }
     }
 
+    // Invalidate cache after generating new variants
+    try {
+      await valkey.del(CacheKeys.userImagesMetadata(userId))
+      console.log('🗑️ Cache invalidated after generation')
+    } catch (cacheError) {
+      console.warn('⚠️ Failed to invalidate cache after generation:', cacheError)
+      // Don't fail the request if cache invalidation fails
+    }
+
+    // Generate signed URLs for newly created generations (6-hour expiry)
+    const expiresAt = Date.now() + (6 * 60 * 60 * 1000) // 6 hours
+    const signedGenerations = insertedGenerations.map(generation => ({
+      ...generation,
+      signedUrl: generation.stagedImagePath
+        ? signUrl(generation.stagedImagePath, userId, expiresAt)
+        : null
+    }))
+
     return NextResponse.json({
       success: true,
       data: {
-        generations: insertedGenerations
+        generations: signedGenerations
       }
     })
   } catch (error) {

@@ -4,6 +4,7 @@ import { db } from '@/db'
 import { sourceImages } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
+import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
 
 const renameSchema = z.object({
   displayName: z.string().min(1).max(255)
@@ -56,10 +57,13 @@ export async function PATCH(
       .set({ displayName, updatedAt: new Date() })
       .where(eq(sourceImages.id, imageId))
 
-    return NextResponse.json({ 
-      success: true, 
+    // Invalidate user's image metadata cache
+    await valkey.del(CacheKeys.userImagesMetadata(userId))
+
+    return NextResponse.json({
+      success: true,
       message: 'Display name updated successfully',
-      displayName 
+      displayName
     })
   } catch (error) {
     console.error('Error updating display name:', error)

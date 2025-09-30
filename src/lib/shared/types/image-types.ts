@@ -18,6 +18,7 @@ export interface GeneratedVariant {
   aiGenerationParams: Record<string, unknown> | null
   createdAt: Date
   completedAt: Date | null
+  signedUrl: string | null
 }
 
 // Simplified variant structure as returned by API endpoints
@@ -33,6 +34,7 @@ export interface VariantSummary {
   errorMessage: string | null
   processingTimeMs: number | null
   completedAt: Date | null
+  signedUrl: string | null
 }
 
 // Base source image interface (matches database schema with nullable fields from LEFT JOIN)
@@ -43,10 +45,11 @@ export interface SourceImage {
   displayName: string | null
   fileSize: number | null
   roomType: string | null  // Nullable when no generations exist
-  stagingStyle: string | null  // Nullable when no generations exist  
+  stagingStyle: string | null  // Nullable when no generations exist
   operationType: string | null  // Nullable when no generations exist
   createdAt: Date
   variants: VariantSummary[]
+  signedUrl: string | null
 }
 
 // Extended interface for components that need project context

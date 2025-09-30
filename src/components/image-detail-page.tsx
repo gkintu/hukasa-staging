@@ -8,9 +8,10 @@ import { ChevronLeft, Home } from "lucide-react"
 import { GenerationForm } from "@/components/image-generation/generation-form"
 import { GeneratingView } from "@/components/image-generation/generating-view"
 import { GenerationResultsView } from "@/components/image-generation/generation-results-view"
-import { useInvalidateImageQueries, useInvalidateProjectQueries } from "@/lib/shared/hooks/use-images"
+import { useInvalidateImageQueries, useInvalidateProjectQueries, useImageList } from "@/lib/shared/hooks/use-images"
 import { useGenerateImages } from "@/lib/shared/hooks/use-generate-images"
-import { SourceImage, MockGeneratedImage, convertRoomTypeFromEnum, convertStyleFromEnum } from "@/components/image-generation/types"
+import { MockGeneratedImage, convertRoomTypeFromEnum, convertStyleFromEnum } from "@/components/image-generation/types"
+import { GeneratedVariant } from "@/lib/shared/types/image-types"
 
 interface Generation {
   id: string;
@@ -18,6 +19,7 @@ interface Generation {
   roomType: string;
   stagingStyle: string;
   variationIndex: number;
+  signedUrl: string | null;
 }
 
 interface User {
@@ -34,10 +36,6 @@ interface ImageDetailPageProps {
 
 export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
   const router = useRouter()
-  const [sourceImage, setSourceImage] = useState<SourceImage | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
   const [generationState, setGenerationState] = useState<'form' | 'generating' | 'results' | 'loading'>('loading')
   const [generatedImages, setGeneratedImages] = useState<MockGeneratedImage[]>([])
   const [generationsData, setGenerationsData] = useState<Generation[]>([])
@@ -46,10 +44,22 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
   const [selectedStyle, setSelectedStyle] = useState<string>("")
   const [lastVariantCount, setLastVariantCount] = useState<number>(3)
 
+  // Check URL params for project context
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null
+  const projectParam = urlParams?.get('project')
+
   // TanStack Query hooks
   const invalidateImageQueries = useInvalidateImageQueries()
   const invalidateProjectQueries = useInvalidateProjectQueries()
   const generateImagesMutation = useGenerateImages()
+
+  // Use the new useImageList hook with project filtering if needed
+  const { data: images, isLoading, error } = useImageList(
+    projectParam ? { projectId: projectParam } : {}
+  )
+
+  // Find the specific image from the list
+  const sourceImage = images?.find(img => img.id === imageId) || null
 
   // Use useMutationState to track ongoing generations globally across navigation
   const pendingGenerations = useMutationState({
@@ -70,50 +80,8 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
     )
   }, [pendingGenerations, imageId])
 
-  // Fetch image data
-  const fetchImageData = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-
-    try {
-      // First try to fetch from project-specific endpoint if we have project context
-      const urlParams = new URLSearchParams(window.location.search)
-      const projectParam = urlParams.get('project')
-
-      let response
-      if (projectParam) {
-        response = await fetch(`/api/projects/${projectParam}`)
-        const data = await response.json()
-        if (data.success) {
-          const foundImage = data.sourceImages.find((img: SourceImage) => img.id === imageId)
-          if (foundImage) {
-            setSourceImage(foundImage)
-            setLoading(false)
-            return
-          }
-        }
-      }
-
-      // Fallback to all images endpoint
-      response = await fetch('/api/images')
-      const data = await response.json()
-      if (data.success) {
-        const foundImage = data.sourceImages.find((img: SourceImage) => img.id === imageId)
-        if (foundImage) {
-          setSourceImage(foundImage)
-        } else {
-          setError('Image not found')
-        }
-      } else {
-        setError('Failed to fetch image data')
-      }
-    } catch (err) {
-      console.error('Error fetching image data:', err)
-      setError('Failed to load image')
-    } finally {
-      setLoading(false)
-    }
-  }, [imageId])
+  // Error handling for image not found
+  const errorMessage = error ? (error instanceof Error ? error.message : String(error)) : null
 
   const fetchExistingGenerations = useCallback(async () => {
     if (!sourceImage) return;
@@ -132,10 +100,10 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
         // Store full generation data
         setGenerationsData(data.data.generations);
 
-        // Convert database generations to MockGeneratedImage format
-        const convertedImages = data.data.generations.map((gen: Generation) => ({
+        // Convert database generations to MockGeneratedImage format using signed URLs
+        const convertedImages = data.data.generations.map((gen: GeneratedVariant) => ({
           id: gen.id,
-          url: `/api/generations/${gen.id}/file`
+          url: gen.signedUrl || '' // Use empty string if no signed URL
         }));
         setGeneratedImages(convertedImages);
         setGenerationState('results');
@@ -156,10 +124,7 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
     }
   }, [sourceImage, generateImagesMutation.isPending, isThisImageGenerating]);
 
-  // Load image data on mount
-  useEffect(() => {
-    fetchImageData()
-  }, [fetchImageData])
+  // Data is now loaded automatically via TanStack Query hooks
 
   // Fetch existing generations when image is loaded OR when generation state changes
   useEffect(() => {
@@ -197,10 +162,10 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
       imageCount: imageCount
     }, {
       onSuccess: (data) => {
-        // Convert API response to display format
-        const newGenerations = data.data.generations.map((gen: Generation) => ({
+        // Convert API response to display format using signed URLs
+        const newGenerations = data.data.generations.map((gen: GeneratedVariant) => ({
           id: gen.id,
-          url: `/api/generations/${gen.id}/file`
+          url: gen.signedUrl || '' // Use empty string if no signed URL
         }));
 
         // Add new generations to existing ones
@@ -285,7 +250,7 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
     }
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="border-b border-border">
@@ -307,7 +272,7 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
     )
   }
 
-  if (error || !sourceImage) {
+  if (errorMessage || (!isLoading && !sourceImage)) {
     return (
       <div className="min-h-screen bg-background">
         <div className="border-b border-border">
@@ -325,7 +290,7 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
             <div className="bg-muted/50 rounded-lg p-8">
               <h2 className="text-2xl font-semibold mb-4">Image Not Found</h2>
               <p className="text-muted-foreground mb-6">
-                {error || 'The image you are looking for could not be found.'}
+                {errorMessage || 'The image you are looking for could not be found.'}
               </p>
               <Button onClick={handleBack} className="gap-2">
                 <Home className="h-4 w-4" />
@@ -350,7 +315,7 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
             </Button>
             <div>
               <h1 className="text-xl font-semibold">
-                {sourceImage.displayName || sourceImage.originalFileName}
+                {sourceImage?.displayName || sourceImage?.originalFileName}
               </h1>
               <p className="text-sm text-muted-foreground">
                 {generationState === 'form' ? 'Generate Staging Variants' :
@@ -372,7 +337,7 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
             </div>
           </div>
         )}
-        {generationState === 'form' && (
+        {generationState === 'form' && sourceImage && (
           <GenerationForm
             sourceImage={sourceImage}
             onClose={handleBack}
@@ -387,12 +352,12 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
             showHeader={false}
           />
         )}
-        {generationState === 'generating' && (
+        {generationState === 'generating' && sourceImage && (
           <div className="p-8">
             <GeneratingView sourceImage={sourceImage} />
           </div>
         )}
-        {generationState === 'results' && (
+        {generationState === 'results' && sourceImage && (
           <GenerationResultsView
             sourceImage={sourceImage}
             generatedImages={generatedImages}

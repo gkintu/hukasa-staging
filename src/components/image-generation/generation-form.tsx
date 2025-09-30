@@ -53,11 +53,17 @@ export function GenerationForm({
                 {/* Left Column: Image */}
                 <div className="relative group">
                     <div className="relative overflow-hidden rounded-xl shadow-lg border border-border">
-                        <img
-                            src={`/api/images/${sourceImage.id}/file`}
-                            alt={sourceImage.displayName || sourceImage.originalFileName}
-                            className="w-full h-[500px] object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
+                        {sourceImage.signedUrl ? (
+                            <img
+                                src={sourceImage.signedUrl}
+                                alt={sourceImage.displayName || sourceImage.originalFileName}
+                                className="w-full h-[500px] object-cover transition-transform duration-300 group-hover:scale-105"
+                            />
+                        ) : (
+                            <div className="w-full h-[500px] bg-muted flex items-center justify-center">
+                                <div className="text-muted-foreground">Loading image...</div>
+                            </div>
+                        )}
                         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
                     </div>
                 </div>

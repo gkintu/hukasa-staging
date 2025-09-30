@@ -92,6 +92,7 @@ function createOptimisticVariants(sourceImageId: string, count: number): Generat
     aiGenerationParams: null,
     createdAt: new Date(),
     completedAt: null,
+    signedUrl: null, // No signed URL for optimistic variants
   }));
 }
 

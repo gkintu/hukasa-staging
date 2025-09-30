@@ -50,7 +50,7 @@ export function GenerationResultsView({
   const [isDeleting, setIsDeleting] = useState(false)
 
   const currentResult = generatedImages[selectedThumbnail]?.url;
-  const originalImageUrl = `/api/images/${sourceImage.id}/file`;
+  const originalImageUrl = sourceImage.signedUrl;
 
   const handleDownload = () => {
     if (!currentResult) return;
@@ -63,6 +63,7 @@ export function GenerationResultsView({
   };
 
   const handleDownloadOriginal = () => {
+    if (!originalImageUrl) return;
     // Create download link for original image
     const downloadUrl = `${originalImageUrl}?download=true`;
     const link = document.createElement('a');
@@ -134,16 +135,24 @@ export function GenerationResultsView({
             <div>
               <h3 className="text-lg font-medium mb-4">Original</h3>
               <div className="aspect-[4/3] bg-muted rounded-lg overflow-hidden mb-6 relative group">
-                <img
-                  src={originalImageUrl}
-                  alt="Original room"
-                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                />
-                <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button size="icon" variant="secondary" aria-label="Download original image" onClick={handleDownloadOriginal}>
-                    <Download className="h-4 w-4" />
-                  </Button>
-                </div>
+                {originalImageUrl ? (
+                  <>
+                    <img
+                      src={originalImageUrl}
+                      alt="Original room"
+                      className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                    />
+                    <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <Button size="icon" variant="secondary" aria-label="Download original image" onClick={handleDownloadOriginal}>
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </>
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <div className="text-muted-foreground">Loading image...</div>
+                  </div>
+                )}
               </div>
             </div>
 

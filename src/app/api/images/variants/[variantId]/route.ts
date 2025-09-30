@@ -3,6 +3,7 @@ import { validateApiSession } from '@/lib/auth-utils'
 import { db } from '@/db'
 import { generations, sourceImages } from '@/db/schema'
 import { eq } from 'drizzle-orm'
+import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
 
 /**
  * DELETE /api/images/variants/[variantId]
@@ -58,6 +59,9 @@ export async function DELETE(
     if (deletedVariant.length === 0) {
       return NextResponse.json({ success: false, message: 'Failed to delete variant' }, { status: 500 })
     }
+
+    // Invalidate user's image cache (contains all variants)
+    await valkey.del(CacheKeys.userImagesMetadata(userId))
 
     return NextResponse.json({
       success: true,
