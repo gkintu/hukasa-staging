@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateApiSession } from '@/lib/auth-utils'
 import { db } from '@/db'
-import { sourceImages, projects } from '@/db/schema'
+import { sourceImages, projects, generations } from '@/db/schema'
 import { eq, and, inArray } from 'drizzle-orm'
 import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
+import { signUrl } from '@/lib/signed-urls'
 
 interface MoveImagesRequest {
   imageIds: string[]
@@ -77,10 +78,10 @@ export async function POST(request: NextRequest) {
 
     // Move source images to the target project (generations will stay with their source images)
     const sourceImageIds = imagesToMove.map(img => img.id)
-    
-    const moveResult = await db
+
+    const movedImages = await db
       .update(sourceImages)
-      .set({ 
+      .set({
         projectId: targetProjectId,
         updatedAt: new Date()
       })
@@ -88,7 +89,13 @@ export async function POST(request: NextRequest) {
         inArray(sourceImages.id, sourceImageIds),
         eq(sourceImages.userId, userId)
       ))
-      .returning({ id: sourceImages.id })
+      .returning()
+
+    // Get variants for all moved images
+    const allVariants = await db
+      .select()
+      .from(generations)
+      .where(inArray(generations.sourceImageId, sourceImageIds))
 
     // Get project names for response
     const projectNames = await db
@@ -107,13 +114,31 @@ export async function POST(request: NextRequest) {
     // Invalidate user's image metadata cache (project associations changed)
     await valkey.del(CacheKeys.userImagesMetadata(userId))
 
+    // Generate fresh signed URLs (1-hour expiry)
+    const expiresAt = Date.now() + (60 * 60 * 1000)
+    const imagesWithUrls = movedImages.map(image => {
+      const imageVariants = allVariants.filter(v => v.sourceImageId === image.id)
+      return {
+        ...image,
+        signedUrl: signUrl(image.originalImagePath, userId, expiresAt),
+        variants: imageVariants.map(variant => ({
+          ...variant,
+          signedUrl: variant.stagedImagePath
+            ? signUrl(variant.stagedImagePath, userId, expiresAt)
+            : null
+        }))
+      }
+    })
+
     return NextResponse.json({
       success: true,
       message: `Successfully moved ${imagesToMove.length} ${imagesToMove.length === 1 ? 'image' : 'images'} to ${targetProjectName}`,
-      movedCount: moveResult.length,
-      targetProject: {
-        id: targetProjectId,
-        name: targetProjectName
+      data: {
+        movedImages: imagesWithUrls,
+        targetProject: {
+          id: targetProjectId,
+          name: targetProjectName
+        }
       }
     })
 

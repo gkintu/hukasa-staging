@@ -48,7 +48,7 @@ export function useImageMetadata(
   });
 }
 
-// Hook for URL refresh (2hr/6hr pattern for security)
+// Hook for URL refresh (optimized for 1hr TTL with 30min stale time)
 export function useImageUrls(
   images: BasicImage[] | undefined,
   options?: UseQueryOptions<{ images: Record<string, string>; variants: Record<string, string | null> }, Error>
@@ -58,12 +58,12 @@ export function useImageUrls(
     queryFn: () => refreshImageUrls(images!),
     enabled: !!images && images.length > 0,
 
-    // 🚀 Optimized 2hr/6hr pattern for signed URLs
-    staleTime: 6 * 60 * 60 * 1000,        // 6 hours (matches URL expiry)
-    refetchInterval: 2 * 60 * 60 * 1000,  // 2 hours (refresh for security)
-    refetchIntervalInBackground: true,     // ✅ Keep refreshing when tab inactive
-    refetchOnWindowFocus: true,           // ✅ Safety net when user returns
-    refetchOnReconnect: true,             // ✅ Refetch when internet reconnects
+    // 🚀 Optimized refresh pattern for signed URLs (1hr TTL, 30min stale)
+    staleTime: 30 * 60 * 1000,       // 30 minutes (refresh before expiry)
+    refetchInterval: false,          // No automatic interval polling
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true,      // ✅ Refresh when user returns (manual trigger)
+    refetchOnReconnect: true,        // ✅ Refetch when internet reconnects
 
     ...options,
   });
@@ -110,9 +110,9 @@ export function useImageList(
       }));
     },
     enabled: metadataQuery.isSuccess,
-    staleTime: 2 * 60 * 60 * 1000, // 2 hours - driven by URL refresh needs
-    refetchInterval: 2 * 60 * 60 * 1000,
-    refetchIntervalInBackground: true,
+    staleTime: 30 * 60 * 1000, // 30 minutes - refresh before 1hr URL expiry (30min safety buffer)
+    refetchInterval: false,
+    refetchIntervalInBackground: false,
     refetchOnWindowFocus: true,
     refetchOnReconnect: true,
     ...options,

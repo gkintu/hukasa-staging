@@ -31,8 +31,8 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Generate signed URLs with 6-hour expiry
-    const expiresAt = Date.now() + (6 * 60 * 60 * 1000) // 6 hours
+    // Generate signed URLs with 1-hour expiry
+    const expiresAt = Date.now() + (60 * 60 * 1000) // 1 hour
 
     // Generate URLs for source images
     const imageUrls: Record<string, string> = {}

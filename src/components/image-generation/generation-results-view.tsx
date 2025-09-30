@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Download, Trash2, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import { SourceImage, MockGeneratedImage, roomTypes, interiorStyles, convertRoomTypeFromEnum, convertStyleFromEnum } from "./types";
+import { useImageErrorHandler } from "@/lib/shared/utils/image-error-handler";
 
 interface GenerationData {
   id: string;
@@ -42,12 +43,13 @@ export function GenerationResultsView({
 }: GenerationResultsViewProps) {
   const [selectedThumbnail, setSelectedThumbnail] = useState(0)
   const [imageCount, setImageCount] = useState([defaultVariantCount])
-  
+
   const [currentRoomType, setCurrentRoomType] = useState(roomType)
   const [currentFurnitureStyle, setCurrentFurnitureStyle] = useState(furnitureStyle)
-  
+
   const [deleteVariantId, setDeleteVariantId] = useState<string | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const handleImageError = useImageErrorHandler()
 
   const currentResult = generatedImages[selectedThumbnail]?.url;
   const originalImageUrl = sourceImage.signedUrl;
@@ -141,6 +143,7 @@ export function GenerationResultsView({
                       src={originalImageUrl}
                       alt="Original room"
                       className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      onError={handleImageError}
                     />
                     <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button size="icon" variant="secondary" aria-label="Download original image" onClick={handleDownloadOriginal}>
@@ -239,6 +242,7 @@ export function GenerationResultsView({
                     `Staged variation — ${convertStyleFromEnum(generationsData[selectedThumbnail].stagingStyle)} ${convertRoomTypeFromEnum(generationsData[selectedThumbnail].roomType)}` :
                     `Staged variation — ${currentFurnitureStyle} ${currentRoomType}`}
                   className="w-full h-full object-cover"
+                  onError={handleImageError}
                 />
                 <div className="absolute bottom-0 left-0 right-0 p-2 bg-gradient-to-t from-black/50 to-transparent">
                   <div className="bg-black/20 text-white px-3 py-1 rounded text-sm inline-block">
@@ -292,6 +296,7 @@ export function GenerationResultsView({
                       src={thumbnail.url}
                       alt={`Room variation ${index + 1}`}
                       className="w-full h-full object-cover"
+                      onError={handleImageError}
                     />
                   </button>
                 ))}

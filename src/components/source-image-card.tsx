@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { CardActionsMenu } from "@/components/ui/card-actions-menu"
 import { RenameModal } from "@/components/ui/rename-modal"
 import { getVariantStatusBadge } from "@/lib/shared/utils/status-badge"
+import { useImageErrorHandler } from "@/lib/shared/utils/image-error-handler"
 import { useState } from "react"
 import Link from "next/link"
 import { Folder } from "lucide-react"
@@ -46,6 +47,7 @@ export function SourceImageCard({
   const [editValue, setEditValue] = useState(image.displayName || image.originalFileName)
   const [isSaving, setIsSaving] = useState(false)
   const [showRenameModal, setShowRenameModal] = useState(false)
+  const handleImageError = useImageErrorHandler()
   
   const handleSaveRename = async () => {
     if (!onRename || !editValue.trim() || editValue === (image.displayName || image.originalFileName)) {
@@ -150,6 +152,8 @@ export function SourceImageCard({
                 onError={(e) => {
                   const target = e.target as HTMLImageElement
                   target.style.display = 'none'
+                  // Trigger global refresh on image load failure (likely 403 expired URL)
+                  handleImageError()
                 }}
               />
             ) : (

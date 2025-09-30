@@ -110,8 +110,8 @@ export async function GET(
       .where(eq(generations.sourceImageId, imageId))
       .orderBy(desc(generations.createdAt))
 
-    // Generate signed URLs for generation images (6-hour expiry)
-    const expiresAt = Date.now() + (6 * 60 * 60 * 1000) // 6 hours
+    // Generate signed URLs for generation images (1-hour expiry)
+    const expiresAt = Date.now() + (60 * 60 * 1000) // 1 hour
     const signedGenerations = imageGenerations.map(generation => ({
       ...generation,
       signedUrl: generation.stagedImagePath
@@ -335,8 +335,8 @@ export async function POST(
       // Don't fail the request if cache invalidation fails
     }
 
-    // Generate signed URLs for newly created generations (6-hour expiry)
-    const expiresAt = Date.now() + (6 * 60 * 60 * 1000) // 6 hours
+    // Generate signed URLs for newly created generations (1-hour expiry)
+    const expiresAt = Date.now() + (60 * 60 * 1000) // 1 hour
     const signedGenerations = insertedGenerations.map(generation => ({
       ...generation,
       signedUrl: generation.stagedImagePath

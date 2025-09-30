@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { validateApiSession } from '@/lib/auth-utils'
 import { db } from '@/db'
-import { sourceImages } from '@/db/schema'
+import { sourceImages, generations } from '@/db/schema'
 import { eq } from 'drizzle-orm'
 import { z } from 'zod'
 import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
+import { signUrl } from '@/lib/signed-urls'
 
 const renameSchema = z.object({
   displayName: z.string().min(1).max(255)
@@ -52,18 +53,38 @@ export async function PATCH(
     }
 
     // Update the display name
-    await db
+    const updatedImage = await db
       .update(sourceImages)
       .set({ displayName, updatedAt: new Date() })
       .where(eq(sourceImages.id, imageId))
+      .returning()
+
+    // Get variants for this image
+    const variants = await db
+      .select()
+      .from(generations)
+      .where(eq(generations.sourceImageId, imageId))
 
     // Invalidate user's image metadata cache
     await valkey.del(CacheKeys.userImagesMetadata(userId))
 
+    // Generate fresh signed URLs (1-hour expiry)
+    const expiresAt = Date.now() + (60 * 60 * 1000)
+    const imageWithUrls = {
+      ...updatedImage[0],
+      signedUrl: signUrl(updatedImage[0].originalImagePath, userId, expiresAt),
+      variants: variants.map(variant => ({
+        ...variant,
+        signedUrl: variant.stagedImagePath
+          ? signUrl(variant.stagedImagePath, userId, expiresAt)
+          : null
+      }))
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Display name updated successfully',
-      displayName
+      data: imageWithUrls
     })
   } catch (error) {
     console.error('Error updating display name:', error)

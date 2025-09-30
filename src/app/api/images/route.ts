@@ -120,8 +120,8 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    // Generate signed URLs for direct file access (6-hour expiry)
-    const expiresAt = Date.now() + (6 * 60 * 60 * 1000) // 6 hours
+    // Generate signed URLs for direct file access (1-hour expiry)
+    const expiresAt = Date.now() + (60 * 60 * 1000) // 1 hour
     const signedImages = sourceImagesArray.map(image => ({
       ...image,
       signedUrl: signUrl(image.originalImagePath, userId, expiresAt),

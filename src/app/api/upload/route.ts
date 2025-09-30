@@ -9,6 +9,7 @@ import { getOrCreateUnassignedProject } from '@/lib/unassigned-project'
 import { db } from '@/db'
 import { sourceImages, projects } from '@/db/schema'
 import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
+import { signUrl } from '@/lib/signed-urls'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 const ALLOWED_TYPES = [
@@ -56,6 +57,7 @@ interface UploadResponse {
     fileSize: number
     fileType: string
     relativePath: string
+    signedUrl: string
     uploadedAt: string
   }>
   errors?: Array<{
@@ -287,11 +289,18 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
       await valkey.del(CacheKeys.userImagesMetadata(session.user.id))
     }
 
+    // Generate fresh signed URLs for successfully uploaded files (1-hour expiry)
+    const expiresAt = Date.now() + (60 * 60 * 1000)
+    const filesWithUrls = uploadResults.map(file => ({
+      ...file,
+      signedUrl: signUrl(file.relativePath, session.user.id, expiresAt)
+    }))
+
     return NextResponse.json(
       {
         success: hasSuccesses,
         message,
-        files: uploadResults.length > 0 ? uploadResults : undefined,
+        files: filesWithUrls.length > 0 ? filesWithUrls : undefined,
         errors: allErrors.length > 0 ? allErrors : undefined
       },
       { status }

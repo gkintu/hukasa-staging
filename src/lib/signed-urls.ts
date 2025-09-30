@@ -1,4 +1,4 @@
-import { createHmac } from 'crypto'
+import { createHmac, timingSafeEqual } from 'crypto'
 
 /**
  * Signed URL Generation and Validation
@@ -44,8 +44,16 @@ export function verifySignature(filePath: string, userId: string, expires: strin
     .update(payload)
     .digest('hex')
 
-  // Compare signatures (constant-time comparison for security)
-  const isValid = signature === expectedSig
+  // Compare signatures using timing-safe comparison to prevent timing attacks
+  const providedBuffer = Buffer.from(signature, 'hex')
+  const expectedBuffer = Buffer.from(expectedSig, 'hex')
+
+  // Ensure buffers are same length before comparison (security requirement)
+  if (providedBuffer.length !== expectedBuffer.length) {
+    return false
+  }
+
+  const isValid = timingSafeEqual(providedBuffer, expectedBuffer)
 
   if (!isValid) {
     console.log('🔐 Invalid signature:', {
