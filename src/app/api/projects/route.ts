@@ -3,6 +3,7 @@ import { validateApiSession } from '@/lib/auth-utils'
 import { db } from '@/db'
 import { projects, sourceImages, generations } from '@/db/schema'
 import { eq, sql, desc } from 'drizzle-orm'
+import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
 
 export async function GET(request: NextRequest) {
   try {
@@ -13,32 +14,38 @@ export async function GET(request: NextRequest) {
 
     const userId = session.user.id
 
-    // Get all projects with their source image and staged version counts
-    const userProjects = await db
-      .select({
-        id: projects.id,
-        name: projects.name,
-        createdAt: projects.createdAt,
-        updatedAt: projects.updatedAt,
-        sourceImageCount: sql<number>`count(distinct ${sourceImages.id})::int`,
-        stagedVersionCount: sql<number>`count(distinct ${generations.id})::int`
-      })
-      .from(projects)
-      .leftJoin(sourceImages, eq(projects.id, sourceImages.projectId))
-      .leftJoin(generations, eq(sourceImages.id, generations.sourceImageId))
-      .where(eq(projects.userId, userId))
-      .groupBy(projects.id, projects.name, projects.createdAt, projects.updatedAt)
-      .orderBy(desc(projects.updatedAt))
+    // Cache-first pattern: Try cache, fallback to database
+    const sortedProjects = await valkey.getOrSet(
+      CacheKeys.userProjects(userId),
+      async () => {
+        // Database fallback - fetch and process data
+        const userProjects = await db
+          .select({
+            id: projects.id,
+            name: projects.name,
+            createdAt: projects.createdAt,
+            updatedAt: projects.updatedAt,
+            sourceImageCount: sql<number>`count(distinct ${sourceImages.id})::int`,
+            stagedVersionCount: sql<number>`count(distinct ${generations.id})::int`
+          })
+          .from(projects)
+          .leftJoin(sourceImages, eq(projects.id, sourceImages.projectId))
+          .leftJoin(generations, eq(sourceImages.id, generations.sourceImageId))
+          .where(eq(projects.userId, userId))
+          .groupBy(projects.id, projects.name, projects.createdAt, projects.updatedAt)
+          .orderBy(desc(projects.updatedAt))
 
-    // Sort to ensure "Unassigned Images" project always appears first
-    const sortedProjects = userProjects.sort((a, b) => {
-      const isAUnassigned = a.name === '📥 Unassigned Images'
-      const isBUnassigned = b.name === '📥 Unassigned Images'
-      
-      if (isAUnassigned && !isBUnassigned) return -1
-      if (!isAUnassigned && isBUnassigned) return 1
-      return 0 // Maintains existing updatedAt DESC order for other projects
-    })
+        // Sort to ensure "Unassigned Images" project always appears first
+        return userProjects.sort((a, b) => {
+          const isAUnassigned = a.name === '📥 Unassigned Images'
+          const isBUnassigned = b.name === '📥 Unassigned Images'
+
+          if (isAUnassigned && !isBUnassigned) return -1
+          if (!isAUnassigned && isBUnassigned) return 1
+          return 0 // Maintains existing updatedAt DESC order for other projects
+        })
+      }
+    )
 
     return NextResponse.json({ success: true, projects: sortedProjects })
   } catch (error) {
@@ -76,8 +83,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, message: 'Failed to create project' }, { status: 500 })
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    // Invalidate projects cache (new project added)
+    await valkey.del(CacheKeys.userProjects(userId))
+
+    return NextResponse.json({
+      success: true,
       project: newProject[0],
       message: 'Project created successfully'
     })

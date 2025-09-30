@@ -111,8 +111,9 @@ export async function POST(request: NextRequest) {
 
     const targetProjectName = projectNames.find(p => p.id === targetProjectId)?.name || 'Unknown Project'
 
-    // Invalidate user's image metadata cache (project associations changed)
+    // Invalidate user's image metadata cache and projects cache (project associations + counts changed)
     await valkey.del(CacheKeys.userImagesMetadata(userId))
+    await valkey.del(CacheKeys.userProjects(userId)) // sourceImageCount changed for source and target projects
 
     // Generate fresh signed URLs (1-hour expiry)
     const expiresAt = Date.now() + (60 * 60 * 1000)

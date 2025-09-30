@@ -329,6 +329,7 @@ export async function POST(
     // Invalidate cache after generating new variants
     try {
       await valkey.del(CacheKeys.userImagesMetadata(userId))
+      await valkey.del(CacheKeys.userProjects(userId)) // stagedVersionCount changed
       console.log('🗑️ Cache invalidated after generation')
     } catch (cacheError) {
       console.warn('⚠️ Failed to invalidate cache after generation:', cacheError)

@@ -284,9 +284,10 @@ export async function POST(request: NextRequest): Promise<NextResponse<UploadRes
       status = 400
     }
 
-    // Invalidate user's image metadata cache if any uploads succeeded
+    // Invalidate user's image metadata cache and projects cache if any uploads succeeded
     if (hasSuccesses) {
       await valkey.del(CacheKeys.userImagesMetadata(session.user.id))
+      await valkey.del(CacheKeys.userProjects(session.user.id)) // Project sourceImageCount changed
     }
 
     // Generate fresh signed URLs for successfully uploaded files (1-hour expiry)

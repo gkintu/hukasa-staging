@@ -3,6 +3,7 @@ import { validateApiSession } from '@/lib/auth-utils'
 import { db } from '@/db'
 import { projects, sourceImages, generations } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
 
 export async function GET(
   request: NextRequest,
@@ -153,9 +154,9 @@ export async function PATCH(
     // Update project name
     const updatedProject = await db
       .update(projects)
-      .set({ 
-        name: name.trim(), 
-        updatedAt: new Date() 
+      .set({
+        name: name.trim(),
+        updatedAt: new Date()
       })
       .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
       .returning()
@@ -164,8 +165,11 @@ export async function PATCH(
       return NextResponse.json({ success: false, message: 'Project not found or update failed' }, { status: 404 })
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    // Invalidate projects cache (project renamed)
+    await valkey.del(CacheKeys.userProjects(userId))
+
+    return NextResponse.json({
+      success: true,
       project: updatedProject[0],
       message: 'Project updated successfully'
     })
@@ -203,8 +207,11 @@ export async function DELETE(
       return NextResponse.json({ success: false, message: 'Project not found' }, { status: 404 })
     }
 
-    return NextResponse.json({ 
-      success: true, 
+    // Invalidate projects cache (project deleted)
+    await valkey.del(CacheKeys.userProjects(userId))
+
+    return NextResponse.json({
+      success: true,
       message: 'Project deleted successfully'
     })
   } catch (error) {
