@@ -9,8 +9,6 @@ interface AnnouncementData {
   id: string
   message: string
   type: 'info' | 'success' | 'warning' | 'error'
-  isActive: boolean
-  icon?: string
 }
 
 const iconMap = {
@@ -41,32 +39,38 @@ const iconStyleMap = {
   error: "text-red-600 dark:text-red-400"
 }
 
-const buttonStyleMap = {
-  info: "text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200",
-  success: "text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-200",
-  warning: "text-yellow-600 hover:text-yellow-800 dark:text-yellow-400 dark:hover:text-yellow-200",
-  error: "text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-200"
-}
-
+/**
+ * Announcement Banner Component
+ *
+ * Pipeline:
+ * 1. On mount: Fetch current announcement from KV store (single fetch)
+ * 2. Connect to SSE for live updates
+ * 3. Check localStorage for dismissal
+ * 4. Show banner if not dismissed
+ * 5. On dismiss: Save to localStorage (per announcement ID)
+ */
 export function AnnouncementBanner() {
   const [announcement, setAnnouncement] = useState<AnnouncementData | null>(null)
   const [isVisible, setIsVisible] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    let eventSource: EventSource | null = null
+
+    // Step 1: Fetch current announcement once
     async function fetchAnnouncement() {
       try {
-        const response = await fetch('/api/announcements')
+        const response = await fetch('/api/announcements/current')
         if (response.ok) {
           const data = await response.json()
           if (data.success && data.data) {
             const announcementData = data.data as AnnouncementData
 
             // Check if user has dismissed this announcement
-            const dismissedKey = `announcement-dismissed-${announcementData.id}`
+            const dismissedKey = `dismissed:announcement:${announcementData.id}`
             const isDismissed = localStorage.getItem(dismissedKey) === 'true'
 
-            if (announcementData.isActive && !isDismissed) {
+            if (!isDismissed) {
               setAnnouncement(announcementData)
               setIsVisible(true)
             }
@@ -79,38 +83,89 @@ export function AnnouncementBanner() {
       }
     }
 
+    // Step 2: Connect to SSE for live updates
+    async function connectSSE() {
+      try {
+        eventSource = new EventSource('/api/sse/auth-events')
+
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data)
+
+            // Handle announcement events
+            if (data.type === 'ANNOUNCEMENT_CREATED') {
+              const newAnnouncement = data.data as AnnouncementData
+              const dismissedKey = `dismissed:announcement:${newAnnouncement.id}`
+              const isDismissed = localStorage.getItem(dismissedKey) === 'true'
+
+              if (!isDismissed) {
+                setAnnouncement(newAnnouncement)
+                setIsVisible(true)
+              }
+            } else if (data.type === 'ANNOUNCEMENT_REMOVED') {
+              // Hide banner immediately
+              setAnnouncement(null)
+              setIsVisible(false)
+            }
+          } catch (error) {
+            console.error('Failed to parse SSE message:', error)
+          }
+        }
+
+        eventSource.onerror = () => {
+          console.log('SSE connection closed, will reconnect...')
+          eventSource?.close()
+        }
+      } catch (error) {
+        console.error('Failed to connect to SSE:', error)
+      }
+    }
+
     fetchAnnouncement()
+    connectSSE()
+
+    // Cleanup on unmount
+    return () => {
+      eventSource?.close()
+    }
   }, [])
 
   const handleDismiss = () => {
     if (announcement) {
-      // Store dismissal in localStorage
-      const dismissedKey = `announcement-dismissed-${announcement.id}`
+      // Save dismissal to localStorage
+      const dismissedKey = `dismissed:announcement:${announcement.id}`
       localStorage.setItem(dismissedKey, 'true')
+
+      // Hide banner
       setIsVisible(false)
+      setAnnouncement(null)
     }
   }
 
-  if (isLoading || !isVisible || !announcement) {
+  // Don't render anything if loading, no announcement, or dismissed
+  if (isLoading || !announcement || !isVisible) {
     return null
   }
 
-  const IconComponent = iconMap[announcement.type]
+  const Icon = iconMap[announcement.type]
 
   return (
-    <Alert className={`mb-6 ${styleMap[announcement.type]}`}>
-      <IconComponent className={`h-4 w-4 ${iconStyleMap[announcement.type]}`} />
-      <AlertDescription className="flex items-center justify-between">
-        <span className={textStyleMap[announcement.type]} dangerouslySetInnerHTML={{ __html: announcement.message }} />
+    <div className="w-full">
+      <Alert className={`${styleMap[announcement.type]} relative rounded-none border-x-0 border-t-0`}>
+        <Icon className={`h-4 w-4 ${iconStyleMap[announcement.type]}`} />
+        <AlertDescription className={`${textStyleMap[announcement.type]} pr-8`}>
+          {announcement.message}
+        </AlertDescription>
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
+          className="absolute right-2 top-2 h-6 w-6 rounded-full hover:bg-black/5 dark:hover:bg-white/10"
           onClick={handleDismiss}
-          className={buttonStyleMap[announcement.type]}
+          aria-label="Dismiss announcement"
         >
           <X className="h-4 w-4" />
         </Button>
-      </AlertDescription>
-    </Alert>
+      </Alert>
+    </div>
   )
 }

@@ -65,8 +65,13 @@ export async function PATCH(
       .from(generations)
       .where(eq(generations.sourceImageId, imageId))
 
-    // Invalidate user's image metadata cache
-    await valkey.del(CacheKeys.userImagesMetadata(userId))
+    const projectId = updatedImage[0].projectId
+
+    // Invalidate user's image metadata cache and project detail
+    await Promise.all([
+      valkey.del(CacheKeys.userImagesMetadata(userId)),
+      valkey.del(CacheKeys.userProject(userId, projectId)) // Project detail changed (displayName updated)
+    ])
 
     // Generate fresh signed URLs (1-hour expiry)
     const expiresAt = Date.now() + (60 * 60 * 1000)

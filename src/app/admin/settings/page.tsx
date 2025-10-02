@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { toast } from "sonner"
 
 export default function AdminSettingsPage() {
   const [settings, setSettings] = useState({
@@ -49,11 +50,12 @@ export default function AdminSettingsPage() {
 
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [hasActiveAnnouncement, setHasActiveAnnouncement] = useState(false)
 
   useEffect(() => {
     async function loadAnnouncementSettings() {
       try {
-        const response = await fetch('/api/admin/announcements')
+        const response = await fetch('/api/announcements/current')
         if (response.ok) {
           const data = await response.json()
           if (data.success && data.data) {
@@ -61,8 +63,9 @@ export default function AdminSettingsPage() {
               ...prev,
               announcementMessage: data.data.message || "",
               announcementType: data.data.type || "info",
-              announcementActive: data.data.isActive || false,
+              announcementActive: true,
             }))
+            setHasActiveAnnouncement(true)
           }
         }
       } catch (error) {
@@ -76,30 +79,56 @@ export default function AdminSettingsPage() {
   }, [])
 
   const handleSave = async () => {
+    // Validate announcement only if it's toggled ON
+    if (settings.announcementActive && !settings.announcementMessage.trim()) {
+      toast.error('Please enter an announcement message or turn off the announcement toggle')
+      return
+    }
+
     setIsSaving(true)
     try {
-      // Save announcement settings
-      const announcementResponse = await fetch('/api/admin/announcements', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: settings.announcementMessage,
-          type: settings.announcementType,
-          isActive: settings.announcementActive,
-        }),
-      })
+      // Handle announcement settings
+      if (settings.announcementActive && settings.announcementMessage.trim()) {
+        // Create/update announcement
+        const announcementResponse = await fetch('/api/admin/announcements', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            message: settings.announcementMessage.trim(),
+            type: settings.announcementType,
+          }),
+        })
 
-      if (!announcementResponse.ok) {
-        throw new Error('Failed to save announcement settings')
+        const data = await announcementResponse.json()
+
+        if (!announcementResponse.ok) {
+          throw new Error(data.message || 'Failed to save announcement')
+        }
+
+        setHasActiveAnnouncement(true)
+      } else if (!settings.announcementActive && hasActiveAnnouncement) {
+        // Delete announcement if toggled off
+        const deleteResponse = await fetch('/api/admin/announcements', {
+          method: 'DELETE',
+        })
+
+        const data = await deleteResponse.json()
+
+        if (!deleteResponse.ok) {
+          throw new Error(data.message || 'Failed to delete announcement')
+        }
+
+        setHasActiveAnnouncement(false)
       }
 
       // TODO: Save other settings to API
 
+      toast.success('Settings saved successfully!')
     } catch (error) {
       console.error('Failed to save settings:', error)
-      // TODO: Show error toast
+      toast.error(error instanceof Error ? error.message : 'Failed to save settings')
     } finally {
       setIsSaving(false)
     }

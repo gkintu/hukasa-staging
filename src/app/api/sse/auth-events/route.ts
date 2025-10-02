@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import postgres from 'postgres'
+import Valkey from 'iovalkey'
 import { validateApiSession } from '@/lib/auth-utils'
 import { suspendedUsersCache } from '@/lib/suspended-users-cache'
 
@@ -11,6 +12,16 @@ const pgClient = postgres(process.env.DATABASE_URL!, {
   max: 1, // Single connection for LISTEN
   idle_timeout: 0, // Keep connection alive
   connect_timeout: 30,
+})
+
+// Valkey subscriber client for Pub/Sub (announcements)
+const valkeySubscriber = new Valkey({
+  host: process.env.VALKEY_HOST!,
+  port: parseInt(process.env.VALKEY_PORT!),
+  db: parseInt(process.env.VALKEY_DB!),
+  password: process.env.VALKEY_PASSWORD,
+  lazyConnect: true,
+  name: 'hukasa-sse-subscriber',
 })
 
 // Start listening to PostgreSQL notifications
@@ -74,8 +85,42 @@ async function startListening() {
     })
 
     console.log('[SSE] Started listening to PostgreSQL notifications')
+
+    // Subscribe to Valkey Pub/Sub for announcements (global broadcast)
+    await valkeySubscriber.connect()
+    await valkeySubscriber.subscribe('announcement:changed')
+
+    valkeySubscriber.on('message', (channel, message) => {
+      if (channel === 'announcement:changed') {
+        try {
+          const data = JSON.parse(message)
+          console.log(`[SSE] Announcement changed:`, data.type)
+
+          // Broadcast to ALL connected users (announcements are global)
+          const allControllers: ReadableStreamDefaultController[] = []
+          userConnections.forEach((controllers) => {
+            allControllers.push(...controllers)
+          })
+
+          const eventData = JSON.stringify(data)
+          allControllers.forEach((controller) => {
+            try {
+              controller.enqueue(`data: ${eventData}\n\n`)
+            } catch (error) {
+              console.error('[SSE] Error broadcasting announcement:', error)
+            }
+          })
+
+          console.log(`[SSE] Broadcasted announcement to ${allControllers.length} connections`)
+        } catch (error) {
+          console.error('[SSE] Error processing announcement:', error)
+        }
+      }
+    })
+
+    console.log('[SSE] Started listening to Valkey announcements')
   } catch (error) {
-    console.error('[SSE] Error starting PostgreSQL listener:', error)
+    console.error('[SSE] Error starting listeners:', error)
   }
 }
 

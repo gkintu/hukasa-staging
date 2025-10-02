@@ -33,6 +33,8 @@ export async function DELETE(
       return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 403 })
     }
 
+    const projectId = existingImage[0].projectId
+
     // Only delete from database - files will be cleaned up by cron job after 30 days
     // This allows users to contact support if they regret deleting images
     // Deleting source image will cascade delete any associated generations
@@ -40,8 +42,12 @@ export async function DELETE(
       .delete(sourceImages)
       .where(eq(sourceImages.id, imageId))
 
-    // Invalidate user's image metadata cache
-    await valkey.del(CacheKeys.userImagesMetadata(userId))
+    // Invalidate user's image metadata cache and affected project caches
+    await Promise.all([
+      valkey.del(CacheKeys.userImagesMetadata(userId)),
+      valkey.del(CacheKeys.userProjects(userId)), // sourceImageCount changed
+      valkey.del(CacheKeys.userProject(userId, projectId)) // Project detail changed
+    ])
 
     console.log(`Soft delete: Removed image ${imageId} from database, files preserved for recovery`)
 

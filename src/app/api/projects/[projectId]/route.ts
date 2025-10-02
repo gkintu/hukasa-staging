@@ -18,113 +18,127 @@ export async function GET(
     const { projectId } = await params
     const userId = session.user.id
 
-    // Verify project belongs to user
-    const project = await db
-      .select()
-      .from(projects)
-      .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
-      .limit(1)
+    // Cache-first pattern for project detail
+    const cachedData = await valkey.getOrSet(
+      CacheKeys.userProject(userId, projectId),
+      async () => {
+        // Verify project belongs to user
+        const project = await db
+          .select()
+          .from(projects)
+          .where(and(eq(projects.id, projectId), eq(projects.userId, userId)))
+          .limit(1)
 
-    if (project.length === 0) {
+        if (project.length === 0) {
+          return null // Will be handled after cache check
+        }
+
+        // Get all source images for this project with their generations
+        const projectSourceImages = await db
+          .select({
+            // Source image fields
+            id: sourceImages.id,
+            originalImagePath: sourceImages.originalImagePath,
+            originalFileName: sourceImages.originalFileName,
+            displayName: sourceImages.displayName,
+            fileSize: sourceImages.fileSize,
+            isFavorited: sourceImages.isFavorited,
+            createdAt: sourceImages.createdAt,
+            updatedAt: sourceImages.updatedAt,
+            // Generation fields (will be null if no generations exist)
+            generationId: generations.id,
+            stagedImagePath: generations.stagedImagePath,
+            variationIndex: generations.variationIndex,
+            roomType: generations.roomType,
+            stagingStyle: generations.stagingStyle,
+            operationType: generations.operationType,
+            status: generations.status,
+            jobId: generations.jobId,
+            errorMessage: generations.errorMessage,
+            processingTimeMs: generations.processingTimeMs,
+            completedAt: generations.completedAt
+          })
+          .from(sourceImages)
+          .leftJoin(generations, eq(sourceImages.id, generations.sourceImageId))
+          .where(and(eq(sourceImages.projectId, projectId), eq(sourceImages.userId, userId)))
+          .orderBy(sourceImages.createdAt, generations.variationIndex)
+
+        // Group source images with their generations
+        const sourceImagesMap = new Map<string, {
+          id: string
+          originalImagePath: string
+          originalFileName: string
+          displayName: string | null
+          fileSize: number | null
+          isFavorited: boolean
+          createdAt: Date
+          updatedAt: Date
+          variants: Array<{
+            id: string
+            stagedImagePath: string | null
+            variationIndex: number
+            roomType: string
+            stagingStyle: string
+            operationType: string
+            status: string
+            jobId: string | null
+            errorMessage: string | null
+            processingTimeMs: number | null
+            completedAt: Date | null
+          }>
+        }>()
+
+        for (const row of projectSourceImages) {
+          const sourceImageId = row.id
+
+          if (!sourceImagesMap.has(sourceImageId)) {
+            sourceImagesMap.set(sourceImageId, {
+              id: row.id,
+              originalImagePath: row.originalImagePath,
+              originalFileName: row.originalFileName,
+              displayName: row.displayName,
+              fileSize: row.fileSize,
+              isFavorited: row.isFavorited,
+              createdAt: row.createdAt,
+              updatedAt: row.updatedAt,
+              variants: []
+            })
+          }
+
+          // Add generation variant if it exists (all generation fields will be non-null when generationId exists)
+          if (row.generationId && row.roomType && row.stagingStyle && row.operationType && row.status) {
+            sourceImagesMap.get(sourceImageId)!.variants.push({
+              id: row.generationId,
+              stagedImagePath: row.stagedImagePath,
+              variationIndex: row.variationIndex || 1,
+              roomType: row.roomType,
+              stagingStyle: row.stagingStyle,
+              operationType: row.operationType,
+              status: row.status,
+              jobId: row.jobId,
+              errorMessage: row.errorMessage,
+              processingTimeMs: row.processingTimeMs,
+              completedAt: row.completedAt
+            })
+          }
+        }
+
+        const sourceImagesArray = Array.from(sourceImagesMap.values())
+
+        return {
+          project: project[0],
+          sourceImages: sourceImagesArray
+        }
+      }
+    )
+
+    if (!cachedData) {
       return NextResponse.json({ success: false, message: 'Project not found' }, { status: 404 })
     }
 
-    // Get all source images for this project with their generations
-    const projectSourceImages = await db
-      .select({
-        // Source image fields
-        id: sourceImages.id,
-        originalImagePath: sourceImages.originalImagePath,
-        originalFileName: sourceImages.originalFileName,
-        displayName: sourceImages.displayName,
-        fileSize: sourceImages.fileSize,
-        isFavorited: sourceImages.isFavorited,
-        createdAt: sourceImages.createdAt,
-        updatedAt: sourceImages.updatedAt,
-        // Generation fields (will be null if no generations exist)
-        generationId: generations.id,
-        stagedImagePath: generations.stagedImagePath,
-        variationIndex: generations.variationIndex,
-        roomType: generations.roomType,
-        stagingStyle: generations.stagingStyle,
-        operationType: generations.operationType,
-        status: generations.status,
-        jobId: generations.jobId,
-        errorMessage: generations.errorMessage,
-        processingTimeMs: generations.processingTimeMs,
-        completedAt: generations.completedAt
-      })
-      .from(sourceImages)
-      .leftJoin(generations, eq(sourceImages.id, generations.sourceImageId))
-      .where(and(eq(sourceImages.projectId, projectId), eq(sourceImages.userId, userId)))
-      .orderBy(sourceImages.createdAt, generations.variationIndex)
-
-    // Group source images with their generations
-    const sourceImagesMap = new Map<string, {
-      id: string
-      originalImagePath: string
-      originalFileName: string
-      displayName: string | null
-      fileSize: number | null
-      isFavorited: boolean
-      createdAt: Date
-      updatedAt: Date
-      variants: Array<{
-        id: string
-        stagedImagePath: string | null
-        variationIndex: number
-        roomType: string
-        stagingStyle: string
-        operationType: string
-        status: string
-        jobId: string | null
-        errorMessage: string | null
-        processingTimeMs: number | null
-        completedAt: Date | null
-      }>
-    }>()
-
-    for (const row of projectSourceImages) {
-      const sourceImageId = row.id
-      
-      if (!sourceImagesMap.has(sourceImageId)) {
-        sourceImagesMap.set(sourceImageId, {
-          id: row.id,
-          originalImagePath: row.originalImagePath,
-          originalFileName: row.originalFileName,
-          displayName: row.displayName,
-          fileSize: row.fileSize,
-          isFavorited: row.isFavorited,
-          createdAt: row.createdAt,
-          updatedAt: row.updatedAt,
-          variants: []
-        })
-      }
-
-      // Add generation variant if it exists (all generation fields will be non-null when generationId exists)
-      if (row.generationId && row.roomType && row.stagingStyle && row.operationType && row.status) {
-        sourceImagesMap.get(sourceImageId)!.variants.push({
-          id: row.generationId,
-          stagedImagePath: row.stagedImagePath,
-          variationIndex: row.variationIndex || 1,
-          roomType: row.roomType,
-          stagingStyle: row.stagingStyle,
-          operationType: row.operationType,
-          status: row.status,
-          jobId: row.jobId,
-          errorMessage: row.errorMessage,
-          processingTimeMs: row.processingTimeMs,
-          completedAt: row.completedAt
-        })
-      }
-    }
-
-    const sourceImagesArray = Array.from(sourceImagesMap.values())
-
-    return NextResponse.json({ 
-      success: true, 
-      project: project[0],
-      sourceImages: sourceImagesArray
+    return NextResponse.json({
+      success: true,
+      ...cachedData
     })
   } catch (error) {
     console.error('Error fetching project details:', error)
@@ -165,8 +179,11 @@ export async function PATCH(
       return NextResponse.json({ success: false, message: 'Project not found or update failed' }, { status: 404 })
     }
 
-    // Invalidate projects cache (project renamed)
-    await valkey.del(CacheKeys.userProjects(userId))
+    // Invalidate caches (project renamed)
+    await Promise.all([
+      valkey.del(CacheKeys.userProjects(userId)),
+      valkey.del(CacheKeys.userProject(userId, projectId))
+    ])
 
     return NextResponse.json({
       success: true,
@@ -207,8 +224,11 @@ export async function DELETE(
       return NextResponse.json({ success: false, message: 'Project not found' }, { status: 404 })
     }
 
-    // Invalidate projects cache (project deleted)
-    await valkey.del(CacheKeys.userProjects(userId))
+    // Invalidate caches (project deleted)
+    await Promise.all([
+      valkey.del(CacheKeys.userProjects(userId)),
+      valkey.del(CacheKeys.userProject(userId, projectId))
+    ])
 
     return NextResponse.json({
       success: true,

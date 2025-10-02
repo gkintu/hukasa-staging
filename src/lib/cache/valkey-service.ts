@@ -289,6 +289,18 @@ class ValkeyService {
   }
 
   /**
+   * Publish message to channel (Pub/Sub)
+   */
+  async publish(channel: string, message: string): Promise<void> {
+    try {
+      await this.client.publish(channel, message)
+    } catch (error) {
+      console.warn('Valkey publish failed:', error)
+      throw error
+    }
+  }
+
+  /**
    * Graceful shutdown
    */
   async disconnect(): Promise<void> {
@@ -339,6 +351,8 @@ export const CacheKeys = {
 
   // System data
   systemSettings: () => `system:settings`,
+  systemAnnouncement: (id: string) => `announcement:${id}`,
+  systemAnnouncementActive: () => `announcement:active`, // Points to current active announcement ID
 
   // Helper for pattern matching
   userPattern: (userId: string) => `user:${userId}:*`,
