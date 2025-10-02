@@ -240,6 +240,10 @@ export function useGenerateImages(
         queryKey: ['projects'],
         exact: false // ✅ This catches ALL project queries!
       });
+      // Invalidate generations cache for this specific image
+      queryClient.invalidateQueries({
+        queryKey: ['image', sourceImageId, 'generations']
+      });
     },
     
     onSettled: (_data, _error, variables) => {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { useMutationState } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
@@ -8,19 +8,10 @@ import { ChevronLeft, Home } from "lucide-react"
 import { GenerationForm } from "@/components/image-generation/generation-form"
 import { GeneratingView } from "@/components/image-generation/generating-view"
 import { GenerationResultsView } from "@/components/image-generation/generation-results-view"
-import { useInvalidateImageQueries, useInvalidateProjectQueries, useImageList } from "@/lib/shared/hooks/use-images"
+import { useInvalidateImageQueries, useInvalidateProjectQueries, useImageList, useImageGenerations } from "@/lib/shared/hooks/use-images"
 import { useGenerateImages } from "@/lib/shared/hooks/use-generate-images"
 import { MockGeneratedImage, convertRoomTypeFromEnum, convertStyleFromEnum } from "@/components/image-generation/types"
 import { GeneratedVariant } from "@/lib/shared/types/image-types"
-
-interface Generation {
-  id: string;
-  stagedImagePath: string | null;
-  roomType: string;
-  stagingStyle: string;
-  variationIndex: number;
-  signedUrl: string | null;
-}
 
 interface User {
   id: string
@@ -38,7 +29,6 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
   const router = useRouter()
   const [generationState, setGenerationState] = useState<'form' | 'generating' | 'results' | 'loading'>('loading')
   const [generatedImages, setGeneratedImages] = useState<MockGeneratedImage[]>([])
-  const [generationsData, setGenerationsData] = useState<Generation[]>([])
 
   const [selectedRoomType, setSelectedRoomType] = useState<string>("")
   const [selectedStyle, setSelectedStyle] = useState<string>("")
@@ -57,6 +47,9 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
   const { data: images, isLoading, error } = useImageList(
     projectParam ? { projectId: projectParam } : {}
   )
+
+  // Fetch generations using TanStack Query (replaces raw fetch)
+  const { data: generationsData = [], isLoading: isLoadingGenerations } = useImageGenerations(imageId)
 
   // Find the specific image from the list
   const sourceImage = images?.find(img => img.id === imageId) || null
@@ -83,8 +76,12 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
   // Error handling for image not found
   const errorMessage = error ? (error instanceof Error ? error.message : String(error)) : null
 
-  const fetchExistingGenerations = useCallback(async () => {
-    if (!sourceImage) return;
+  // Update UI state based on TanStack Query data
+  useEffect(() => {
+    if (!sourceImage || isLoading || isLoadingGenerations) {
+      setGenerationState('loading');
+      return;
+    }
 
     // Check if a generation is currently in progress (local OR global)
     if (generateImagesMutation.isPending || isThisImageGenerating) {
@@ -92,46 +89,25 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
       return;
     }
 
-    try {
-      const response = await fetch(`/api/images/${sourceImage.id}/generations`);
-      const data = await response.json();
+    if (generationsData.length > 0) {
+      // Convert database generations to MockGeneratedImage format using signed URLs
+      const convertedImages = generationsData.map((gen: GeneratedVariant) => ({
+        id: gen.id,
+        url: gen.signedUrl || '' // Use empty string if no signed URL
+      }));
+      setGeneratedImages(convertedImages);
+      setGenerationState('results');
 
-      if (data.success && data.data.generations.length > 0) {
-        // Store full generation data
-        setGenerationsData(data.data.generations);
-
-        // Convert database generations to MockGeneratedImage format using signed URLs
-        const convertedImages = data.data.generations.map((gen: GeneratedVariant) => ({
-          id: gen.id,
-          url: gen.signedUrl || '' // Use empty string if no signed URL
-        }));
-        setGeneratedImages(convertedImages);
-        setGenerationState('results');
-
-        // Set the room type and style from the most recent generation
-        const mostRecent = data.data.generations[0];
-        setSelectedRoomType(convertRoomTypeFromEnum(mostRecent.roomType));
-        setSelectedStyle(convertStyleFromEnum(mostRecent.stagingStyle));
-      } else {
-        // No existing generations, show form
-        setGenerationState('form');
-        setGeneratedImages([]);
-        setGenerationsData([]);
-      }
-    } catch (error) {
-      console.error('Error fetching existing generations:', error);
+      // Set the room type and style from the most recent generation
+      const mostRecent = generationsData[0];
+      setSelectedRoomType(convertRoomTypeFromEnum(mostRecent.roomType));
+      setSelectedStyle(convertStyleFromEnum(mostRecent.stagingStyle));
+    } else {
+      // No existing generations, show form
       setGenerationState('form');
+      setGeneratedImages([]);
     }
-  }, [sourceImage, generateImagesMutation.isPending, isThisImageGenerating]);
-
-  // Data is now loaded automatically via TanStack Query hooks
-
-  // Fetch existing generations when image is loaded OR when generation state changes
-  useEffect(() => {
-    if (sourceImage) {
-      fetchExistingGenerations();
-    }
-  }, [sourceImage, fetchExistingGenerations, isThisImageGenerating]);
+  }, [sourceImage, isLoading, isLoadingGenerations, generationsData, generateImagesMutation.isPending, isThisImageGenerating]);
 
   const handleGenerate = async (imageCount: number = 3, prompt?: string, roomType?: string, stagingStyle?: string) => {
     setLastVariantCount(imageCount); // Remember the count for next time
@@ -202,10 +178,7 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
         // Remove the deleted variant from state
         setGeneratedImages(prev => prev.filter(img => img.id !== variantId));
 
-        // 🔥 FIX: Also remove from generationsData to keep arrays in sync
-        setGenerationsData(prev => prev.filter(gen => gen.id !== variantId));
-
-        // Invalidate cache to update badge status
+        // Invalidate cache to refetch fresh data (TanStack Query will update generationsData automatically)
         invalidateImageQueries.invalidateAll();
         invalidateProjectQueries.invalidateAll();
       } else {

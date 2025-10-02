@@ -27,21 +27,13 @@ interface User {
 
 interface MainAppProps {
   user: User
+  defaultOpen?: boolean
 }
 
 // Define types for the image detail modal
 import { type ImageSelectHandler } from '@/lib/shared/types/image-types'
 
-function getCookie(name: string): string | null {
-  if (typeof document === "undefined") return null
-  
-  const value = `; ${document.cookie}`
-  const parts = value.split(`; ${name}=`)
-  if (parts.length === 2) return parts.pop()?.split(";").shift() || null
-  return null
-}
-
-export function MainApp({ user }: MainAppProps) {
+export function MainApp({ user, defaultOpen = true }: MainAppProps) {
   const searchParams = useSearchParams()
   const router = useRouter()
   
@@ -131,8 +123,6 @@ export function MainApp({ user }: MainAppProps) {
       exact: false // ✅ Catches ALL project queries!
     })
   }, [queryClient])
-
-  const defaultOpen = getCookie("sidebar_state") !== "false"
 
   return (
     <SidebarProvider defaultOpen={defaultOpen}>

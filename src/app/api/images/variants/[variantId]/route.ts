@@ -60,8 +60,13 @@ export async function DELETE(
       return NextResponse.json({ success: false, message: 'Failed to delete variant' }, { status: 500 })
     }
 
+    const sourceImageId = variant.sourceImageId
+
     // Invalidate user's image cache (contains all variants)
-    await valkey.del(CacheKeys.userImagesMetadata(userId))
+    await Promise.all([
+      valkey.del(CacheKeys.userImagesMetadata(userId)),
+      valkey.del(CacheKeys.imageVariants(sourceImageId)) // Image variants cache changed
+    ])
 
     return NextResponse.json({
       success: true,

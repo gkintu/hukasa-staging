@@ -88,31 +88,48 @@ export async function GET(
 
     const userId = session.user.id
 
-    // First verify the user owns this source image
-    const sourceImageCheck = await db
-      .select({ userId: sourceImages.userId })
-      .from(sourceImages)
-      .where(eq(sourceImages.id, imageId))
-      .limit(1)
+    // Cache-first pattern for image generations (same as /api/images)
+    const cachedGenerations = await valkey.getOrSet(
+      CacheKeys.imageVariants(imageId),
+      async () => {
+        // First verify the user owns this source image
+        const sourceImageCheck = await db
+          .select({ userId: sourceImages.userId })
+          .from(sourceImages)
+          .where(eq(sourceImages.id, imageId))
+          .limit(1)
 
-    if (sourceImageCheck.length === 0) {
+        if (sourceImageCheck.length === 0) {
+          return null // Image not found
+        }
+
+        // Fetch all generations for this source image, ordered by creation date
+        const imageGenerations = await db
+          .select()
+          .from(generations)
+          .where(eq(generations.sourceImageId, imageId))
+          .orderBy(desc(generations.createdAt))
+
+        return {
+          ownerId: sourceImageCheck[0].userId,
+          generations: imageGenerations
+        }
+      }
+    )
+
+    if (!cachedGenerations) {
       return NextResponse.json({ success: false, message: 'Image not found' }, { status: 404 })
     }
 
-    if (sourceImageCheck[0].userId !== userId) {
+    // Verify user owns this image
+    if (cachedGenerations.ownerId !== userId) {
       return NextResponse.json({ success: false, message: 'Access denied' }, { status: 403 })
     }
 
-    // Fetch all generations for this source image, ordered by creation date
-    const imageGenerations = await db
-      .select()
-      .from(generations)
-      .where(eq(generations.sourceImageId, imageId))
-      .orderBy(desc(generations.createdAt))
-
     // Generate signed URLs for generation images (1-hour expiry)
+    // URLs are generated fresh on every request, not cached
     const expiresAt = Date.now() + (60 * 60 * 1000) // 1 hour
-    const signedGenerations = imageGenerations.map(generation => ({
+    const signedGenerations = cachedGenerations.generations.map(generation => ({
       ...generation,
       signedUrl: generation.stagedImagePath
         ? signUrl(generation.stagedImagePath, userId, expiresAt)
@@ -332,7 +349,8 @@ export async function POST(
       await Promise.all([
         valkey.del(CacheKeys.userImagesMetadata(userId)),
         valkey.del(CacheKeys.userProjects(userId)), // stagedVersionCount changed
-        valkey.del(CacheKeys.userProject(userId, projectId)) // Project detail changed (new variants)
+        valkey.del(CacheKeys.userProject(userId, projectId)), // Project detail changed (new variants)
+        valkey.del(CacheKeys.imageVariants(imageId)) // Image variants cache changed
       ])
       console.log('🗑️ Cache invalidated after generation')
     } catch (cacheError) {

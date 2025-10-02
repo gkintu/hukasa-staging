@@ -1,4 +1,4 @@
-import { headers } from "next/headers"
+import { headers, cookies } from "next/headers"
 import { LandingPage } from "@/components/landing"
 import { validateServerSession } from "@/lib/auth-utils"
 import { MainApp } from "@/components/main-app"
@@ -15,9 +15,14 @@ export default async function Home() {
 
   // Handle valid sessions
   if (sessionResult.success && sessionResult.user) {
+    // Read sidebar state from cookies (server-side to avoid hydration mismatch)
+    const cookieStore = await cookies()
+    const sidebarState = cookieStore.get("sidebar_state")?.value
+    const defaultOpen = sidebarState !== "false"
+
     return (
       <SharedQueryProvider>
-        <MainApp user={sessionResult.user} />
+        <MainApp user={sessionResult.user} defaultOpen={defaultOpen} />
       </SharedQueryProvider>
     )
   }

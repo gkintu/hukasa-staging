@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState } from "react"
+import { createContext, useContext, useState, useEffect } from "react"
 
 export type Collapsible = "offcanvas" | "icon" | "none"
 export type Variant = "inset" | "sidebar" | "floating"
@@ -48,15 +48,22 @@ function setCookie(name: string, value: string, maxAge: number) {
 }
 
 export function LayoutProvider({ children }: LayoutProviderProps) {
-  const [collapsible, _setCollapsible] = useState<Collapsible>(() => {
-    const saved = getCookie(LAYOUT_COLLAPSIBLE_COOKIE_NAME)
-    return (saved as Collapsible) || DEFAULT_COLLAPSIBLE
-  })
+  // Initialize with defaults to match server-side render
+  const [collapsible, _setCollapsible] = useState<Collapsible>(DEFAULT_COLLAPSIBLE)
+  const [variant, _setVariant] = useState<Variant>(DEFAULT_VARIANT)
 
-  const [variant, _setVariant] = useState<Variant>(() => {
-    const saved = getCookie(LAYOUT_VARIANT_COOKIE_NAME)
-    return (saved as Variant) || DEFAULT_VARIANT
-  })
+  // Read cookie only on client after hydration (prevents mismatch)
+  useEffect(() => {
+    const savedCollapsible = getCookie(LAYOUT_COLLAPSIBLE_COOKIE_NAME)
+    const savedVariant = getCookie(LAYOUT_VARIANT_COOKIE_NAME)
+
+    if (savedCollapsible) {
+      _setCollapsible(savedCollapsible as Collapsible)
+    }
+    if (savedVariant) {
+      _setVariant(savedVariant as Variant)
+    }
+  }, [])
 
   const setCollapsible = (newCollapsible: Collapsible) => {
     _setCollapsible(newCollapsible)

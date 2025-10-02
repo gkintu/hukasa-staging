@@ -166,6 +166,33 @@ export function useProjectDetail(
   });
 }
 
+// Hook for image generations/variants (modal usage)
+export function useImageGenerations(
+  imageId: string,
+  options?: UseQueryOptions<Array<any>, Error>
+) {
+  return useQuery({
+    queryKey: ['image', imageId, 'generations'],
+    queryFn: async () => {
+      const response = await fetch(`/api/images/${imageId}/generations`)
+      const data = await response.json()
+
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to fetch generations')
+      }
+
+      return data.data.generations
+    },
+    enabled: !!imageId,
+    staleTime: 30 * 60 * 1000, // 30 minutes (signed URLs valid for 60min)
+    refetchInterval: false,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true, // ✅ Refresh when user returns (signed URLs might be stale)
+    refetchOnReconnect: true,
+    ...options,
+  });
+}
+
 // Mutation Hooks (using admin's pattern)
 
 export function useRenameImage(
