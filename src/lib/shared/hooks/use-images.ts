@@ -85,7 +85,8 @@ export function useImageList(
   return useQuery({
     queryKey: imageKeys.list(query),
     queryFn: async () => {
-      const metadata = await queryClient.ensureQueryData({
+      // Use fetchQuery instead of ensureQueryData to always get fresh data when this query runs
+      const metadata = await queryClient.fetchQuery({
         queryKey: [...imageKeys.list(query), 'metadata'],
         queryFn: () => fetchImageMetadata(query)
       });
@@ -94,7 +95,7 @@ export function useImageList(
         return metadata;
       }
 
-      const urls = await queryClient.ensureQueryData({
+      const urls = await queryClient.fetchQuery({
         queryKey: ['imageUrls', metadata.map(img => img.id)],
         queryFn: () => refreshImageUrls(metadata)
       });

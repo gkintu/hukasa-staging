@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { useMutationState } from "@tanstack/react-query"
+import { useMutationState, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { ChevronLeft, Home } from "lucide-react"
 import { GenerationForm } from "@/components/image-generation/generation-form"
@@ -27,6 +27,7 @@ interface ImageDetailPageProps {
 
 export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
   const router = useRouter()
+  const queryClient = useQueryClient()
   const [generationState, setGenerationState] = useState<'form' | 'generating' | 'results' | 'loading'>('loading')
   const [generatedImages, setGeneratedImages] = useState<MockGeneratedImage[]>([])
 
@@ -148,9 +149,23 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
         setGeneratedImages(prev => [...prev, ...newGenerations]);
         setGenerationState('results');
 
-        // 🔥 FIX: Invalidate caches so badge counts update INSTANTLY!
-        invalidateImageQueries.invalidateAll()
-        invalidateProjectQueries.invalidateAll()
+        // 🔥 FIX: Force refetch of all image/project queries (active AND inactive)
+        // Using refetchType: 'all' ensures inactive queries refetch when component remounts
+        queryClient.invalidateQueries({
+          queryKey: ['images'],
+          exact: false,
+          refetchType: 'all'
+        })
+        queryClient.invalidateQueries({
+          queryKey: ['imageUrls'],
+          exact: false,
+          refetchType: 'all'
+        })
+        queryClient.invalidateQueries({
+          queryKey: ['projects'],
+          exact: false,
+          refetchType: 'all'
+        })
 
         console.log(`✅ Successfully generated ${newGenerations.length} variants`);
       },
@@ -175,12 +190,31 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
       const data = await response.json();
 
       if (data.success) {
-        // Remove the deleted variant from state
-        setGeneratedImages(prev => prev.filter(img => img.id !== variantId));
+        // Invalidate the specific generations query for this image
+        queryClient.invalidateQueries({
+          queryKey: ['image', imageId, 'generations']
+        });
 
-        // Invalidate cache to refetch fresh data (TanStack Query will update generationsData automatically)
-        invalidateImageQueries.invalidateAll();
-        invalidateProjectQueries.invalidateAll();
+        // Force refetch all image/project queries (active AND inactive)
+        queryClient.invalidateQueries({
+          queryKey: ['images'],
+          exact: false,
+          refetchType: 'all'
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ['imageUrls'],
+          exact: false,
+          refetchType: 'all'
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ['projects'],
+          exact: false,
+          refetchType: 'all'
+        });
+
+        // The useEffect will automatically update generatedImages when generationsData refreshes
       } else {
         console.error('Failed to delete variant:', data.message);
         alert(`Delete failed: ${data.message}`);

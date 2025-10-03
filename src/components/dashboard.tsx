@@ -1,12 +1,9 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Progress } from "@/components/ui/progress"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Upload, Image, Clock } from "lucide-react"
+import { Upload, Image, Lightbulb } from "lucide-react"
 import { SourceImageCard } from "@/components/source-image-card"
 import { useImageList } from "@/lib/shared/hooks/use-images"
 import { useRouter } from "next/navigation"
@@ -20,19 +17,11 @@ interface User {
 
 interface DashboardProps {
   user: User
+  onUploadClick?: () => void
 }
 
-interface ProcessingItem {
-  id: string
-  name: string
-  progress: number
-  eta?: string
-}
-
-export function Dashboard({ user }: DashboardProps) {
+export function Dashboard({ user, onUploadClick }: DashboardProps) {
   const router = useRouter()
-  const [processingItems, setProcessingItems] = useState<ProcessingItem[]>([])
-  const [selectedProject, setSelectedProject] = useState<string>("")
 
   // ✅ Use TanStack Query for recent images (shared cache with All Images)
   // Use the SAME query as AllImages component: { unassignedOnly: false }
@@ -70,19 +59,6 @@ export function Dashboard({ user }: DashboardProps) {
 
     router.push(imageUrl)
   }
-
-  useEffect(() => {
-    // Mock processing items for now - in real app this would come from processing status API
-    const mockProcessing: ProcessingItem[] = [
-      {
-        id: "1",
-        name: "Kitchen staging",
-        progress: 65,
-        eta: "~8 minutes"
-      }
-    ]
-    setProcessingItems(mockProcessing)
-  }, [])
 
   if (imagesLoading) {
     return (
@@ -124,18 +100,36 @@ export function Dashboard({ user }: DashboardProps) {
 
   return (
     <div className="p-8 animate-fade-in">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">
-          Welcome back, {user.name || 'User'}
-        </h1>
-        <p className="text-muted-foreground">
-          Ready to create stunning virtual staging for your listings
-        </p>
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">
+            Welcome back, {user.name || 'User'}
+          </h1>
+          <p className="text-muted-foreground">
+            Ready to create stunning virtual staging for your listings
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            className="gap-2"
+          >
+            <Lightbulb className="h-4 w-4" />
+            Quick Tips
+          </Button>
+          <Button
+            onClick={onUploadClick}
+            className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+          >
+            <Upload className="h-4 w-4" />
+            Upload Images
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Recent Images */}
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
@@ -186,10 +180,7 @@ export function Dashboard({ user }: DashboardProps) {
                 <p className="text-muted-foreground mb-4">
                   Upload your first images to start virtual staging
                 </p>
-                <Button onClick={() => {
-                  // Could trigger upload modal or navigate to upload
-                  console.log('Upload clicked')
-                }}>
+                <Button onClick={onUploadClick}>
                   <Upload className="mr-2 h-4 w-4" />
                   Upload Images
                 </Button>
@@ -197,67 +188,6 @@ export function Dashboard({ user }: DashboardProps) {
             )}
           </CardContent>
         </Card>
-
-        {/* Right Sidebar */}
-        <div className="space-y-6">
-          {/* Quick Upload */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Upload className="h-5 w-5" />
-                Quick Upload
-              </CardTitle>
-              <CardDescription>Drop images to start staging</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center hover:border-muted-foreground/50 transition-colors cursor-pointer">
-                <Upload className="mx-auto h-8 w-8 text-muted-foreground mb-3" />
-                <p className="text-sm font-medium mb-1">Drop images here</p>
-                <p className="text-xs text-muted-foreground">or click to browse</p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Project</label>
-                <Select value={selectedProject} onValueChange={setSelectedProject}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select or create project" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="new">Create New Project</SelectItem>
-                    <SelectItem value="unassigned">📥 Unassigned Images</SelectItem>
-                    {/* Projects would be loaded from useProjectList hook */}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Processing Status */}
-          {processingItems.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Currently Processing
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {processingItems.map((item) => (
-                  <div key={item.id} className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium truncate">{item.name}</span>
-                      <span className="text-muted-foreground">{item.progress}%</span>
-                    </div>
-                    <Progress value={item.progress} className="h-2" />
-                    {item.eta && (
-                      <p className="text-xs text-muted-foreground">{item.eta} remaining</p>
-                    )}
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
-        </div>
       </div>
     </div>
   )

@@ -169,7 +169,7 @@ export function MainApp({ user, defaultOpen = true }: MainAppProps) {
             />
           ) : (
             <>
-              {activeView === "dashboard" && <Dashboard user={user} />}
+              {activeView === "dashboard" && <Dashboard user={user} onUploadClick={handleUploadClick} />}
               {activeView === "allImages" && (
                 <AllImages
                   ref={allImagesRef}
