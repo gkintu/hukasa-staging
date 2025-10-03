@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
@@ -9,6 +9,7 @@ import { RenameModal } from "@/components/ui/rename-modal"
 import { Input } from "@/components/ui/input"
 import { CreateProjectDialog } from "@/components/create-project-dialog"
 import { FolderOpen, Plus, Image as ImageIcon, Inbox } from "lucide-react"
+import { useProjectList, useInvalidateProjectQueries } from "@/lib/shared/hooks/use-images"
 
 // Helper function to check if project is unassigned (client-side only)
 const isUnassignedProject = (projectName: string) => projectName === "📥 Unassigned Images"
@@ -33,40 +34,24 @@ interface Project {
   updatedAt: string
   sourceImageCount: number
   stagedVersionCount: number
+  thumbnailSignedUrl: string | null
 }
 
 export function Projects({ onProjectSelect }: ProjectsProps) {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(true)
+  // Use TanStack Query hook for projects
+  const { data: projects = [], isLoading: loading } = useProjectList()
+  const invalidateProjects = useInvalidateProjectQueries()
+
   const [createProjectDialogOpen, setCreateProjectDialogOpen] = useState(false)
   const [renameDialogOpen, setRenameDialogOpen] = useState(false)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedProject, setSelectedProject] = useState<Project | null>(null)
   const [isUpdating, setIsUpdating] = useState(false)
-  
+
   // Inline editing state
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null)
   const [editValue, setEditValue] = useState("")
   const [isSaving, setIsSaving] = useState(false)
-
-  // Move fetchProjects function here so it can be used in useEffect and elsewhere
-  const fetchProjects = async () => {
-    try {
-      const response = await fetch('/api/projects')
-      const data = await response.json()
-      if (data.success) {
-        setProjects(data.projects)
-      }
-    } catch (error) {
-      console.error('Error fetching projects:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchProjects()
-  }, [])
 
 
   const handleProjectClick = (project: Project) => {
@@ -79,8 +64,8 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
   }
 
   const handleProjectCreated = (projectId: string) => {
-    // Refresh the projects list
-    fetchProjects()
+    // Refresh the projects list (TanStack Query will auto-refetch)
+    invalidateProjects.invalidateAll()
     // Navigate to the newly created project
     onProjectSelect?.(projectId)
   }
@@ -107,11 +92,8 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
 
       const data = await response.json()
       if (data.success) {
-        setProjects(projects.map(p => 
-          p.id === selectedProject.id 
-            ? { ...p, name: data.project.name, updatedAt: data.project.updatedAt }
-            : p
-        ))
+        // Invalidate projects cache to refetch with new data
+        invalidateProjects.invalidateAll()
       } else {
         throw new Error(data.message || 'Failed to rename project')
       }
@@ -152,11 +134,8 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
 
       const data = await response.json()
       if (data.success) {
-        setProjects(projects.map(p => 
-          p.id === editingProjectId 
-            ? { ...p, name: data.project.name, updatedAt: data.project.updatedAt }
-            : p
-        ))
+        // Invalidate projects cache to refetch with new data
+        invalidateProjects.invalidateAll()
         setEditingProjectId(null)
         setEditValue("")
       } else {
@@ -198,7 +177,8 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
 
       const data = await response.json()
       if (data.success) {
-        setProjects(projects.filter(p => p.id !== selectedProject.id))
+        // Invalidate projects cache to refetch with new data
+        invalidateProjects.invalidateAll()
         setDeleteDialogOpen(false)
         setSelectedProject(null)
       } else {
@@ -302,9 +282,9 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
               <CardContent className="p-0">
                 <div className="relative">
                   <div className="aspect-video overflow-hidden rounded-t-sm bg-muted">
-                    {project.sourceImageCount > 0 ? (
+                    {project.sourceImageCount > 0 && project.thumbnailSignedUrl ? (
                       <img
-                        src={`/api/projects/${project.id}/thumbnail`}
+                        src={project.thumbnailSignedUrl}
                         alt={`${project.name} thumbnail`}
                         className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
                         onError={(e) => {

@@ -142,9 +142,11 @@ export function useProjectList(
   return useQuery({
     queryKey: projectKeys.lists(),
     queryFn: fetchProjectList,
-    staleTime: Infinity, // Never consider data stale (only refetch on invalidation)
-    refetchOnWindowFocus: false, // ❌ NO refetch when returning to tab
-    refetchOnReconnect: true, // ✅ YES - refetch when internet reconnects
+    staleTime: 30 * 60 * 1000, // 30 minutes (signed URLs valid for 60min)
+    refetchInterval: false,
+    refetchIntervalInBackground: false,
+    refetchOnWindowFocus: true, // ✅ Refresh when user returns
+    refetchOnReconnect: true, // ✅ Refetch when internet reconnects
     ...options,
   });
 }

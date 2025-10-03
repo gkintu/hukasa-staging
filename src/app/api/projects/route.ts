@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { validateApiSession } from '@/lib/auth-utils'
 import { db } from '@/db'
 import { projects, sourceImages, generations } from '@/db/schema'
-import { eq, sql, desc } from 'drizzle-orm'
+import { eq, sql, desc, asc } from 'drizzle-orm'
 import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
+import { signUrl } from '@/lib/signed-urls'
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
     const userId = session.user.id
 
     // Cache-first pattern: Try cache, fallback to database
-    const sortedProjects = await valkey.getOrSet(
+    const projectsData = await valkey.getOrSet(
       CacheKeys.userProjects(userId),
       async () => {
         // Database fallback - fetch and process data
@@ -35,8 +36,33 @@ export async function GET(request: NextRequest) {
           .groupBy(projects.id, projects.name, projects.createdAt, projects.updatedAt)
           .orderBy(desc(projects.updatedAt))
 
+        // For each project, get the first source image for thumbnail
+        const projectsWithThumbnails = await Promise.all(
+          userProjects.map(async (project) => {
+            if (project.sourceImageCount > 0) {
+              const firstImage = await db
+                .select({
+                  originalImagePath: sourceImages.originalImagePath
+                })
+                .from(sourceImages)
+                .where(eq(sourceImages.projectId, project.id))
+                .orderBy(asc(sourceImages.createdAt))
+                .limit(1)
+
+              return {
+                ...project,
+                thumbnailPath: firstImage[0]?.originalImagePath || null
+              }
+            }
+            return {
+              ...project,
+              thumbnailPath: null
+            }
+          })
+        )
+
         // Sort to ensure "Unassigned Images" project always appears first
-        return userProjects.sort((a, b) => {
+        return projectsWithThumbnails.sort((a, b) => {
           const isAUnassigned = a.name === '📥 Unassigned Images'
           const isBUnassigned = b.name === '📥 Unassigned Images'
 
@@ -47,7 +73,17 @@ export async function GET(request: NextRequest) {
       }
     )
 
-    return NextResponse.json({ success: true, projects: sortedProjects })
+    // Generate signed URLs for thumbnails (1-hour expiry, same as images)
+    const expiresAt = Date.now() + (60 * 60 * 1000)
+    const projectsWithSignedUrls = projectsData.map(project => ({
+      ...project,
+      thumbnailSignedUrl: project.thumbnailPath
+        ? signUrl(project.thumbnailPath, userId, expiresAt)
+        : null,
+      thumbnailPath: undefined // Remove from response, only send signed URL
+    }))
+
+    return NextResponse.json({ success: true, projects: projectsWithSignedUrls })
   } catch (error) {
     console.error('Error fetching projects:', error)
     return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 })
