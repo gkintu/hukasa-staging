@@ -248,87 +248,114 @@ export function UploadModal({ isOpen, onClose, projectId, onUploadSuccess }: Upl
 
         <div className="max-h-[70vh] overflow-y-auto">
           <div className="space-y-6 p-6">
-            {/* Project Selection - Only show if no projectId was provided */}
+            {/* Project Selection and Tips - Only show if no projectId was provided */}
             {!projectId && (
               <div className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Folder className="h-4 w-4 text-muted-foreground" />
-                  <Label className="text-sm font-medium">Project Destination</Label>
-                </div>
-                
-                <div className="space-y-4">
-                  {/* Create New Project Option */}
-                  <div className="flex items-center space-x-3">
-                    <Checkbox
-                      id="create-new-project"
-                      checked={createNewProject}
-                      onCheckedChange={(checked) => {
-                        setCreateNewProject(checked === true)
-                        if (checked) {
-                          setSelectedProjectId('')
-                        }
-                      }}
-                      disabled={isUploading}
-                    />
-                    <Label 
-                      htmlFor="create-new-project" 
-                      className="text-sm cursor-pointer flex items-center gap-2"
-                    >
-                      <FolderPlus className="h-4 w-4" />
-                      Create new project
-                    </Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Left Column: Project Destination */}
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2">
+                      <Folder className="h-4 w-4 text-muted-foreground" />
+                      <Label className="text-sm font-medium">Project Destination</Label>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Create New Project Option */}
+                      <div className="flex items-center space-x-3">
+                        <Checkbox
+                          id="create-new-project"
+                          checked={createNewProject}
+                          onCheckedChange={(checked) => {
+                            setCreateNewProject(checked === true)
+                            if (checked) {
+                              setSelectedProjectId('')
+                            }
+                          }}
+                          disabled={isUploading}
+                        />
+                        <Label
+                          htmlFor="create-new-project"
+                          className="text-sm cursor-pointer flex items-center gap-2"
+                        >
+                          <FolderPlus className="h-4 w-4" />
+                          Create new project
+                        </Label>
+                      </div>
+
+                      {/* New Project Name Input */}
+                      {createNewProject && (
+                        <div className="ml-6">
+                          <Input
+                            placeholder="Project name (e.g., Johnson House Staging)"
+                            value={newProjectName}
+                            onChange={(e) => setNewProjectName(e.target.value)}
+                            disabled={isUploading}
+                            maxLength={100}
+                            className="mb-2"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            A new project will be created with this name
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Existing Project Selection */}
+                      {!createNewProject && (
+                        <div className="space-y-2">
+                          <Select
+                            value={selectedProjectId}
+                            onValueChange={setSelectedProjectId}
+                            disabled={isUploading || loadingProjects}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={loadingProjects ? "Loading projects..." : "Select existing project (optional)"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {projects.map((project) => (
+                                <SelectItem key={project.id} value={project.id}>
+                                  <div className="flex items-center gap-2">
+                                    <span>{project.name}</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      ({project.sourceImageCount} images)
+                                    </span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-xs text-muted-foreground">
+                            {selectedProjectId
+                              ? "Images will be added to the selected project"
+                              : "Leave empty to add to Unassigned folder"
+                            }
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* New Project Name Input */}
-                  {createNewProject && (
-                    <div className="ml-6">
-                      <Input
-                        placeholder="Project name (e.g., Johnson House Staging)"
-                        value={newProjectName}
-                        onChange={(e) => setNewProjectName(e.target.value)}
-                        disabled={isUploading}
-                        maxLength={100}
-                        className="mb-2"
-                      />
-                      <p className="text-xs text-muted-foreground">
-                        A new project will be created with this name
-                      </p>
+                  {/* Right Column: Upload Tips */}
+                  <div className="bg-muted/30 rounded-lg p-4 h-fit">
+                    <div className="flex items-center gap-2 mb-3">
+                      <FileImage className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Upload Tips</span>
                     </div>
-                  )}
-
-                  {/* Existing Project Selection */}
-                  {!createNewProject && (
-                    <div className="space-y-2">
-                      <Select
-                        value={selectedProjectId}
-                        onValueChange={setSelectedProjectId}
-                        disabled={isUploading || loadingProjects}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={loadingProjects ? "Loading projects..." : "Select existing project (optional)"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {projects.map((project) => (
-                            <SelectItem key={project.id} value={project.id}>
-                              <div className="flex items-center gap-2">
-                                <span>{project.name}</span>
-                                <span className="text-xs text-muted-foreground">
-                                  ({project.sourceImageCount} images)
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedProjectId 
-                          ? "Images will be added to the selected project" 
-                          : "Leave empty to add to Unassigned folder"
-                        }
-                      </p>
-                    </div>
-                  )}
+                    <ul className="text-xs text-muted-foreground space-y-1">
+                      <li>• High-resolution images work best</li>
+                      <li>• Formats: JPG, PNG, WEBP</li>
+                      <li>• Max 10MB per file, up to 5 files at once</li>
+                      <li>• Empty or minimal furniture gives better results</li>
+                    </ul>
+                  </div>
                 </div>
+
+                {/* Feedback Messages - Success/Error notifications (Full Width) */}
+                <UploadFeedback
+                  messages={feedbackMessages}
+                  rejectedFiles={rejectedFiles}
+                  onDismiss={handleDismissMessage}
+                  onRetryRejected={handleRetryRejected}
+                />
               </div>
             )}
 
@@ -344,28 +371,6 @@ export function UploadModal({ isOpen, onClose, projectId, onUploadSuccess }: Upl
             {uploads.length > 0 && (
               <UploadProgress uploads={uploads} />
             )}
-
-            {/* Feedback Messages */}
-            <UploadFeedback
-              messages={feedbackMessages}
-              rejectedFiles={rejectedFiles}
-              onDismiss={handleDismissMessage}
-              onRetryRejected={handleRetryRejected}
-            />
-
-            {/* Tips */}
-            <div className="bg-muted/30 rounded-lg p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <FileImage className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Upload Tips</span>
-              </div>
-              <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• High-resolution images (1200x800px+) work best</li>
-                <li>• Formats: JPG, PNG, WEBP, TIFF</li>
-                <li>• Max 10MB per file, up to 5 files at once</li>
-                <li>• Empty or minimal furniture gives better results</li>
-              </ul>
-            </div>
           </div>
         </div>
 
