@@ -146,7 +146,7 @@ export function useProjectList(
     staleTime: 30 * 60 * 1000, // 30 minutes (signed URLs valid for 60min)
     refetchInterval: false,
     refetchIntervalInBackground: false,
-    refetchOnWindowFocus: true, // ✅ Refresh when user returns
+    refetchOnWindowFocus: 'always', // Always refetch on tab switch (catches admin deletions)
     refetchOnReconnect: true, // ✅ Refetch when internet reconnects
     ...options,
   });

@@ -11,7 +11,7 @@ import { Image as ImageIcon, Upload, Inbox, FolderOpen, FolderPlus, ArrowRight, 
 import { SourceImageCard } from "@/components/source-image-card"
 import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog"
 import { useSimpleDeleteImage } from "@/lib/shared/hooks/use-delete-image"
-import { useImageList, useRenameImage, useProjectList } from "@/lib/shared/hooks/use-images"
+import { useImageList, useImageMetadata, useRenameImage, useProjectList } from "@/lib/shared/hooks/use-images"
 import type { MainImageListQuery } from "@/lib/shared/schemas/image-schemas"
 import { SourceImage, SourceImageWithProject } from "@/lib/shared/types/image-types"
 
@@ -28,15 +28,21 @@ export interface AllImagesRef {
 export const AllImages = forwardRef<AllImagesRef, AllImagesProps>(function AllImages({ onImageSelect, onUploadClick, unassignedOnly = false }, ref) {
   // TanStack Query state (replacing manual useState)
   const imageQuery: MainImageListQuery = { unassignedOnly }
-  const { 
-    data: sourceImages = [], 
-    isLoading: loading, 
-    refetch 
+
+  // Check both metadata and imageList loading states (fixes F5 flash)
+  const metadataQuery = useImageMetadata(imageQuery)
+  const {
+    data: sourceImages = [],
+    isLoading: imagesLoading,
+    refetch
   } = useImageList(imageQuery)
-  
-  const { 
-    data: projects = [], 
-    isLoading: loadingProjects 
+
+  // Show loading if EITHER query is loading
+  const loading = metadataQuery.isLoading || imagesLoading
+
+  const {
+    data: projects = [],
+    isLoading: loadingProjects
   } = useProjectList()
 
   // Local UI state (keep these)

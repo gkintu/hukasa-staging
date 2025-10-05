@@ -8,7 +8,7 @@ import { ChevronLeft, Image as ImageIcon, Upload, Trash2 } from "lucide-react"
 import { SourceImageCard } from "@/components/source-image-card"
 import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog"
 import { useSimpleDeleteImage } from "@/lib/shared/hooks/use-delete-image"
-import { useImageList, useRenameImage } from "@/lib/shared/hooks/use-images"
+import { useImageList, useImageMetadata, useRenameImage } from "@/lib/shared/hooks/use-images"
 import { useImageSelection } from "@/lib/shared/hooks/use-row-selection"
 
 interface ProjectDetailProps {
@@ -34,11 +34,17 @@ import { SourceImage, type ImageSelectHandler } from '@/lib/shared/types/image-t
 
 export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(function ProjectDetail({ projectId, onBack, onImageSelect, onUploadMore }, ref) {
   // Use unified cache - images filtered by projectId (shares cache with AllImages and Dashboard!)
+
+  // Check both metadata and imageList loading states (fixes F5 flash)
+  const metadataQuery = useImageMetadata({ projectId })
   const {
     data: sourceImages = [],
-    isLoading: loading,
+    isLoading: imagesLoading,
     refetch
   } = useImageList({ projectId })
+
+  // Show loading if EITHER query is loading
+  const loading = metadataQuery.isLoading || imagesLoading
 
   // Get project info from the first image (they all have the same project info)
   const project = sourceImages.length > 0 ? {

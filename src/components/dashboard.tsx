@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Upload, Image, Lightbulb } from "lucide-react"
 import { SourceImageCard } from "@/components/source-image-card"
-import { useImageList } from "@/lib/shared/hooks/use-images"
+import { useImageList, useImageMetadata } from "@/lib/shared/hooks/use-images"
 import { useRouter } from "next/navigation"
 
 interface User {
@@ -25,10 +25,16 @@ export function Dashboard({ user, onUploadClick }: DashboardProps) {
 
   // ✅ Use TanStack Query for recent images (shared cache with All Images)
   // Use the SAME query as AllImages component: { unassignedOnly: false }
+
+  // Check both metadata and imageList loading states
+  const metadataQuery = useImageMetadata({ unassignedOnly: false })
   const {
     data: allImages = [],
     isLoading: imagesLoading
   } = useImageList({ unassignedOnly: false })
+
+  // Show loading if EITHER query is loading (fixes F5 "No images yet" flash)
+  const isLoading = metadataQuery.isLoading || imagesLoading
 
   // Process images for dashboard display
   const recentImages = React.useMemo(() => {
@@ -60,7 +66,7 @@ export function Dashboard({ user, onUploadClick }: DashboardProps) {
     router.push(imageUrl)
   }
 
-  if (imagesLoading) {
+  if (isLoading) {
     return (
       <div className="p-8 animate-fade-in">
         <div className="mb-8">
