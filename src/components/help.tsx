@@ -5,19 +5,27 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { 
-  HelpCircle, 
-  FileText, 
-  MessageCircle, 
+import {
+  HelpCircle,
+  FileText,
+  MessageCircle,
   Mail,
   Upload,
   Image,
   Settings,
+  LogOut,
   Zap,
   ExternalLink
 } from "lucide-react"
+import { signOut } from "@/lib/auth-client"
 
-export function Help() {
+interface HelpProps {
+  onUploadClick?: () => void
+  onNavigateToProjects?: () => void
+  onNavigateToSettings?: () => void
+}
+
+export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings }: HelpProps = {}) {
   const faqs = [
     {
       question: "How do I upload images for virtual staging?",
@@ -45,6 +53,16 @@ export function Help() {
     }
   ]
 
+  const handleLogout = async () => {
+    await signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          window.location.href = "/"
+        },
+      },
+    })
+  }
+
   const quickActions = [
     {
       title: "Upload Images",
@@ -65,10 +83,10 @@ export function Help() {
       action: "settings"
     },
     {
-      title: "Processing Status",
-      description: "Check the status of your staging jobs",
-      icon: Zap,
-      action: "status"
+      title: "Sign Out",
+      description: "Log out of your account",
+      icon: LogOut,
+      action: "signout"
     }
   ]
 
@@ -94,17 +112,30 @@ export function Help() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {quickActions.map((action, index) => (
-              <Card key={index} className="p-4 hover:bg-muted/50 transition-colors cursor-pointer">
-                <div className="flex items-center space-x-3">
-                  <action.icon className="h-8 w-8 text-primary" />
-                  <div>
-                    <h3 className="font-semibold">{action.title}</h3>
-                    <p className="text-sm text-muted-foreground">{action.description}</p>
+            {quickActions.map((action, index) => {
+              const handleClick = () => {
+                if (action.action === "upload") onUploadClick?.()
+                else if (action.action === "projects") onNavigateToProjects?.()
+                else if (action.action === "settings") onNavigateToSettings?.()
+                else if (action.action === "signout") handleLogout()
+              }
+
+              return (
+                <Card
+                  key={index}
+                  className="p-4 hover:bg-muted/50 transition-colors cursor-pointer"
+                  onClick={handleClick}
+                >
+                  <div className="flex items-center space-x-3">
+                    <action.icon className="h-8 w-8 text-primary" />
+                    <div>
+                      <h3 className="font-semibold">{action.title}</h3>
+                      <p className="text-sm text-muted-foreground">{action.description}</p>
+                    </div>
                   </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              )
+            })}
           </div>
         </CardContent>
       </Card>

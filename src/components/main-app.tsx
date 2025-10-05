@@ -190,7 +190,13 @@ export function MainApp({ user, defaultOpen = true }: MainAppProps) {
                 />
               )}
               {activeView === "settings" && <SettingsPage user={user} />}
-              {activeView === "help" && <Help />}
+              {activeView === "help" && (
+                <Help
+                  onUploadClick={handleUploadClick}
+                  onNavigateToProjects={() => handleSidebarNavigation("projects")}
+                  onNavigateToSettings={() => setActiveView("settings")}
+                />
+              )}
             </>
           )}
           </main>
