@@ -3,15 +3,16 @@ import { validateApiSession } from '@/lib/auth-utils';
 import { db } from '@/db';
 import { users } from '@/db/schema';
 import { eq } from 'drizzle-orm';
-import { 
+import {
   ImageListQuerySchema,
   type ImageListQuery,
-  type ApiResponse 
+  type ApiResponse
 } from '@/lib/admin/image-schemas';
-import { 
+import {
   getImagesWithFilters,
-  logAdminImageAction 
+  logAdminImageAction
 } from '@/lib/admin/image-queries';
+import { signUrl } from '@/lib/signed-urls';
 
 export async function GET(request: NextRequest) {
   try {
@@ -69,6 +70,17 @@ export async function GET(request: NextRequest) {
     // Fetch images with filters
     const result = await getImagesWithFilters(query);
 
+    // Generate signed URLs for all images (1 hour expiry)
+    const expiresAt = Date.now() + 60 * 60 * 1000; // 1 hour from now (timestamp)
+    const imagesWithSignedUrls = result.images.map((image) => {
+      // For admin, we don't need user-specific signing, just sign the path
+      const signedUrl = signUrl(image.originalImagePath, image.user.id, expiresAt);
+      return {
+        ...image,
+        signedUrl
+      };
+    });
+
     // Log admin action
     await logAdminImageAction(
       sessionResult.user!.id,
@@ -87,7 +99,10 @@ export async function GET(request: NextRequest) {
     const response: ApiResponse = {
       success: true,
       message: 'Images retrieved successfully',
-      data: result
+      data: {
+        ...result,
+        images: imagesWithSignedUrls
+      }
     };
 
     return Response.json(response);
