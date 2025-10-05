@@ -7,13 +7,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Image as ImageIcon, Upload, Inbox, FolderOpen, FolderPlus, ArrowRight, CheckSquare, Square } from "lucide-react"
+import { Image as ImageIcon, Upload, FolderOutput, FolderOpen, FolderPlus, ArrowRight, CheckSquare, Square } from "lucide-react"
 import { SourceImageCard } from "@/components/source-image-card"
 import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog"
 import { useSimpleDeleteImage } from "@/lib/shared/hooks/use-delete-image"
 import { useImageList, useImageMetadata, useRenameImage, useProjectList } from "@/lib/shared/hooks/use-images"
 import type { MainImageListQuery } from "@/lib/shared/schemas/image-schemas"
 import { SourceImage, SourceImageWithProject } from "@/lib/shared/types/image-types"
+import { UNASSIGNED_PROJECT_NAME } from "@/lib/constants/project-constants"
 
 interface AllImagesProps {
   onImageSelect: (imageId: string, sourceImage: SourceImageWithProject) => void
@@ -95,7 +96,7 @@ export const AllImages = forwardRef<AllImagesRef, AllImagesProps>(function AllIm
   }
 
   // Helper to check if project is unassigned
-  const isUnassignedProject = (projectName: string) => projectName === "📥 Unassigned Images"
+  const isUnassignedProject = (projectName: string) => projectName === UNASSIGNED_PROJECT_NAME
 
   // Expose refresh function via ref (now uses TanStack Query refetch)
   useImperativeHandle(ref, () => ({
@@ -216,7 +217,7 @@ export const AllImages = forwardRef<AllImagesRef, AllImagesProps>(function AllIm
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
               {unassignedOnly ? (
                 <>
-                  <Inbox className="h-8 w-8 text-muted-foreground" />
+                  <FolderOutput className="h-8 w-8 text-muted-foreground" />
                   Unassigned Images
                 </>
               ) : (
@@ -251,7 +252,7 @@ export const AllImages = forwardRef<AllImagesRef, AllImagesProps>(function AllIm
             <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
               {unassignedOnly ? (
                 <>
-                  <Inbox className="h-8 w-8 text-muted-foreground" />
+                  <FolderOutput className="h-8 w-8 text-muted-foreground" />
                   Unassigned Images
                 </>
               ) : (
@@ -316,7 +317,7 @@ export const AllImages = forwardRef<AllImagesRef, AllImagesProps>(function AllIm
           <h1 className="text-3xl font-bold text-foreground flex items-center gap-2">
             {unassignedOnly ? (
               <>
-                <Inbox className="h-8 w-8 text-muted-foreground" />
+                <FolderOutput className="h-8 w-8 text-muted-foreground" />
                 Unassigned Images ({sourceImages.length})
               </>
             ) : (

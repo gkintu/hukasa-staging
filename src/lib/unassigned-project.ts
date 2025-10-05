@@ -1,8 +1,10 @@
 import { db } from '@/db'
 import { projects } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
+import { UNASSIGNED_PROJECT_NAME } from './constants/project-constants'
 
-export const UNASSIGNED_PROJECT_NAME = "📥 Unassigned Images"
+// Re-export for server-side convenience
+export { UNASSIGNED_PROJECT_NAME }
 
 /**
  * Gets or creates the special "Unassigned Images" project for a user.

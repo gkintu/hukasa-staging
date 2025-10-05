@@ -5,6 +5,7 @@ import { projects, sourceImages, generations } from '@/db/schema'
 import { eq, sql, desc, asc } from 'drizzle-orm'
 import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
 import { signUrl } from '@/lib/signed-urls'
+import { UNASSIGNED_PROJECT_NAME } from '@/lib/unassigned-project'
 
 export async function GET(request: NextRequest) {
   try {
@@ -63,8 +64,8 @@ export async function GET(request: NextRequest) {
 
         // Sort to ensure "Unassigned Images" project always appears first
         return projectsWithThumbnails.sort((a, b) => {
-          const isAUnassigned = a.name === '📥 Unassigned Images'
-          const isBUnassigned = b.name === '📥 Unassigned Images'
+          const isAUnassigned = a.name === UNASSIGNED_PROJECT_NAME
+          const isBUnassigned = b.name === UNASSIGNED_PROJECT_NAME
 
           if (isAUnassigned && !isBUnassigned) return -1
           if (!isAUnassigned && isBUnassigned) return 1

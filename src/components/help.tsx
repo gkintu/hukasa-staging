@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,17 +16,22 @@ import {
   Settings,
   LogOut,
   Zap,
-  ExternalLink
+  ExternalLink,
+  Video
 } from "lucide-react"
 import { signOut } from "@/lib/auth-client"
+import { QuickTipsModal } from "@/components/quick-tips-modal"
 
 interface HelpProps {
   onUploadClick?: () => void
   onNavigateToProjects?: () => void
   onNavigateToSettings?: () => void
+  onNavigateToHelp?: () => void
 }
 
-export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings }: HelpProps = {}) {
+export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings, onNavigateToHelp }: HelpProps = {}) {
+  const [quickTipsOpen, setQuickTipsOpen] = useState(false)
+
   const faqs = [
     {
       question: "How do I upload images for virtual staging?",
@@ -143,40 +149,73 @@ export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings
       {/* Getting Started */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <FileText className="h-5 w-5" />
-            <span>Getting Started</span>
-          </CardTitle>
-          <CardDescription>New to virtual staging? Start here</CardDescription>
+          <div className="flex items-center justify-between">
+            <div className="space-y-1.5">
+              <CardTitle className="flex items-center space-x-2">
+                <FileText className="h-5 w-5" />
+                <span>Getting Started</span>
+              </CardTitle>
+              <CardDescription>New to virtual staging? Start here</CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setQuickTipsOpen(true)}
+              className="gap-2"
+            >
+              <Video className="h-4 w-4 text-red-500" />
+              Video Tutorials
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-4">
             <div className="flex items-start space-x-3">
-              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">1</div>
+              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold shrink-0">1</div>
               <div>
                 <h4 className="font-semibold">Upload Your Images</h4>
-                <p className="text-sm text-muted-foreground">Click &apos;Upload Files&apos; and select high-quality images of empty or minimally furnished rooms.</p>
+                <p className="text-sm text-muted-foreground">
+                  Click the Upload button in the sidebar or header to get started. You&apos;ll see a dialog where you can choose an existing project
+                  or let your images go to &quot;Unassigned Images&quot; to organize later. Select high-quality photos of empty or minimally
+                  furnished rooms—the clearer your photos, the better your staged results will be. You can upload multiple images at once for
+                  batch processing.
+                </p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">2</div>
+              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold shrink-0">2</div>
               <div>
-                <h4 className="font-semibold">Choose Your Style</h4>
-                <p className="text-sm text-muted-foreground">Select from our range of design styles or use your default preference.</p>
+                <h4 className="font-semibold">Organize with Projects</h4>
+                <p className="text-sm text-muted-foreground">
+                  Create projects to organize your staging work by property, client, or any way that makes sense for your workflow.
+                  Navigate to the Projects page to create a new project with a custom name. You can move images between projects anytime
+                  using the All Images view—just select images and use the Move action. Projects help you keep track of different properties
+                  and find your work quickly.
+                </p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">3</div>
+              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold shrink-0">3</div>
               <div>
-                <h4 className="font-semibold">Wait for Processing</h4>
-                <p className="text-sm text-muted-foreground">Our AI will generate beautifully staged versions of your rooms in minutes.</p>
+                <h4 className="font-semibold">Generate Variants</h4>
+                <p className="text-sm text-muted-foreground">
+                  Click any image from your Dashboard, All Images, or within a project to open the detailed view. Here you can generate
+                  up to 4 different AI-staged variants of the same room. Each variant can showcase different furniture styles, layouts,
+                  and design aesthetics. This gives you and your clients multiple professionally staged options to choose from. Generation
+                  typically takes a few minutes per variant.
+                </p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold">4</div>
+              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-bold shrink-0">4</div>
               <div>
-                <h4 className="font-semibold">Download & Use</h4>
-                <p className="text-sm text-muted-foreground">Download your staged images and use them in your property listings.</p>
+                <h4 className="font-semibold">Download & Share</h4>
+                <p className="text-sm text-muted-foreground">
+                  Once your variants are ready, download them individually by clicking the download button on each variant, or download
+                  all variants at once for convenience. Your staged images are ready to use in property listings, marketing materials,
+                  social media posts, or client presentations. You can also delete specific variants you don&apos;t need or regenerate
+                  new ones if you want to try different styles.
+                </p>
               </div>
             </div>
           </div>
@@ -271,6 +310,13 @@ export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings
           </div>
         </CardContent>
       </Card>
+
+      {/* Quick Tips Modal */}
+      <QuickTipsModal
+        open={quickTipsOpen}
+        onOpenChange={setQuickTipsOpen}
+        onNavigateToHelp={onNavigateToHelp}
+      />
     </div>
   )
 }

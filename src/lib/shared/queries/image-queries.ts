@@ -4,6 +4,7 @@ import type {
   BasicImage,
   BasicProject
 } from '../schemas/image-schemas';
+import { UNASSIGNED_PROJECT_NAME } from '@/lib/constants/project-constants';
 
 /**
  * Main App API Functions with separated metadata and URL endpoints
@@ -28,7 +29,7 @@ export async function fetchImageMetadata(query: MainImageListQuery = {}): Promis
 
   // Apply filters (same logic as current main app)
   if (query.unassignedOnly) {
-    images = images.filter(img => img.projectName === "📥 Unassigned Images");
+    images = images.filter(img => img.projectName === UNASSIGNED_PROJECT_NAME);
   }
 
   if (query.projectId) {

@@ -50,6 +50,8 @@ export const BasicProjectSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   sourceImageCount: z.number().int().optional(),
+  stagedVersionCount: z.number().int().optional(),
+  thumbnailSignedUrl: z.string().nullable().optional(),
 });
 
 export const ProjectListResponseSchema = z.object({

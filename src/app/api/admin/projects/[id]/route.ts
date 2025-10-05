@@ -6,6 +6,7 @@ import { eq, and } from 'drizzle-orm';
 import { promises as fs } from 'node:fs';
 import { join } from 'node:path';
 import type { AdvancedDelete } from '@/lib/shared/schemas/delete-schemas';
+import { UNASSIGNED_PROJECT_NAME } from '@/lib/unassigned-project';
 
 export async function DELETE(
   request: NextRequest,
@@ -175,7 +176,7 @@ export async function DELETE(
       for (const ownerId of sourceImageOwners) {
         // Find or create unassigned project for this user
         const unassignedProject = await db.query.projects.findFirst({
-          where: and(eq(projects.userId, ownerId), eq(projects.name, "📥 Unassigned Images")),
+          where: and(eq(projects.userId, ownerId), eq(projects.name, UNASSIGNED_PROJECT_NAME)),
         });
 
         if (unassignedProject) {

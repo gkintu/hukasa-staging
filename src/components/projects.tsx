@@ -8,11 +8,12 @@ import { CardActionsMenu } from "@/components/ui/card-actions-menu"
 import { RenameModal } from "@/components/ui/rename-modal"
 import { Input } from "@/components/ui/input"
 import { CreateProjectDialog } from "@/components/create-project-dialog"
-import { FolderOpen, Plus, Image as ImageIcon, Inbox } from "lucide-react"
+import { FolderOpen, Plus, Image as ImageIcon, FolderOutput } from "lucide-react"
 import { useProjectList, useInvalidateProjectQueries } from "@/lib/shared/hooks/use-images"
+import { UNASSIGNED_PROJECT_NAME } from "@/lib/constants/project-constants"
 
 // Helper function to check if project is unassigned (client-side only)
-const isUnassignedProject = (projectName: string) => projectName === "📥 Unassigned Images"
+const isUnassignedProject = (projectName: string) => projectName === UNASSIGNED_PROJECT_NAME
 
 interface User {
   id: string
@@ -32,9 +33,9 @@ interface Project {
   name: string
   createdAt: string
   updatedAt: string
-  sourceImageCount: number
-  stagedVersionCount: number
-  thumbnailSignedUrl: string | null
+  sourceImageCount?: number
+  stagedVersionCount?: number
+  thumbnailSignedUrl?: string | null
 }
 
 export function Projects({ onProjectSelect }: ProjectsProps) {
@@ -282,7 +283,7 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
               <CardContent className="p-0">
                 <div className="relative">
                   <div className="aspect-video overflow-hidden rounded-t-sm bg-muted">
-                    {project.sourceImageCount > 0 && project.thumbnailSignedUrl ? (
+                    {(project.sourceImageCount ?? 0) > 0 && project.thumbnailSignedUrl ? (
                       <img
                         src={project.thumbnailSignedUrl}
                         alt={`${project.name} thumbnail`}
@@ -295,7 +296,7 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         {isUnassigned ? (
-                          <Inbox className="h-12 w-12 text-muted-foreground" />
+                          <FolderOutput className="h-12 w-12 text-muted-foreground" />
                         ) : (
                           <ImageIcon className="h-12 w-12 text-muted-foreground" />
                         )}
@@ -307,12 +308,12 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
                 <div className="absolute bottom-2 left-2 text-foreground text-xs space-y-2">
                   {isUnassigned ? (
                     <div className="bg-background/90 rounded-sm px-1.5 py-0.5">
-                      Unorganized Images: {project.sourceImageCount}
+                      Unorganized Images: {project.sourceImageCount ?? 0}
                     </div>
                   ) : (
                     <>
-                      <div className="bg-background/90 rounded-sm px-1.5 py-0.5">Source Images: {project.sourceImageCount}</div>
-                      <div className="bg-background/90 rounded-sm px-1.5 py-0.5">Staged Versions: {project.stagedVersionCount}</div>
+                      <div className="bg-background/90 rounded-sm px-1.5 py-0.5">Source Images: {project.sourceImageCount ?? 0}</div>
+                      <div className="bg-background/90 rounded-sm px-1.5 py-0.5">Staged Versions: {project.stagedVersionCount ?? 0}</div>
                     </>
                   )}
                 </div>
@@ -341,8 +342,10 @@ export function Projects({ onProjectSelect }: ProjectsProps) {
                     autoFocus
                   />
                 ) : (
-                  <h3 
-                    className="font-semibold text-lg truncate cursor-pointer hover:text-primary transition-colors" 
+                  <h3
+                    className={`font-semibold text-lg truncate transition-colors ${
+                      !isUnassigned ? 'cursor-pointer hover:text-primary' : ''
+                    }`}
                     title={project.name}
                     onClick={(e) => {
                       if (!isUnassigned) {
