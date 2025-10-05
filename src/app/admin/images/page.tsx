@@ -20,6 +20,7 @@ import { AdminImagesTable } from "@/components/admin/admin-images-table"
 import { toast } from "sonner"
 import type { SortingState, ColumnFiltersState, PaginationState } from "@tanstack/react-table"
 import type { ImageListQuery } from "@/lib/admin/image-schemas"
+import { imageKeys, projectKeys } from "@/lib/shared/utils/query-keys"
 
 export default function AdminImagesPage() {
   const queryClient = useQueryClient()
@@ -100,9 +101,10 @@ export default function AdminImagesPage() {
       toast.success('Image deleted successfully')
       setDeleteImageId(null)
       refetch()
-      // Invalidate main app queries for real-time updates
-      queryClient.invalidateQueries({ queryKey: ['images'] })
-      queryClient.invalidateQueries({ queryKey: ['projects'] })
+      // Invalidate ALL user image and project queries for real-time updates
+      // Backend already invalidates Valkey cache, this handles React Query cache
+      queryClient.invalidateQueries({ queryKey: imageKeys.all })
+      queryClient.invalidateQueries({ queryKey: projectKeys.all })
     },
     onError: (error: Error) => {
       toast.error(`Failed to delete image: ${error.message}`)

@@ -4,16 +4,17 @@ import { db } from '@/db';
 import { users, sourceImages, generations } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { 
+import {
   ImageDeleteSchema,
   type ImageDelete,
   type ImageDeleteResponse,
-  type ApiResponse 
+  type ApiResponse
 } from '@/lib/admin/image-schemas';
-import { 
+import {
   getImageById,
-  logAdminImageAction 
+  logAdminImageAction
 } from '@/lib/admin/image-queries';
+import { valkey, CacheKeys } from '@/lib/cache/valkey-service';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -271,6 +272,15 @@ export async function DELETE(
         }
       }
     }
+
+    // Invalidate ALL Valkey caches for the affected user
+    // This ensures the user sees the deletion immediately when their query refetches
+    await valkey.del(CacheKeys.userImages(image.user.id));
+    await valkey.del(CacheKeys.userImagesMetadata(image.user.id)); // Metadata cache (separate!)
+
+    // Also invalidate project caches since image counts changed
+    await valkey.del(CacheKeys.userProjects(image.user.id));
+    await valkey.del(CacheKeys.userProject(image.user.id, image.projectId));
 
     // Log admin action
     await logAdminImageAction(

@@ -31,7 +31,7 @@ import type {
 
 // Separated metadata and URL hooks for optimal caching
 
-// Hook for image metadata (cached indefinitely, only invalidated on mutations)
+// Hook for image metadata (cached indefinitely, refetches on window focus to catch external changes)
 export function useImageMetadata(
   query: MainImageListQuery = {},
   options?: UseQueryOptions<BasicImage[], Error>
@@ -40,7 +40,7 @@ export function useImageMetadata(
     queryKey: [...imageKeys.list(query), 'metadata'],
     queryFn: () => fetchImageMetadata(query),
     staleTime: Infinity, // Never stale - only refetch on invalidation
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: 'always', // Always refetch on tab switch (catches admin deletions, external changes)
     refetchInterval: false,
     refetchIntervalInBackground: false,
     refetchOnReconnect: true, // Refetch when network reconnects
@@ -114,7 +114,7 @@ export function useImageList(
     staleTime: 30 * 60 * 1000, // 30 minutes - refresh before 1hr URL expiry (30min safety buffer)
     refetchInterval: false,
     refetchIntervalInBackground: false,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: 'always', // Always refetch on tab switch (catches external changes like admin deletions)
     refetchOnReconnect: true,
     ...options,
   });
