@@ -1,12 +1,13 @@
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Upload, Image, Lightbulb } from "lucide-react"
 import { SourceImageCard } from "@/components/source-image-card"
 import { useImageList, useImageMetadata } from "@/lib/shared/hooks/use-images"
 import { useRouter } from "next/navigation"
+import { QuickTipsModal } from "@/components/quick-tips-modal"
 
 interface User {
   id: string
@@ -18,10 +19,12 @@ interface User {
 interface DashboardProps {
   user: User
   onUploadClick?: () => void
+  onNavigateToHelp?: () => void
 }
 
-export function Dashboard({ user, onUploadClick }: DashboardProps) {
+export function Dashboard({ user, onUploadClick, onNavigateToHelp }: DashboardProps) {
   const router = useRouter()
+  const [quickTipsOpen, setQuickTipsOpen] = useState(false)
 
   // ✅ Use TanStack Query for recent images (shared cache with All Images)
   // Use the SAME query as AllImages component: { unassignedOnly: false }
@@ -119,6 +122,7 @@ export function Dashboard({ user, onUploadClick }: DashboardProps) {
           <Button
             variant="outline"
             className="gap-2"
+            onClick={() => setQuickTipsOpen(true)}
           >
             <Lightbulb className="h-4 w-4" />
             Quick Tips
@@ -195,6 +199,13 @@ export function Dashboard({ user, onUploadClick }: DashboardProps) {
           </CardContent>
         </Card>
       </div>
+
+      {/* Quick Tips Modal */}
+      <QuickTipsModal
+        open={quickTipsOpen}
+        onOpenChange={setQuickTipsOpen}
+        onNavigateToHelp={onNavigateToHelp}
+      />
     </div>
   )
 }

@@ -169,7 +169,13 @@ export function MainApp({ user, defaultOpen = true }: MainAppProps) {
             />
           ) : (
             <>
-              {activeView === "dashboard" && <Dashboard user={user} onUploadClick={handleUploadClick} />}
+              {activeView === "dashboard" && (
+                <Dashboard
+                  user={user}
+                  onUploadClick={handleUploadClick}
+                  onNavigateToHelp={() => handleSidebarNavigation("help")}
+                />
+              )}
               {activeView === "allImages" && (
                 <AllImages
                   ref={allImagesRef}
