@@ -35,11 +35,11 @@ export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings
   const faqs = [
     {
       question: "How do I upload images for virtual staging?",
-      answer: "Click the 'Upload' button in the sidebar or header. You can choose to upload to an existing project or leave images in 'Unassigned Images' to organize later. We support JPG, JPEG, PNG, WEBP, and GIF formats with a 10MB file size limit per image."
+      answer: "Click the 'Upload' button in the sidebar or header. You can choose to upload to an existing project or leave images in 'Unassigned Images' to organize later. We support JPG, JPEG, PNG and WEBP formats with a 10MB file size limit per image."
     },
     {
       question: "What is the Unassigned Images project?",
-      answer: "Unassigned Images is a special system project where uploaded images go by default if you don't select a specific project during upload. It helps you upload quickly and organize later. You can move images to other projects anytime using the batch move feature in All Images view."
+      answer: "Unassigned Images is a default project where your uploads go when you don't choose a specific project. This lets you upload quickly now and organize later. To move them from this project, navigate to it by clicking the All Images tab, select the images you want to move using checkboxes, and click Move to Project."
     },
     {
       question: "How do I organize my images into projects?",
@@ -47,23 +47,23 @@ export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings
     },
     {
       question: "How many variants can I generate per image?",
-      answer: "You can generate up to 4 different AI-staged variants for each source image. Click any image to open the detail view, then use the generation panel to create variants. Each variant provides a unique staging option with different furniture arrangements and design aesthetics."
+      answer: "You can generate up to 4 variants per generation request. Click any image to open the detail view, then use the generation panel to create variants. You can run multiple generations. Each variant provides a unique staging option with different furniture arrangements and design aesthetics."
     },
     {
       question: "How do I download my staged images?",
-      answer: "Open any image to view its detail page. Each generated variant has its own download button, or you can download all variants at once using the &apos;Download All&apos; button. Downloaded images maintain high quality for professional use in listings and marketing."
+      answer: "Open any image to view its detail page. Each generated variant has its own download button."
     },
     {
       question: "Can I delete images or variants?",
-      answer: "Yes! You have three deletion options: (1) Delete a specific variant while keeping the source image and other variants, (2) Delete the source image only while preserving generated variants, or (3) Delete everything—the source image and all its variants. You can also batch delete multiple images from the All Images view."
+      answer: "Yes! You have two deletion options: (1) Delete a specific variant while keeping the source image and other variants, or (2) Delete the source image, which automatically deletes all its variants."
     },
     {
       question: "How do I view all my images across projects?",
-      answer: "Click &apos;All Images&apos; in the sidebar to see every image you&apos;ve uploaded, regardless of which project they&apos;re in. This view supports batch operations like moving, deleting, and filtering. You can also search for specific images using the search bar."
+      answer: "Click 'All Images' in the sidebar to see every image you've uploaded, regardless of which project they're in. From here you can also rename or delete individual source images."
     },
     {
       question: "What if I need to rename an image?",
-      answer: "Open the image detail view and click the edit icon next to the image name at the top. You can set a custom display name that makes it easier to identify the image in your projects and searches."
+      answer: "Hover over any image card to reveal the three-dot menu, then select Rename. Alternatively, click on the name of the image card. Enter a custom display name to make it easier to identify the image in your projects."
     }
   ]
 
