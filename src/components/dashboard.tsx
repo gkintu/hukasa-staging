@@ -111,12 +111,9 @@ export function Dashboard({ user, onUploadClick, onNavigateToHelp }: DashboardPr
     <div className="p-8 animate-fade-in">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-3xl font-bold mb-2">
+          <h1 className="text-3xl font-bold">
             Welcome back, {user.name || 'User'}
           </h1>
-          <p className="text-muted-foreground">
-            Ready to create stunning virtual staging for your listings
-          </p>
         </div>
         <div className="flex gap-2">
           <Button
