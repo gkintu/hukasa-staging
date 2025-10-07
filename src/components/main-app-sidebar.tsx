@@ -3,6 +3,7 @@
 import * as React from "react"
 import Image from "next/image"
 import { LayoutDashboard, FolderOpen, HelpCircle, Images } from "lucide-react"
+import { useTheme } from "next-themes"
 import {
   Sidebar,
   SidebarContent,
@@ -47,6 +48,13 @@ interface MainAppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 
 export function MainAppSidebar({ activeView, onViewChange, ...props }: MainAppSidebarProps) {
   const { collapsible, variant } = useLayout()
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = React.useState(false)
+
+  // Wait until mounted to avoid hydration mismatch
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
     <Sidebar collapsible={collapsible} variant={variant} {...props}>
@@ -56,12 +64,25 @@ export function MainAppSidebar({ activeView, onViewChange, ...props }: MainAppSi
           className="flex items-center justify-center px-2 py-3 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:pt-0 group-data-[collapsible=icon]:pb-4 cursor-pointer hover:opacity-80 transition-opacity w-full"
         >
           <div className="relative w-24 h-12 flex items-center justify-center group-data-[collapsible=icon]:w-12 group-data-[collapsible=icon]:h-12">
-            <Image
-              src="/logo.png"
-              alt="Hukasa Logo"
-              fill
-              className="object-contain"
-            />
+            {!mounted ? (
+              // Show default logo during SSR to prevent hydration mismatch
+              <Image
+                src="/logo.png"
+                alt="Hukasa Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            ) : (
+              // Switch logo based on theme after mount
+              <Image
+                src={resolvedTheme === 'dark' ? '/logo-dark.png' : '/logo.png'}
+                alt="Hukasa Logo"
+                fill
+                className="object-contain"
+                priority
+              />
+            )}
           </div>
         </button>
       </SidebarHeader>

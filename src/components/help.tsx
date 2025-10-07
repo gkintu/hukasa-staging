@@ -35,27 +35,35 @@ export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings
   const faqs = [
     {
       question: "How do I upload images for virtual staging?",
-      answer: "Click the &apos;Upload Files&apos; button at the top of the screen or navigate to Projects and click &apos;Upload More&apos;. Select up to 5 images (max 10MB each) in JPG, PNG, or WEBP format."
+      answer: "Click the 'Upload' button in the sidebar or header. You can choose to upload to an existing project or leave images in 'Unassigned Images' to organize later. We support JPG, JPEG, PNG, WEBP, and GIF formats with a 10MB file size limit per image."
     },
     {
-      question: "What image formats are supported?",
-      answer: "We support JPG, PNG, and WEBP formats. Images should be high-resolution for best results, with a recommended minimum size of 1200x800 pixels."
+      question: "What is the Unassigned Images project?",
+      answer: "Unassigned Images is a special system project where uploaded images go by default if you don't select a specific project during upload. It helps you upload quickly and organize later. You can move images to other projects anytime using the batch move feature in All Images view."
     },
     {
-      question: "How long does virtual staging take?",
-      answer: "Processing typically takes 5-15 minutes depending on image size and complexity. You&apos;ll receive notifications when your staged images are ready."
+      question: "How do I organize my images into projects?",
+      answer: "Create projects from the Projects page to organize your work by property, client, or any system that works for you. To move images between projects, go to All Images view, select the images you want to move using checkboxes, and click the Move button to choose a destination project."
     },
     {
-      question: "Can I customize the staging style?",
-      answer: "Yes! You can choose from various design styles including Modern, Scandinavian, Industrial, Farmhouse, and more. Set your default style in Settings or choose per project."
+      question: "How many variants can I generate per image?",
+      answer: "You can generate up to 4 different AI-staged variants for each source image. Click any image to open the detail view, then use the generation panel to create variants. Each variant provides a unique staging option with different furniture arrangements and design aesthetics."
     },
     {
       question: "How do I download my staged images?",
-      answer: "Go to Projects, find your completed project, and click the download button. You can also enable auto-download in Settings to automatically download completed projects."
+      answer: "Open any image to view its detail page. Each generated variant has its own download button, or you can download all variants at once using the &apos;Download All&apos; button. Downloaded images maintain high quality for professional use in listings and marketing."
     },
     {
-      question: "What if I'm not satisfied with the results?",
-      answer: "You can regenerate images with different styles or settings. Contact our support team if you need assistance with specific adjustments."
+      question: "Can I delete images or variants?",
+      answer: "Yes! You have three deletion options: (1) Delete a specific variant while keeping the source image and other variants, (2) Delete the source image only while preserving generated variants, or (3) Delete everything—the source image and all its variants. You can also batch delete multiple images from the All Images view."
+    },
+    {
+      question: "How do I view all my images across projects?",
+      answer: "Click &apos;All Images&apos; in the sidebar to see every image you&apos;ve uploaded, regardless of which project they&apos;re in. This view supports batch operations like moving, deleting, and filtering. You can also search for specific images using the search bar."
+    },
+    {
+      question: "What if I need to rename an image?",
+      answer: "Open the image detail view and click the edit icon next to the image name at the top. You can set a custom display name that makes it easier to identify the image in your projects and searches."
     }
   ]
 
