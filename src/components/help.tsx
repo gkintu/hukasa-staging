@@ -196,9 +196,9 @@ export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings
                 <h4 className="font-semibold">Organize with Projects</h4>
                 <p className="text-sm text-muted-foreground">
                   Create projects to organize your staging work by property, client, or any way that makes sense for your workflow.
-                  Navigate to the Projects page to create a new project with a custom name. To move images between projects, go to the
-                  All Images view, select the images you want to organize using checkboxes, and click the Move button to choose a destination
-                  project. Projects help you keep track of different properties and find your work quickly.
+                  Navigate to the Projects page to create a new project with a custom name. To move images between projects, open any
+                  project, select the images you want to move using checkboxes, and click Move to Project. You can choose an existing
+                  destination or create a new project on the spot. Projects help you keep track of different properties and find your work quickly.
                 </p>
               </div>
             </div>
@@ -210,7 +210,7 @@ export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings
                   Click any image from your Dashboard, All Images, or within a project to open the detailed view. Here you can generate
                   up to 4 different AI-staged variants of the same room. Each variant can showcase different furniture styles, layouts,
                   and design aesthetics. This gives you and your clients multiple professionally staged options to choose from. Generation
-                  typically takes a few minutes per variant.
+                  typically takes a few seconds per variant.
                 </p>
               </div>
             </div>
@@ -219,8 +219,8 @@ export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings
               <div>
                 <h4 className="font-semibold">Download & Share</h4>
                 <p className="text-sm text-muted-foreground">
-                  Once your variants are ready, download them individually by clicking the download button on each variant, or download
-                  all variants at once for convenience. Your staged images are ready to use in property listings, marketing materials,
+                  Once your variants are ready, download them individually by clicking the download button on each variant. 
+                  Your staged images are ready to use in property listings, marketing materials,
                   social media posts, or client presentations. You can also delete specific variants you don&apos;t need or regenerate
                   new ones if you want to try different styles.
                 </p>

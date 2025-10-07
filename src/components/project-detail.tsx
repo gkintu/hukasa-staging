@@ -208,16 +208,14 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
         setTargetProjectId('')
         selection.clearSelection()
 
-        // Invalidate all image and project caches to ensure UI updates everywhere
+        // Invalidate image and project caches (only refetches active queries by default)
         await queryClient.invalidateQueries({
           queryKey: ['images'],
-          exact: false,
-          refetchType: 'all'
+          exact: false
         })
         await queryClient.invalidateQueries({
           queryKey: ['projects'],
-          exact: false,
-          refetchType: 'all'
+          exact: false
         })
       } else {
         toast.error(data.message || 'Failed to move images')
@@ -273,16 +271,14 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
         setNewProjectName('')
         selection.clearSelection()
 
-        // Invalidate all image and project caches
+        // Invalidate image and project caches (only refetches active queries by default)
         await queryClient.invalidateQueries({
           queryKey: ['images'],
-          exact: false,
-          refetchType: 'all'
+          exact: false
         })
         await queryClient.invalidateQueries({
           queryKey: ['projects'],
-          exact: false,
-          refetchType: 'all'
+          exact: false
         })
       } else {
         toast.error(moveData.message || 'Failed to move images to new project')
