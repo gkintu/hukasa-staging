@@ -51,7 +51,10 @@ export function MainAppSidebar({ activeView, onViewChange, ...props }: MainAppSi
   return (
     <Sidebar collapsible={collapsible} variant={variant} {...props}>
       <SidebarHeader>
-        <div className="flex items-center justify-center px-2 py-3 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:pt-0 group-data-[collapsible=icon]:pb-4">
+        <button
+          onClick={() => onViewChange("dashboard")}
+          className="flex items-center justify-center px-2 py-3 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:pt-0 group-data-[collapsible=icon]:pb-4 cursor-pointer hover:opacity-80 transition-opacity w-full"
+        >
           <div className="relative w-24 h-12 flex items-center justify-center group-data-[collapsible=icon]:w-12 group-data-[collapsible=icon]:h-12">
             <Image
               src="/logo.png"
@@ -60,7 +63,7 @@ export function MainAppSidebar({ activeView, onViewChange, ...props }: MainAppSi
               className="object-contain"
             />
           </div>
-        </div>
+        </button>
       </SidebarHeader>
 
       <SidebarContent>
