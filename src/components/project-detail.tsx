@@ -1,15 +1,22 @@
 "use client"
 
 import { useState, forwardRef, useImperativeHandle } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ChevronLeft, Image as ImageIcon, Upload, Trash2 } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { ChevronLeft, Image as ImageIcon, Upload, Trash2, FolderOpen, ArrowRight, FolderPlus } from "lucide-react"
 import { SourceImageCard } from "@/components/source-image-card"
 import { DeleteConfirmationDialog } from "@/components/shared/delete-confirmation-dialog"
 import { useSimpleDeleteImage } from "@/lib/shared/hooks/use-delete-image"
-import { useImageList, useImageMetadata, useRenameImage } from "@/lib/shared/hooks/use-images"
+import { useImageList, useImageMetadata, useRenameImage, useProjectList } from "@/lib/shared/hooks/use-images"
 import { useImageSelection } from "@/lib/shared/hooks/use-row-selection"
+import { UNASSIGNED_PROJECT_NAME } from "@/lib/constants/project-constants"
+import { toast } from "sonner"
 
 interface ProjectDetailProps {
   projectId: string
@@ -34,6 +41,7 @@ import { SourceImage, type ImageSelectHandler } from '@/lib/shared/types/image-t
 
 export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(function ProjectDetail({ projectId, onBack, onImageSelect, onUploadMore }, ref) {
   // Use unified cache - images filtered by projectId (shares cache with AllImages and Dashboard!)
+  const queryClient = useQueryClient()
 
   // Check both metadata and imageList loading states (fixes F5 flash)
   const metadataQuery = useImageMetadata({ projectId })
@@ -56,9 +64,22 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
   const [deleteImageId, setDeleteImageId] = useState<string | null>(null)
   const [deleteImageName, setDeleteImageName] = useState<string>('')
   const [bulkDeleteIds, setBulkDeleteIds] = useState<string[]>([])
-  
+
+  // Move to project state
+  const [moveDialogOpen, setMoveDialogOpen] = useState(false)
+  const [targetProjectId, setTargetProjectId] = useState<string>('')
+  const [newProjectName, setNewProjectName] = useState('')
+  const [isCreatingProject, setIsCreatingProject] = useState(false)
+  const [isMoving, setIsMoving] = useState(false)
+
   // Bulk selection state
   const selection = useImageSelection(sourceImages)
+
+  // Load projects for move functionality
+  const {
+    data: projects = [],
+    isLoading: loadingProjects
+  } = useProjectList()
 
   // Use the rename mutation hook
   const renameMutation = useRenameImage()
@@ -144,6 +165,133 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
     } catch (error) {
       console.error('Error renaming image:', error)
       throw error // Re-throw so the component can handle the error
+    }
+  }
+
+  // Helper to check if project is unassigned or current project
+  const isUnassignedProject = (projectName: string) => projectName === UNASSIGNED_PROJECT_NAME
+
+  // Filter available projects for move functionality (exclude current project and unassigned)
+  const availableProjects = projects.filter(p =>
+    p.id !== projectId && !isUnassignedProject(p.name)
+  )
+
+  // Move selected images to another project
+  const handleMoveSelected = () => {
+    if (selection.selectedIds.length > 0) {
+      setMoveDialogOpen(true)
+    }
+  }
+
+  const handleConfirmMove = async () => {
+    if (!targetProjectId || selection.selectedIds.length === 0) {
+      toast.error('Please select a project')
+      return
+    }
+
+    setIsMoving(true)
+    try {
+      const response = await fetch('/api/images/move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageIds: selection.selectedIds,
+          targetProjectId: targetProjectId
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success(data.message)
+        setMoveDialogOpen(false)
+        setTargetProjectId('')
+        selection.clearSelection()
+
+        // Invalidate all image and project caches to ensure UI updates everywhere
+        await queryClient.invalidateQueries({
+          queryKey: ['images'],
+          exact: false,
+          refetchType: 'all'
+        })
+        await queryClient.invalidateQueries({
+          queryKey: ['projects'],
+          exact: false,
+          refetchType: 'all'
+        })
+      } else {
+        toast.error(data.message || 'Failed to move images')
+      }
+    } catch (error) {
+      console.error('Error moving images:', error)
+      toast.error('Failed to move images')
+    } finally {
+      setIsMoving(false)
+    }
+  }
+
+  const handleCreateAndMove = async () => {
+    if (!newProjectName.trim()) {
+      toast.error('Please enter a project name')
+      return
+    }
+
+    setIsCreatingProject(true)
+    try {
+      // Create new project
+      const createResponse = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newProjectName })
+      })
+
+      const createData = await createResponse.json()
+
+      if (!createData.success) {
+        toast.error(createData.message || 'Failed to create project')
+        return
+      }
+
+      const newProjectId = createData.project.id
+
+      // Move images to new project
+      const moveResponse = await fetch('/api/images/move', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageIds: selection.selectedIds,
+          targetProjectId: newProjectId
+        })
+      })
+
+      const moveData = await moveResponse.json()
+
+      if (moveData.success) {
+        toast.success(`Created "${newProjectName}" and moved ${selection.selectedIds.length} images`)
+        setMoveDialogOpen(false)
+        setTargetProjectId('')
+        setNewProjectName('')
+        selection.clearSelection()
+
+        // Invalidate all image and project caches
+        await queryClient.invalidateQueries({
+          queryKey: ['images'],
+          exact: false,
+          refetchType: 'all'
+        })
+        await queryClient.invalidateQueries({
+          queryKey: ['projects'],
+          exact: false,
+          refetchType: 'all'
+        })
+      } else {
+        toast.error(moveData.message || 'Failed to move images to new project')
+      }
+    } catch (error) {
+      console.error('Error creating project:', error)
+      toast.error('Failed to create project')
+    } finally {
+      setIsCreatingProject(false)
     }
   }
 
@@ -275,6 +423,15 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
                 Clear
               </Button>
               <Button
+                size="sm"
+                onClick={handleMoveSelected}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2"
+                disabled={isMoving}
+              >
+                <FolderOpen className="h-4 w-4" />
+                Move to Project
+              </Button>
+              <Button
                 variant="destructive"
                 size="sm"
                 onClick={handleBulkDelete}
@@ -330,6 +487,106 @@ export const ProjectDetail = forwardRef<ProjectDetailRef, ProjectDetailProps>(fu
         itemName={`${bulkDeleteIds.length} ${bulkDeleteIds.length === 1 ? 'image' : 'images'}`}
         isLoading={isDeleting}
       />
+
+      {/* Move to Project Dialog */}
+      <Dialog open={moveDialogOpen} onOpenChange={setMoveDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FolderOpen className="h-5 w-5 text-primary" />
+              Move {selection.selectedIds.length} {selection.selectedIds.length === 1 ? 'Image' : 'Images'} to Project
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="target-project">Select Project</Label>
+              <Select
+                value={targetProjectId}
+                onValueChange={setTargetProjectId}
+                disabled={loadingProjects || isMoving}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={loadingProjects ? "Loading projects..." : "Choose a project"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableProjects.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      <div className="flex items-center gap-2">
+                        <FolderOpen className="h-4 w-4" />
+                        <span>{project.name}</span>
+                        <span className="text-xs text-muted-foreground">
+                          ({project.sourceImageCount} images)
+                        </span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">
+                  Or create new project
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="new-project-name">New Project Name</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="new-project-name"
+                  placeholder="Enter project name..."
+                  value={newProjectName}
+                  onChange={(e) => setNewProjectName(e.target.value)}
+                  disabled={isCreatingProject || isMoving}
+                />
+                <Button
+                  onClick={handleCreateAndMove}
+                  disabled={!newProjectName.trim() || isCreatingProject || isMoving}
+                  className="gap-2 shrink-0"
+                >
+                  <FolderPlus className="h-4 w-4" />
+                  Create & Move
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMoveDialogOpen(false)
+                setTargetProjectId('')
+                setNewProjectName('')
+              }}
+              disabled={isMoving || isCreatingProject}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleConfirmMove}
+              disabled={!targetProjectId || isMoving || isCreatingProject}
+              className="gap-2"
+            >
+              {isMoving ? (
+                <>Moving...</>
+              ) : (
+                <>
+                  Move Images
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 })

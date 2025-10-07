@@ -185,7 +185,7 @@ export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings
                 <p className="text-sm text-muted-foreground">
                   Click the Upload button in the sidebar or header to get started. You&apos;ll see a dialog where you can choose an existing project
                   or let your images go to &quot;Unassigned Images&quot; to organize later. Select high-quality photos of empty or minimally
-                  furnished rooms—the clearer your photos, the better your staged results will be. You can upload multiple images at once for
+                  furnished rooms the clearer your photos, the better your staged results will be. You can upload upto 5 images at once for
                   batch processing.
                 </p>
               </div>
@@ -196,9 +196,9 @@ export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings
                 <h4 className="font-semibold">Organize with Projects</h4>
                 <p className="text-sm text-muted-foreground">
                   Create projects to organize your staging work by property, client, or any way that makes sense for your workflow.
-                  Navigate to the Projects page to create a new project with a custom name. You can move images between projects anytime
-                  using the All Images view—just select images and use the Move action. Projects help you keep track of different properties
-                  and find your work quickly.
+                  Navigate to the Projects page to create a new project with a custom name. To move images between projects, go to the
+                  All Images view, select the images you want to organize using checkboxes, and click the Move button to choose a destination
+                  project. Projects help you keep track of different properties and find your work quickly.
                 </p>
               </div>
             </div>
