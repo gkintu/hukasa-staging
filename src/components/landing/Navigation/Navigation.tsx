@@ -1,10 +1,12 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { useState } from "react"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useTheme } from "next-themes"
 
 const navigationItems = [
   { title: "How it Works", href: "#how-it-works" },
@@ -15,14 +17,20 @@ const navigationItems = [
 
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const { theme } = useTheme()
 
   return (
-    <header className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
-          <div className="h-8 w-8 rounded bg-primary" />
-          <span className="font-semibold text-xl text-foreground">Hukasa AI</span>
+          <Image
+            src={theme === 'dark' ? '/logo-dark.png' : '/logo.png'}
+            alt="Hukasa AI"
+            width={120}
+            height={32}
+            className="h-8 w-auto"
+          />
         </Link>
 
         {/* Desktop Navigation */}
@@ -42,10 +50,10 @@ export function Navigation() {
         <div className="flex items-center space-x-4">
           <ThemeToggle />
           <Button variant="ghost" className="hidden sm:inline-flex" asChild>
-            <Link href="/login">Sign In</Link>
+            <Link href="/login">Log in</Link>
           </Button>
           <Button asChild>
-            <Link href="/signup">Get Started</Link>
+            <Link href="/signup">Sign up</Link>
           </Button>
 
           {/* Mobile menu button */}
