@@ -1,11 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Label } from "@/components/ui/label"
 import {
   HelpCircle,
   FileText,
@@ -16,11 +13,13 @@ import {
   Settings,
   LogOut,
   Zap,
+  Video,
   ExternalLink,
-  Video
+  Copy
 } from "lucide-react"
 import { signOut } from "@/lib/auth-client"
 import { QuickTipsModal } from "@/components/quick-tips-modal"
+import { toast } from "sonner"
 
 interface HelpProps {
   onUploadClick?: () => void
@@ -31,6 +30,26 @@ interface HelpProps {
 
 export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings, onNavigateToHelp }: HelpProps = {}) {
   const [quickTipsOpen, setQuickTipsOpen] = useState(false)
+  const [email, setEmail] = useState('')
+
+  // Email obfuscation for scraper protection
+  useEffect(() => {
+    // This code runs only in the browser, not on the server
+    const user = 'support'
+    const domain = 'hukasa.com'
+    setEmail(`${user}@${domain}`)
+  }, [])
+
+  const copyEmail = async () => {
+    if (email) {
+      try {
+        await navigator.clipboard.writeText(email)
+        toast.success('Email copied to clipboard!')
+      } catch (err) {
+        toast.error('Failed to copy email')
+      }
+    }
+  }
 
   const faqs = [
     {
@@ -261,60 +280,37 @@ export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings
           <CardDescription>Still need help? Get in touch with our team</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-semibold mb-4">Send us a message</h4>
-              <div className="space-y-4">
-                <div>
-                  <Label htmlFor="support-email">Email Address</Label>
-                  <Input id="support-email" type="email" placeholder="your@email.com" className="mt-1" />
-                </div>
-                <div>
-                  <Label htmlFor="support-subject">Subject</Label>
-                  <Input id="support-subject" placeholder="How can we help?" className="mt-1" />
-                </div>
-                <div>
-                  <Label htmlFor="support-message">Message</Label>
-                  <Textarea 
-                    id="support-message" 
-                    placeholder="Describe your issue or question..."
-                    className="mt-1"
-                    rows={4}
-                  />
-                </div>
-                <Button className="w-full">
-                  <Mail className="mr-2 h-4 w-4" />
-                  Send Message
+          <div className="space-y-4">
+            <div className="text-center p-6 bg-muted/50 rounded-lg">
+              <Mail className="mx-auto h-12 w-12 text-primary mb-4" />
+              <h4 className="font-semibold mb-2">Email Support</h4>
+              <p className="text-sm text-muted-foreground mb-4">
+                 Have a question or need assistance? Send us an email and we&apos;ll get back to you as soon as possible.
+              </p>
+              <div className="flex gap-2 justify-center">
+                <Button
+                  variant="outline"
+                  onClick={copyEmail}
+                  className="gap-2"
+                  disabled={!email}
+                >
+                  <Copy className="h-4 w-4" />
+                  {email ? email : 'Loading email...'}
+                </Button>
+                <Button asChild className="gap-2">
+                  <a 
+                    href={email ? `mailto:${email}?subject=Hukasa Support Request&body=Hi there,%0A%0AI need help with:%0A%0A` : '#'}
+                    className={email ? '' : 'pointer-events-none opacity-50'}
+                  >
+                    <Mail className="h-4 w-4" />
+                    Send Email
+                    <ExternalLink className="h-4 w-4" />
+                  </a>
                 </Button>
               </div>
             </div>
             
-            <div className="space-y-4">
-              <h4 className="font-semibold">Other ways to reach us</h4>
-              
-              <div className="space-y-3">
-                <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted/50">
-                  <Mail className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-medium">Email Support</p>
-                    <p className="text-sm text-muted-foreground">support@hukasa.com</p>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3 p-3 rounded-lg bg-muted/50">
-                  <FileText className="h-5 w-5 text-primary" />
-                  <div>
-                    <p className="font-medium">Documentation</p>
-                    <p className="text-sm text-muted-foreground">Detailed guides and tutorials</p>
-                  </div>
-                </div>
-                
-                <Button variant="outline" className="w-full">
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Visit Documentation
-                </Button>
-              </div>
-            </div>
+
           </div>
         </CardContent>
       </Card>
