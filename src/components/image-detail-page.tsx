@@ -8,7 +8,7 @@ import { ChevronLeft, Home } from "lucide-react"
 import { GenerationForm } from "@/components/image-generation/generation-form"
 import { GeneratingView } from "@/components/image-generation/generating-view"
 import { GenerationResultsView } from "@/components/image-generation/generation-results-view"
-import { useInvalidateImageQueries, useInvalidateProjectQueries, useImageList, useImageGenerations } from "@/lib/shared/hooks/use-images"
+import { useImageList, useImageGenerations } from "@/lib/shared/hooks/use-images"
 import { useGenerateImages } from "@/lib/shared/hooks/use-generate-images"
 import { MockGeneratedImage, convertRoomTypeFromEnum, convertStyleFromEnum } from "@/components/image-generation/types"
 import { GeneratedVariant } from "@/lib/shared/types/image-types"
@@ -40,8 +40,6 @@ export function ImageDetailPage({ imageId }: ImageDetailPageProps) {
   const projectParam = urlParams?.get('project')
 
   // TanStack Query hooks
-  const invalidateImageQueries = useInvalidateImageQueries()
-  const invalidateProjectQueries = useInvalidateProjectQueries()
   const generateImagesMutation = useGenerateImages()
 
   // Use the new useImageList hook with project filtering if needed

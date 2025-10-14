@@ -138,6 +138,28 @@ export default function AdminSettingsPage() {
     setSettings(prev => ({ ...prev, [key]: value }))
   }
 
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">Admin Settings</h1>
+            <p className="text-muted-foreground">
+              Loading settings...
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="h-64 rounded-lg border bg-muted animate-pulse" />
+          <div className="h-64 rounded-lg border bg-muted animate-pulse" />
+          <div className="h-64 rounded-lg border bg-muted animate-pulse" />
+          <div className="h-64 rounded-lg border bg-muted animate-pulse" />
+          <div className="h-32 rounded-lg border bg-muted animate-pulse lg:col-span-2" />
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

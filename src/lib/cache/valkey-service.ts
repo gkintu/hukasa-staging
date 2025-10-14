@@ -17,7 +17,17 @@ class ValkeyService {
     }
 
     // Initialize Valkey client with connection options
-    const config: any = {
+    const config: {
+      host: string
+      port: number
+      db: number
+      connectTimeout: number
+      lazyConnect: boolean
+      maxRetriesPerRequest: number
+      retryDelayOnFailover: number
+      name: string
+      password?: string
+    } = {
       host: process.env.VALKEY_HOST!,
       port: parseInt(process.env.VALKEY_PORT!),
       db: parseInt(process.env.VALKEY_DB!),
@@ -264,7 +274,7 @@ class ValkeyService {
         dbSize,
         memory
       }
-    } catch (error) {
+    } catch {
       return {
         connected: false,
         dbSize: 0,
@@ -283,7 +293,7 @@ class ValkeyService {
       const latency = Date.now() - start
 
       return { status: 'healthy', latency }
-    } catch (error) {
+    } catch {
       return { status: 'unhealthy' }
     }
   }

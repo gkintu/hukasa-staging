@@ -3,12 +3,7 @@ import {
   useQueryClient,
   UseMutationOptions
 } from '@tanstack/react-query';
-import { 
-  imageKeys, 
-  projectKeys, 
-  invalidateImageQueries, 
-  invalidateProjectQueries 
-} from '../utils/query-keys';
+import { imageKeys } from '../utils/query-keys';
 import { toast } from './use-toast';
 import type { GeneratedVariant, SourceImage, VariantSummary } from '../types/image-types';
 
@@ -89,7 +84,6 @@ function createOptimisticVariants(sourceImageId: string, count: number): Generat
     jobId: null,
     errorMessage: null,
     processingTimeMs: null,
-    aiGenerationParams: null,
     createdAt: new Date(),
     completedAt: null,
     signedUrl: null, // No signed URL for optimistic variants

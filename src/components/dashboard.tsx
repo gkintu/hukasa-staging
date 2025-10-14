@@ -141,7 +141,8 @@ export function Dashboard({ user, onUploadClick, onNavigateToHelp }: DashboardPr
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <Image className="h-5 w-5" />
+                  {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                  <Image className="h-5 w-5" aria-hidden="true" />
                   Recent Work
                 </CardTitle>
                 <CardDescription>
@@ -182,7 +183,8 @@ export function Dashboard({ user, onUploadClick, onNavigateToHelp }: DashboardPr
               </div>
             ) : (
               <div className="text-center py-12">
-                <Image className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                <Image className="mx-auto h-12 w-12 text-muted-foreground mb-4" aria-hidden="true" />
                 <h3 className="text-lg font-medium mb-2">No images yet</h3>
                 <p className="text-muted-foreground mb-4">
                   Upload your first images to start virtual staging

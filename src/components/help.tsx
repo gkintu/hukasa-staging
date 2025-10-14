@@ -45,7 +45,7 @@ export function Help({ onUploadClick, onNavigateToProjects, onNavigateToSettings
       try {
         await navigator.clipboard.writeText(email)
         toast.success('Email copied to clipboard!')
-      } catch (err) {
+      } catch {
         toast.error('Failed to copy email')
       }
     }

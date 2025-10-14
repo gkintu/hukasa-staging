@@ -5,6 +5,7 @@ import {
   UseQueryOptions,
   UseMutationOptions
 } from '@tanstack/react-query';
+import type { GeneratedVariant } from '../types/image-types';
 import {
   fetchMainImageList,
   fetchMainImageDetail,
@@ -172,7 +173,7 @@ export function useProjectDetail(
 // Hook for image generations/variants (modal usage)
 export function useImageGenerations(
   imageId: string,
-  options?: UseQueryOptions<Array<any>, Error>
+  options?: UseQueryOptions<GeneratedVariant[], Error>
 ) {
   return useQuery({
     queryKey: ['image', imageId, 'generations'],

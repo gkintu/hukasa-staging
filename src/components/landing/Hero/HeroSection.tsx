@@ -1,5 +1,6 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
+import { BeforeAfterCarousel } from "@/components/before-after-carousel"
 
 export function HeroSection() {
   return (
@@ -21,8 +22,11 @@ export function HeroSection() {
             Transform empty properties into beautifully furnished spaces instantly with photorealistic AI staging.
           </p>
 
+          {/* Before/After Carousel */}
+          <BeforeAfterCarousel />
+
           {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
             <Button size="lg" className="text-lg px-8 py-6" asChild>
               <Link href="/generate">
                 Start Virtual Staging
@@ -33,26 +37,6 @@ export function HeroSection() {
                 View Examples
               </Link>
             </Button>
-          </div>
-
-          {/* Professional Images Grid */}
-          <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
-            <div className="aspect-square rounded-lg overflow-hidden">
-              <div className="w-full h-full bg-muted flex items-center justify-center">
-                <span className="text-muted-foreground text-sm">Before</span>
-              </div>
-            </div>
-            <div className="aspect-square rounded-lg overflow-hidden">
-              <div className="w-full h-full bg-primary/10 flex items-center justify-center">
-                <span className="text-primary text-sm font-medium">After</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-center mt-4 space-x-4 text-sm text-muted-foreground">
-            <span>Empty Room</span>
-            <span>→</span>
-            <span>Virtually Staged</span>
           </div>
         </div>
       </div>

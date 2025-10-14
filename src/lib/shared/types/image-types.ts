@@ -1,6 +1,6 @@
 // Centralized image type definitions to avoid conflicts across components
 
-// Full database variant structure
+// Full database variant structure with signed URL (as returned by API)
 export interface GeneratedVariant {
   id: string
   sourceImageId: string
@@ -15,7 +15,6 @@ export interface GeneratedVariant {
   jobId: string | null
   errorMessage: string | null
   processingTimeMs: number | null
-  aiGenerationParams: Record<string, unknown> | null
   createdAt: Date
   completedAt: Date | null
   signedUrl: string | null

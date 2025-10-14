@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
 
 /**
@@ -12,7 +12,7 @@ import { valkey, CacheKeys } from '@/lib/cache/valkey-service'
  * 2. If exists, read "announcement:<id>" to get full announcement data
  * 3. Return announcement or null if none active
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Step 1: Get active announcement ID
     const activeAnnouncementId = await valkey.get<string>(

@@ -1,9 +1,8 @@
-import { NextRequest } from 'next/server'
 import { db } from '@/db'
 import { systemSettings } from '@/db/schema'
 import { eq, and } from 'drizzle-orm'
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Fetch announcement-related settings from database
     const announcementSettings = await db
