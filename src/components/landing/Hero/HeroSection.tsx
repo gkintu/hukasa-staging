@@ -4,7 +4,7 @@ import { BeforeAfterCarousel } from "@/components/before-after-carousel"
 
 export function HeroSection() {
   return (
-    <section className="py-20 lg:py-32 bg-gradient-to-b from-background to-muted/20">
+    <section className="pt-4 pb-20 lg:pt-10 lg:pb-32 bg-gradient-to-b from-background to-muted/20">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center">
           {/* Trust indicator */}
@@ -18,7 +18,7 @@ export function HeroSection() {
           </h1>
           
           {/* Subheading */}
-          <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto leading-relaxed">
             Transform empty properties into beautifully furnished spaces instantly with photorealistic AI staging.
           </p>
 

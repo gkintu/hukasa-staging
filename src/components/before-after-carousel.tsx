@@ -63,8 +63,8 @@ export function BeforeAfterCarousel() {
   }
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-8">
-      <Card className="relative border-0 bg-card p-8 rounded-3xl shadow-2xl overflow-hidden">
+    <div className="w-full max-w-5xl mx-auto px-4 py-4">
+      <Card className="relative border-0 bg-card p-8 rounded-lg shadow-2xl overflow-hidden">
         {/* Main carousel container with fixed aspect ratio */}
         <div
           className="relative w-full aspect-video"
@@ -87,7 +87,7 @@ export function BeforeAfterCarousel() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-red-500 uppercase tracking-wider">BEFORE</span>
                   </div>
-                  <div className="relative flex-1 overflow-hidden rounded-2xl bg-muted">
+                  <div className="relative flex-1 overflow-hidden rounded-lg bg-muted">
                     <img
                       src={slides[activeIndex].before}
                       alt={`${slides[activeIndex].alt} - Before`}
@@ -100,7 +100,7 @@ export function BeforeAfterCarousel() {
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-bold text-green-500 uppercase tracking-wider">AFTER</span>
                   </div>
-                  <div className="relative flex-1 overflow-hidden rounded-2xl bg-muted">
+                  <div className="relative flex-1 overflow-hidden rounded-lg bg-muted">
                     <img
                       src={slides[activeIndex].after}
                       alt={`${slides[activeIndex].alt} - After`}
