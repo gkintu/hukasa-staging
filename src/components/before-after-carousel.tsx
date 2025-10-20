@@ -44,14 +44,43 @@ const fadeSpring = {
 export function BeforeAfterCarousel() {
   const [activeIndex, setActiveIndex] = React.useState(0)
   const [isHovered, setIsHovered] = React.useState(false)
+  const indicatorRef = React.useRef<HTMLDivElement | null>(null)
+  const [indicatorWidth, setIndicatorWidth] = React.useState(0)
 
   // Auto-play functionality - advance every 5 seconds
   React.useEffect(() => {
     const intervalId = setInterval(() => {
       setActiveIndex((current) => (current + 1) % slides.length)
-    }, 5000)
+    }, 4000)
 
     return () => clearInterval(intervalId)
+  }, [])
+
+  React.useEffect(() => {
+    const indicatorNode = indicatorRef.current
+    if (!indicatorNode) {
+      return
+    }
+
+    const updateWidth = () => {
+      setIndicatorWidth(indicatorNode.offsetWidth)
+    }
+
+    updateWidth()
+
+    if (typeof ResizeObserver === "undefined") {
+      return
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        setIndicatorWidth(entry.contentRect.width)
+      }
+    })
+
+    observer.observe(indicatorNode)
+
+    return () => observer.disconnect()
   }, [])
 
   const goToPrevious = () => {
@@ -85,7 +114,7 @@ export function BeforeAfterCarousel() {
                 {/* Before Image */}
                 <div className="space-y-3 flex flex-col">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-red-500 uppercase tracking-wider">BEFORE</span>
+                    <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">BEFORE</span>
                   </div>
                   <div className="relative flex-1 overflow-hidden rounded-lg bg-muted">
                     <img
@@ -98,7 +127,7 @@ export function BeforeAfterCarousel() {
                 {/* After Image */}
                 <div className="space-y-3 flex flex-col">
                   <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-green-500 uppercase tracking-wider">AFTER</span>
+                    <span className="text-sm font-bold text-primary uppercase tracking-wider">AFTER</span>
                   </div>
                   <div className="relative flex-1 overflow-hidden rounded-lg bg-muted">
                     <img
@@ -135,30 +164,38 @@ export function BeforeAfterCarousel() {
             <ChevronRight className="h-6 w-6 text-primary-foreground" />
           </motion.button>
 
-          {/* Linear progress bar that animates from 0% to 100% over 5 seconds */}
-          <AnimatePresence>
-            <motion.div
-              key={activeIndex}
-              initial={{ width: "0%" }}
-              animate={{ width: "100%" }}
-              transition={{ duration: 5, ease: "linear" }}
-              className="absolute bottom-0 left-0 h-1 bg-primary z-10"
-            />
-          </AnimatePresence>
         </div>
 
-        {/* Slide indicators */}
-        <div className="flex justify-center gap-2 mt-6">
-          {slides.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setActiveIndex(index)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                activeIndex === index ? "w-8 bg-foreground" : "w-2 bg-foreground/40 hover:bg-foreground/60"
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
+        <div className="mt-6 flex flex-col items-center gap-4">
+          {/* Linear progress bar that animates from 0% to 100% over 5 seconds */}
+          <div
+            className="h-6 overflow-hidden rounded-lg bg-foreground/5"
+            style={{ width: indicatorWidth || "7rem" }}
+          >
+            <AnimatePresence>
+              <motion.div
+                key={activeIndex}
+                initial={{ width: "0%" }}
+                animate={{ width: "100%" }}
+                transition={{ duration: 4, ease: "linear" }}
+                className="h-full rounded-lg bg-foreground/15"
+              />
+            </AnimatePresence>
+          </div>
+
+          {/* Slide indicators */}
+          <div ref={indicatorRef} className="flex justify-center gap-2">
+            {slides.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveIndex(index)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  activeIndex === index ? "w-8 bg-foreground" : "w-2 bg-foreground/40 hover:bg-foreground/60"
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
+          </div>
         </div>
       </Card>
     </div>
