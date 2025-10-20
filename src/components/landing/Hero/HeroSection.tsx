@@ -13,31 +13,33 @@ export function HeroSection() {
           </div>
 
           {/* Main Headline */}
-          <h1 className="text-4xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
+          <h1 className="text-4xl lg:text-6xl font-bold text-foreground mb-4 leading-tight">
             AI-Powered Virtual Staging in <span className="text-primary">30 Seconds</span>
           </h1>
           
           {/* Subheading */}
-          <p className="text-xl text-muted-foreground mb-4 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg text-muted-foreground mb-4 max-w-2xl mx-auto leading-relaxed">
             Transform empty properties into beautifully furnished spaces instantly with photorealistic AI staging.
           </p>
+        </div>
 
-          {/* Before/After Carousel */}
+        {/* Before/After Carousel */}
+        <div className="mt-6 flex justify-center">
           <BeforeAfterCarousel />
+        </div>
 
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-8">
-            <Button size="lg" className="text-lg px-8 py-6" asChild>
-              <Link href="/generate">
-                Start Virtual Staging
-              </Link>
-            </Button>
-            <Button variant="outline" size="lg" className="text-lg px-8 py-6 bg-transparent" asChild>
-              <Link href="#gallery">
-                View Examples
-              </Link>
-            </Button>
-          </div>
+        {/* CTA Buttons */}
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-4xl mx-auto text-center">
+          <Button size="lg" className="text-lg px-8 py-6" asChild>
+            <Link href="/generate">
+              Start Virtual Staging
+            </Link>
+          </Button>
+          <Button variant="outline" size="lg" className="text-lg px-8 py-6 bg-transparent" asChild>
+            <Link href="#gallery">
+              View Examples
+            </Link>
+          </Button>
         </div>
       </div>
     </section>
