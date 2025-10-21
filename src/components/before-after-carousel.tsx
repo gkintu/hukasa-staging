@@ -41,6 +41,10 @@ const fadeSpring = {
   mass: 1,
 }
 
+const DOT_ACTIVE_WIDTH = 24 // Tailwind w-6
+const DOT_INACTIVE_WIDTH = 16 // Tailwind w-4
+const DOT_GAP = 8 // Tailwind gap-2
+
 export function BeforeAfterCarousel() {
   const [activeIndex, setActiveIndex] = React.useState(0)
   const [isHovered, setIsHovered] = React.useState(false)
@@ -91,6 +95,9 @@ export function BeforeAfterCarousel() {
     setActiveIndex((current) => (current + 1) % slides.length)
   }
 
+  const fallbackIndicatorWidth =
+    DOT_ACTIVE_WIDTH + (slides.length - 1) * (DOT_INACTIVE_WIDTH + DOT_GAP)
+
   return (
     <div className="w-full max-w-5xl mx-auto px-4 py-4">
       <Card className="relative border-0 bg-card p-8 rounded-lg shadow-2xl overflow-hidden">
@@ -122,6 +129,22 @@ export function BeforeAfterCarousel() {
                       alt={`${slides[activeIndex].alt} - Before`}
                       className="w-full h-full object-cover"
                     />
+                    <div className="absolute left-4 bottom-4 rounded-md bg-foreground/10 px-3 py-2 shadow-sm">
+                      <div ref={indicatorRef} className="flex justify-center gap-2">
+                        {slides.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={() => setActiveIndex(index)}
+                            className={`h-4 rounded-md transition-all duration-300 ${
+                              activeIndex === index
+                                ? "w-6 bg-foreground/70"
+                                : "w-4 bg-foreground/30 hover:bg-foreground/60"
+                            }`}
+                            aria-label={`Go to slide ${index + 1}`}
+                          />
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
                 {/* After Image */}
@@ -135,6 +158,24 @@ export function BeforeAfterCarousel() {
                       alt={`${slides[activeIndex].alt} - After`}
                       className="w-full h-full object-cover"
                     />
+                    <div className="absolute left-4 bottom-4 rounded-md bg-foreground/10 px-3 py-2 shadow-sm">
+                      <div
+                        className="h-4 overflow-hidden rounded-md bg-foreground/20"
+                        style={{
+                          width: `${indicatorWidth || fallbackIndicatorWidth}px`,
+                        }}
+                      >
+                        <AnimatePresence>
+                          <motion.div
+                            key={activeIndex}
+                            initial={{ width: "0%" }}
+                            animate={{ width: "100%" }}
+                            transition={{ duration: 4, ease: "linear" }}
+                            className="h-full rounded-md bg-foreground/60"
+                          />
+                        </AnimatePresence>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -164,38 +205,6 @@ export function BeforeAfterCarousel() {
             <ChevronRight className="h-6 w-6 text-primary-foreground" />
           </motion.button>
 
-        </div>
-
-        <div className="mt-6 flex flex-col items-center gap-4">
-          {/* Linear progress bar that animates from 0% to 100% over 5 seconds */}
-          <div
-            className="h-6 overflow-hidden rounded-lg bg-foreground/5"
-            style={{ width: indicatorWidth || "7rem" }}
-          >
-            <AnimatePresence>
-              <motion.div
-                key={activeIndex}
-                initial={{ width: "0%" }}
-                animate={{ width: "100%" }}
-                transition={{ duration: 4, ease: "linear" }}
-                className="h-full rounded-lg bg-foreground/15"
-              />
-            </AnimatePresence>
-          </div>
-
-          {/* Slide indicators */}
-          <div ref={indicatorRef} className="flex justify-center gap-2">
-            {slides.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setActiveIndex(index)}
-                className={`h-2 rounded-full transition-all duration-300 ${
-                  activeIndex === index ? "w-8 bg-foreground" : "w-2 bg-foreground/40 hover:bg-foreground/60"
-                }`}
-                aria-label={`Go to slide ${index + 1}`}
-              />
-            ))}
-          </div>
         </div>
       </Card>
     </div>
