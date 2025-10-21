@@ -2,8 +2,10 @@
 
 import * as React from "react"
 import { Card } from "@/components/ui/card"
+import Link from "next/link"
 import { motion, AnimatePresence } from "framer-motion"
 import { ChevronLeft, ChevronRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 interface BeforeAfterSlide {
   before: string
@@ -99,7 +101,7 @@ export function BeforeAfterCarousel() {
     DOT_ACTIVE_WIDTH + (slides.length - 1) * (DOT_INACTIVE_WIDTH + DOT_GAP)
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-4">
+    <div className="w-full max-w-6xl mx-auto px-4 py-4">
       <Card className="relative border-0 bg-card p-8 rounded-lg shadow-2xl overflow-hidden">
         {/* Main carousel container with fixed aspect ratio */}
         <div
@@ -119,11 +121,11 @@ export function BeforeAfterCarousel() {
             >
               <div className="grid md:grid-cols-2 gap-6 h-full">
                 {/* Before Image */}
-                <div className="space-y-3 flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-muted-foreground uppercase tracking-wider">BEFORE</span>
-                  </div>
+                <div className="flex flex-col">
                   <div className="relative flex-1 overflow-hidden rounded-lg bg-muted">
+                    <div className="absolute left-4 top-4 rounded-md bg-foreground/50 px-3 py-1 text-xs font-bold tracking-wider text-background/80 shadow-sm uppercase">
+                      BEFORE
+                    </div>
                     <img
                       src={slides[activeIndex].before}
                       alt={`${slides[activeIndex].alt} - Before`}
@@ -148,11 +150,11 @@ export function BeforeAfterCarousel() {
                   </div>
                 </div>
                 {/* After Image */}
-                <div className="space-y-3 flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-primary uppercase tracking-wider">AFTER</span>
-                  </div>
+                <div className="flex flex-col">
                   <div className="relative flex-1 overflow-hidden rounded-lg bg-muted">
+                    <div className="absolute left-4 top-4 rounded-md bg-background/60 px-3 py-1 text-xs font-bold tracking-wider text-foreground/70 shadow-sm uppercase">
+                      AFTER
+                    </div>
                     <img
                       src={slides[activeIndex].after}
                       alt={`${slides[activeIndex].alt} - After`}
@@ -205,6 +207,25 @@ export function BeforeAfterCarousel() {
             <ChevronRight className="h-6 w-6 text-primary-foreground" />
           </motion.button>
 
+        </div>
+
+        {/* CTA Buttons */}
+        <div className="mt-2 flex flex-col items-center justify-center gap-4 md:flex-row">
+          <Button size="lg" className="text-base md:text-lg px-6 md:px-8 py-4 md:py-5" asChild>
+            <Link href="/generate">
+              Start Virtual Staging
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="lg"
+            className="text-base md:text-lg px-6 md:px-8 py-4 md:py-5 bg-transparent"
+            asChild
+          >
+            <Link href="#gallery">
+              View Examples
+            </Link>
+          </Button>
         </div>
       </Card>
     </div>

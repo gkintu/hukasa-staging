@@ -1,5 +1,3 @@
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
 import { BeforeAfterCarousel } from "@/components/before-after-carousel"
 
 export function HeroSection() {
@@ -28,19 +26,6 @@ export function HeroSection() {
           <BeforeAfterCarousel />
         </div>
 
-        {/* CTA Buttons */}
-        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 max-w-4xl mx-auto text-center">
-          <Button size="lg" className="text-lg px-8 py-6" asChild>
-            <Link href="/generate">
-              Start Virtual Staging
-            </Link>
-          </Button>
-          <Button variant="outline" size="lg" className="text-lg px-8 py-6 bg-transparent" asChild>
-            <Link href="#gallery">
-              View Examples
-            </Link>
-          </Button>
-        </div>
       </div>
     </section>
   )
