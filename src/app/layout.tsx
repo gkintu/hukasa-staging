@@ -11,19 +11,21 @@ export const metadata: Metadata = {
   description: "Transform property listings with AI-powered virtual staging",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const storedTheme =
     cookieStore.get("theme")?.value ??
     cookieStore.get("next-theme")?.value ??
     "system";
 
+  const headerList = await headers();
+
   const systemPreference =
-    headers().get("sec-ch-prefers-color-scheme") === "dark" ? "dark" : "light";
+    headerList.get("sec-ch-prefers-color-scheme") === "dark" ? "dark" : "light";
 
   const initialTheme =
     storedTheme === "dark" || storedTheme === "light"
