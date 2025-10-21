@@ -2,11 +2,12 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { useTheme } from "next-themes"
+import { useInitialTheme } from "@/components/theme-provider"
 
 const navigationItems = [
   { title: "How it Works", href: "#how-it-works" },
@@ -17,7 +18,19 @@ const navigationItems = [
 
 export function Navigation() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const { theme } = useTheme()
+  const { theme, resolvedTheme } = useTheme()
+  const initialTheme = useInitialTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  const activeTheme = mounted
+    ? (theme === "system" ? resolvedTheme : theme) ?? initialTheme
+    : initialTheme
+
+  const logoSrc = activeTheme === "dark" ? "/logo-dark.png" : "/logo.png"
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -25,7 +38,7 @@ export function Navigation() {
         {/* Logo */}
         <Link href="/" className="flex items-center space-x-2">
           <Image
-            src={theme === 'dark' ? '/logo-dark.png' : '/logo.png'}
+            src={logoSrc}
             alt="Hukasa AI"
             width={120}
             height={32}

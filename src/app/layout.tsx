@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies, headers } from "next/headers";
 import { GeistSans } from "geist/font/sans";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -15,14 +16,42 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = cookies();
+  const storedTheme =
+    cookieStore.get("theme")?.value ??
+    cookieStore.get("next-theme")?.value ??
+    "system";
+
+  const systemPreference =
+    headers().get("sec-ch-prefers-color-scheme") === "dark" ? "dark" : "light";
+
+  const initialTheme =
+    storedTheme === "dark" || storedTheme === "light"
+      ? storedTheme
+      : systemPreference;
+
+  const htmlClassName = [
+    GeistSans.variable,
+    initialTheme === "dark" ? "dark" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
   return (
-    <html lang="en" className={GeistSans.variable} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={htmlClassName}
+      data-theme={initialTheme}
+      suppressHydrationWarning
+    >
       <body className={`${GeistSans.className} antialiased`} suppressHydrationWarning>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
+          defaultTheme={initialTheme}
           enableSystem
           disableTransitionOnChange
+          initialTheme={initialTheme}
+          storageKey="theme"
         >
           <LayoutProvider>
             {children}
