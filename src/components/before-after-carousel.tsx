@@ -123,7 +123,7 @@ export function BeforeAfterCarousel() {
                 {/* Before Image */}
                 <div className="flex flex-col">
                   <div className="relative flex-1 overflow-hidden rounded-lg bg-muted">
-                    <div className="absolute left-4 top-4 rounded-md bg-foreground/50 px-3 py-1 text-xs font-bold tracking-wider text-background/80 shadow-sm uppercase">
+                    <div className="absolute left-3 top-3 sm:left-4 sm:top-4 rounded-md bg-foreground/40 sm:bg-foreground/50 px-2 py-0.5 text-[11px] sm:px-3 sm:py-1 sm:text-xs font-bold tracking-wider text-background/80 shadow-sm uppercase">
                       BEFORE
                     </div>
                     <img
@@ -152,7 +152,7 @@ export function BeforeAfterCarousel() {
                 {/* After Image */}
                 <div className="flex flex-col">
                   <div className="relative flex-1 overflow-hidden rounded-lg bg-muted">
-                    <div className="absolute left-4 top-4 rounded-md bg-background/60 px-3 py-1 text-xs font-bold tracking-wider text-foreground/70 shadow-sm uppercase">
+                    <div className="absolute left-3 top-3 sm:left-4 sm:top-4 rounded-md bg-background/50 sm:bg-background/60 px-2 py-0.5 text-[11px] sm:px-3 sm:py-1 sm:text-xs font-bold tracking-wider text-foreground/70 shadow-sm uppercase">
                       AFTER
                     </div>
                     <img
