@@ -101,8 +101,8 @@ export function BeforeAfterCarousel() {
     DOT_ACTIVE_WIDTH + (slides.length - 1) * (DOT_INACTIVE_WIDTH + DOT_GAP)
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-4">
-      <Card className="relative border-0 bg-card p-8 rounded-lg shadow-2xl overflow-hidden">
+    <div className="w-full max-w-6xl mx-auto px-px py-px sm:px-1 sm:py-1">
+      <Card className="relative border-0 bg-card p-2 pb-4 sm:p-5 rounded-lg shadow-2xl overflow-hidden">
         {/* Main carousel container with fixed aspect ratio */}
         <div
           className="relative w-full aspect-video"
@@ -119,7 +119,7 @@ export function BeforeAfterCarousel() {
               transition={fadeSpring}
               className="absolute inset-0"
             >
-              <div className="grid md:grid-cols-2 gap-6 h-full">
+              <div className="grid grid-cols-2 gap-4 md:gap-6 h-full">
                 {/* Before Image */}
                 <div className="flex flex-col">
                   <div className="relative flex-1 overflow-hidden rounded-lg bg-muted">
@@ -210,10 +210,10 @@ export function BeforeAfterCarousel() {
         </div>
 
         {/* CTA Buttons */}
-        <div className="mt-2 flex flex-col items-center justify-center gap-4 md:flex-row">
-          <Button size="lg" className="text-base md:text-lg px-6 md:px-8 py-4 md:py-5" asChild>
+        <div className="mt-2 flex flex-col items-center justify-center gap-4 sm:flex-row">
+          <Button size="lg" className="text-base md:text-lg px-10 md:px-8 py-4 md:py-5" asChild>
             <Link href="/generate">
-              Start Virtual Staging
+             Try for free
             </Link>
           </Button>
           <Button
