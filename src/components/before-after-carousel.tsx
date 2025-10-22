@@ -43,9 +43,9 @@ const fadeSpring = {
   mass: 1,
 }
 
-const DOT_ACTIVE_WIDTH = 24 // Tailwind w-6
-const DOT_INACTIVE_WIDTH = 16 // Tailwind w-4
-const DOT_GAP = 8 // Tailwind gap-2
+const DOT_ACTIVE_WIDTH = 14 // Tailwind w-3.5
+const DOT_INACTIVE_WIDTH = 10 // Tailwind w-2.5
+const DOT_GAP = 6 // Tailwind gap-1.5
 
 export function BeforeAfterCarousel() {
   const [activeIndex, setActiveIndex] = React.useState(0)
@@ -132,15 +132,15 @@ export function BeforeAfterCarousel() {
                       className="w-full h-full object-cover"
                     />
                     <div className="absolute left-4 bottom-4 rounded-md bg-foreground/10 px-3 py-2 shadow-sm">
-                      <div ref={indicatorRef} className="flex justify-center gap-2">
+                      <div ref={indicatorRef} className="flex justify-center gap-1.5 sm:gap-2">
                         {slides.map((_, index) => (
                           <button
                             key={index}
                             onClick={() => setActiveIndex(index)}
-                            className={`h-4 rounded-md transition-all duration-300 ${
+                            className={`h-3 sm:h-4 rounded-md transition-all duration-300 ${
                               activeIndex === index
-                                ? "w-6 bg-foreground/70"
-                                : "w-4 bg-foreground/30 hover:bg-foreground/60"
+                                ? "w-3.5 sm:w-6 bg-foreground/70"
+                                : "w-2.5 sm:w-4 bg-foreground/30 hover:bg-foreground/60"
                             }`}
                             aria-label={`Go to slide ${index + 1}`}
                           />
@@ -162,7 +162,7 @@ export function BeforeAfterCarousel() {
                     />
                     <div className="absolute left-4 bottom-4 rounded-md bg-foreground/10 px-3 py-2 shadow-sm">
                       <div
-                        className="h-4 overflow-hidden rounded-md bg-foreground/20"
+                        className="h-3 sm:h-4 overflow-hidden rounded-md bg-foreground/20"
                         style={{
                           width: `${indicatorWidth || fallbackIndicatorWidth}px`,
                         }}
