@@ -11,10 +11,12 @@ export function HeroSection() {
         backgroundRepeat: "no-repeat",
       }}
     >
+      {/* Overlay softens the background artwork for legibility (light + dark tuned) */}
       <div
         className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/88 to-background/99 dark:from-background/92 dark:via-background/96 dark:to-background/99"
         aria-hidden="true"
       />
+      {/* Actual hero content stack */}
       <div className="relative container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center">
             {/* Trust indicator */}
