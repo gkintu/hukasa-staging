@@ -1,6 +1,5 @@
 import { Navigation } from "./Navigation"
 import { HeroSection } from "./Hero"
-import { TrustIndicators } from "./TrustIndicators"
 import { FeaturesSection } from "./Features"
 import { GallerySection } from "./Gallery"
 import { PricingSection } from "./Pricing"
@@ -14,7 +13,6 @@ export function LandingPage() {
       <Navigation />
       <main>
         <HeroSection />
-        <TrustIndicators />
         <FeaturesSection />
         <GallerySection />
         <TestimonialsSection />

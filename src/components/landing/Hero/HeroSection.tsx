@@ -2,8 +2,20 @@ import { BeforeAfterCarousel } from "@/components/before-after-carousel"
 
 export function HeroSection() {
   return (
-    <section className="pt-4 pb-20 lg:pt-10 lg:pb-32 bg-gradient-to-b from-background to-muted/20">
-      <div className="container mx-auto px-4">
+    <section
+      className="relative pt-4 pb-20 lg:pt-10 lg:pb-32"
+      style={{
+        backgroundImage: "url('/landing/Hero-banner-hukasa-00.webp')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+      }}
+    >
+      <div
+        className="absolute inset-0 bg-gradient-to-b from-background/85 via-background/88 to-background/99 dark:from-background/92 dark:via-background/96 dark:to-background/99"
+        aria-hidden="true"
+      />
+      <div className="relative container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center">
             {/* Trust indicator */}
             {/*

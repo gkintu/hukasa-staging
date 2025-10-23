@@ -213,7 +213,7 @@ export function BeforeAfterCarousel() {
         <div className="mt-2 flex flex-col items-center justify-center gap-4 sm:flex-row">
           <Button size="lg" className="text-base md:text-lg px-10 md:px-8 py-4 md:py-5" asChild>
             <Link href="/generate">
-             Try for free
+             Start Now
             </Link>
           </Button>
           <Button
