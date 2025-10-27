@@ -1,57 +1,111 @@
+import { Fragment, type ComponentType, type SVGProps } from "react"
+import Image from "next/image"
+import { Download, Upload, Wand2 } from "lucide-react"
+
+import {
+  CardDescription,
+  CardTitle,
+} from "@/components/ui/card"
+import { Separator } from "@/components/ui/separator"
+
+type StepDefinition = {
+  index: string
+  title: string
+  description: string
+  image: string
+  Icon: ComponentType<SVGProps<SVGSVGElement>>
+}
+
+const steps: StepDefinition[] = [
+  {
+    index: "01",
+    title: "Upload Property Photos",
+    description:
+      "Upload empty or unfurnished rooms directly from your listing to start the staging workflow.",
+    image: "/carousel/empty-room-before.jpg",
+    Icon: Upload,
+  },
+  {
+    index: "02",
+    title: "Choose Design Direction",
+    description:
+      "Select curated staging styles that align with your target buyer and let our AI handle the heavy lifting.",
+    image: "/carousel/ai-designed-bedroom-after.jpg",
+    Icon: Wand2,
+  },
+  {
+    index: "03",
+    title: "Review & Download",
+    description:
+      "Approve your favorite variants and download photorealistic renders ready for MLS listings and marketing.",
+    image: "/carousel/ai-modern-kitchen-after.jpg",
+    Icon: Download,
+  },
+]
+
+type StepProps = StepDefinition
+
+function Step({ index, title, description, image, Icon }: StepProps) {
+  return (
+    <div className="flex max-w-sm flex-1 flex-col items-center text-center px-4">
+      <header className="mb-8 flex flex-col items-center">
+        <span className="text-5xl font-serif text-muted-foreground">
+          {index}
+        </span>
+        <div className="mt-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+          <Icon className="h-5 w-5" strokeWidth={1.5} />
+        </div>
+        <CardTitle className="mt-6 font-serif text-2xl text-primary">
+          {title}
+        </CardTitle>
+        <CardDescription className="mt-3 text-base leading-relaxed">
+          {description}
+        </CardDescription>
+      </header>
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-border/80 bg-muted">
+        <Image
+          src={image}
+          alt={title}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 360px"
+          loading="lazy"
+        />
+      </div>
+    </div>
+  )
+}
+
 export function FeaturesSection() {
   return (
-    <section id="how-it-works" className="py-24 bg-muted/30">
-      <div className="container mx-auto px-4">
-        <div className="text-center">
-          <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
+    <section id="how-it-works" className="bg-muted/20 py-24">
+      <div className="container px-6">
+        <header className="mx-auto flex max-w-3xl flex-col items-center text-center">
+          <p className="text-sm font-medium uppercase tracking-wide text-primary/80">
             How It Works
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl mx-auto">
-            Transform empty properties into stunning staged spaces in three simple steps
           </p>
-        </div>
+          <h2 className="mt-4 text-4xl font-serif text-foreground sm:text-5xl">
+            Transform empty properties into stunning staged spaces in three
+            simple steps
+          </h2>
+          <p className="mt-4 text-base text-muted-foreground sm:text-lg">
+            Every project flows through the same elevated experience—upload,
+            style selection, and instant delivery of MLS-ready visuals.
+          </p>
+        </header>
 
-        <div className="mt-20">
-          <div className="grid grid-cols-1 gap-12 sm:grid-cols-3">
-            {/* Step 1 */}
-            <div className="text-center">
-              <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-2xl font-bold text-primary">1</span>
-              </div>
-              <h3 className="mt-6 text-xl font-semibold text-foreground">
-                Upload Property Photos
-              </h3>
-              <p className="mt-2 text-muted-foreground">
-                Upload photos of empty or unfurnished rooms from your property listings
-              </p>
-            </div>
-
-            {/* Step 2 */}
-            <div className="text-center">
-              <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-2xl font-bold text-primary">2</span>
-              </div>
-              <h3 className="mt-6 text-xl font-semibold text-foreground">
-                Choose Design Style
-              </h3>
-              <p className="mt-2 text-muted-foreground">
-                Select from modern, traditional, luxury, or Scandinavian furniture styles
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="text-center">
-              <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <span className="text-2xl font-bold text-primary">3</span>
-              </div>
-              <h3 className="mt-6 text-xl font-semibold text-foreground">
-                Get Staged Photos
-              </h3>
-              <p className="mt-2 text-muted-foreground">
-                Receive photorealistic staged images in 30 seconds, ready for MLS listings
-              </p>
-            </div>
-          </div>
+        <div className="mt-16 flex flex-col items-center gap-12 md:flex-row md:items-start md:justify-center md:gap-0">
+          {steps.map((step, index) => (
+            <Fragment key={step.index}>
+              <Step {...step} />
+              {index < steps.length - 1 ? (
+                <Separator
+                  orientation="vertical"
+                  className="hidden h-24 w-px bg-border md:mx-10 md:block md:self-center"
+                />
+              ) : null}
+            </Fragment>
+          ))}
         </div>
       </div>
     </section>
