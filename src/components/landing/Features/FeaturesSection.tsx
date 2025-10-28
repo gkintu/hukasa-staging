@@ -49,13 +49,13 @@ function Step({ index, title, description, image, Icon }: StepProps) {
   return (
     <div className="flex max-w-sm flex-1 flex-col items-center text-center px-4">
       <header className="mb-8 flex flex-col items-center">
-        <span className="text-5xl font-serif text-muted-foreground">
+        <span className="text-5xl text-muted-foreground">
           {index}
         </span>
         <div className="mt-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
           <Icon className="h-5 w-5" strokeWidth={1.5} />
         </div>
-        <CardTitle className="mt-6 font-serif text-2xl text-primary">
+        <CardTitle className="mt-6 text-2xl text-primary">
           {title}
         </CardTitle>
         <CardDescription className="mt-3 text-base leading-relaxed">
@@ -78,20 +78,16 @@ function Step({ index, title, description, image, Icon }: StepProps) {
 
 export function FeaturesSection() {
   return (
-    <section id="how-it-works" className="bg-muted/20 py-24">
-      <div className="container px-6">
+    <section id="how-it-works" className="bg-muted/20 pt-16 pb-24 lg:pt-20 lg:pb-24">
+      <div className="container mx-auto px-6">
         <header className="mx-auto flex max-w-3xl flex-col items-center text-center">
-          <p className="text-sm font-medium uppercase tracking-wide text-primary/80">
+          <p className="text-3xl font-bold uppercase tracking-wide text-primary/80 lg:text-4xl">
             How It Works
           </p>
-          <h2 className="mt-4 text-4xl font-serif text-foreground sm:text-5xl">
+          <h2 className="mt-4 text-md text-muted-foreground max-w-lg mx-auto leading-relaxed">
             Transform empty properties into stunning staged spaces in three
             simple steps
           </h2>
-          <p className="mt-4 text-base text-muted-foreground sm:text-lg">
-            Every project flows through the same elevated experience—upload,
-            style selection, and instant delivery of MLS-ready visuals.
-          </p>
         </header>
 
         <div className="mt-16 flex flex-col items-center gap-12 md:flex-row md:items-start md:justify-center md:gap-0">

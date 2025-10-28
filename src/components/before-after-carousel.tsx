@@ -122,14 +122,14 @@ export function BeforeAfterCarousel() {
               <div className="grid grid-cols-2 gap-4 md:gap-6 h-full">
                 {/* Before Image */}
                 <div className="flex flex-col">
-                  <div className="relative flex-1 overflow-hidden rounded-lg bg-muted">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-muted">
                     <div className="absolute left-3 top-3 sm:left-4 sm:top-4 rounded-md bg-foreground/40 sm:bg-foreground/50 px-2 py-0.5 text-[11px] sm:px-3 sm:py-1 sm:text-xs font-bold tracking-wider text-background/80 shadow-sm uppercase">
                       BEFORE
                     </div>
                     <img
                       src={slides[activeIndex].before}
                       alt={`${slides[activeIndex].alt} - Before`}
-                      className="w-full h-full object-cover"
+                      className="absolute inset-0 h-full w-full object-cover"
                     />
                     <div className="absolute left-4 bottom-4 rounded-md bg-foreground/10 px-3 py-2 shadow-sm">
                       <div ref={indicatorRef} className="flex justify-center gap-1.5 sm:gap-2">
@@ -151,14 +151,14 @@ export function BeforeAfterCarousel() {
                 </div>
                 {/* After Image */}
                 <div className="flex flex-col">
-                  <div className="relative flex-1 overflow-hidden rounded-lg bg-muted">
+                  <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-muted">
                     <div className="absolute left-3 top-3 sm:left-4 sm:top-4 rounded-md bg-background/50 sm:bg-background/60 px-2 py-0.5 text-[11px] sm:px-3 sm:py-1 sm:text-xs font-bold tracking-wider text-foreground/70 shadow-sm uppercase">
                       AFTER
                     </div>
                     <img
                       src={slides[activeIndex].after}
                       alt={`${slides[activeIndex].alt} - After`}
-                      className="w-full h-full object-cover"
+                      className="absolute inset-0 h-full w-full object-cover"
                     />
                     <div className="absolute left-4 bottom-4 rounded-md bg-foreground/10 px-3 py-2 shadow-sm">
                       <div
