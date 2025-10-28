@@ -101,11 +101,11 @@ export function BeforeAfterCarousel() {
     DOT_ACTIVE_WIDTH + (slides.length - 1) * (DOT_INACTIVE_WIDTH + DOT_GAP)
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-px py-px sm:px-1 sm:py-1">
+    <div className="w-full max-w-none mx-auto px-px py-px sm:px-1 sm:py-1">
       <Card className="relative border-0 bg-card p-2 pb-4 sm:p-5 rounded-lg shadow-2xl overflow-hidden">
         {/* Main carousel container with fixed aspect ratio */}
         <div
-          className="relative w-full aspect-video"
+          className="relative w-full aspect-[8/3]"
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
         >
@@ -123,7 +123,7 @@ export function BeforeAfterCarousel() {
                 {/* Before Image */}
                 <div className="flex flex-col">
                   <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-muted">
-                    <div className="absolute left-3 top-3 sm:left-4 sm:top-4 rounded-md bg-foreground/40 sm:bg-foreground/50 px-2 py-0.5 text-[11px] sm:px-3 sm:py-1 sm:text-xs font-bold tracking-wider text-background/80 shadow-sm uppercase">
+                    <div className="absolute left-3 top-3 sm:left-4 sm:top-4 rounded-md bg-foreground/40 sm:bg-foreground/50 px-2 py-0.5 text-[11px] sm:px-3 sm:py-1 sm:text-xs font-bold tracking-wider text-background/80 shadow-sm uppercase z-10">
                       BEFORE
                     </div>
                     <img
@@ -131,7 +131,7 @@ export function BeforeAfterCarousel() {
                       alt={`${slides[activeIndex].alt} - Before`}
                       className="absolute inset-0 h-full w-full object-cover"
                     />
-                    <div className="absolute left-4 bottom-4 rounded-md bg-foreground/10 px-3 py-2 shadow-sm">
+                    <div className="absolute left-4 bottom-4 rounded-md bg-white/20 dark:bg-white/15 px-3 py-2 shadow-sm">
                       <div ref={indicatorRef} className="flex justify-center gap-1.5 sm:gap-2">
                         {slides.map((_, index) => (
                           <button
@@ -139,7 +139,7 @@ export function BeforeAfterCarousel() {
                             onClick={() => setActiveIndex(index)}
                             className={`h-3 sm:h-4 rounded-md transition-all duration-300 ${
                               activeIndex === index
-                                ? "w-3.5 sm:w-6 bg-foreground/70"
+                                ? "w-3.5 sm:w-6 bg-foreground/80 dark:bg-foreground/70"
                                 : "w-2.5 sm:w-4 bg-foreground/30 hover:bg-foreground/60"
                             }`}
                             aria-label={`Go to slide ${index + 1}`}
@@ -152,7 +152,7 @@ export function BeforeAfterCarousel() {
                 {/* After Image */}
                 <div className="flex flex-col">
                   <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg bg-muted">
-                    <div className="absolute left-3 top-3 sm:left-4 sm:top-4 rounded-md bg-background/50 sm:bg-background/60 px-2 py-0.5 text-[11px] sm:px-3 sm:py-1 sm:text-xs font-bold tracking-wider text-foreground/70 shadow-sm uppercase">
+                    <div className="absolute left-3 top-3 sm:left-4 sm:top-4 rounded-md bg-background/50 sm:bg-background/60 px-2 py-0.5 text-[11px] sm:px-3 sm:py-1 sm:text-xs font-bold tracking-wider text-foreground/70 shadow-sm uppercase z-10">
                       AFTER
                     </div>
                     <img
@@ -160,7 +160,7 @@ export function BeforeAfterCarousel() {
                       alt={`${slides[activeIndex].alt} - After`}
                       className="absolute inset-0 h-full w-full object-cover"
                     />
-                    <div className="absolute left-4 bottom-4 rounded-md bg-foreground/10 px-3 py-2 shadow-sm">
+                    <div className="absolute left-4 bottom-4 rounded-md bg-white/20 dark:bg-white/15 px-3 py-2 shadow-sm">
                       <div
                         className="h-3 sm:h-4 overflow-hidden rounded-md bg-foreground/20"
                         style={{
@@ -173,7 +173,7 @@ export function BeforeAfterCarousel() {
                             initial={{ width: "0%" }}
                             animate={{ width: "100%" }}
                             transition={{ duration: 4, ease: "linear" }}
-                            className="h-full rounded-md bg-foreground/60"
+                            className="h-full rounded-md bg-foreground/80"
                           />
                         </AnimatePresence>
                       </div>
