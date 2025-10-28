@@ -3,7 +3,7 @@ import { BeforeAfterCarousel } from "@/components/before-after-carousel"
 export function HeroSection() {
   return (
     <section
-      className="relative pt-4 pb-20 lg:pt-10 lg:pb-32"
+      className="relative pt-4 pb-1 lg:pt-10"
       style={{
         backgroundImage: "url('/landing/Hero-banner-hukasa-00.webp')",
         backgroundSize: "cover",

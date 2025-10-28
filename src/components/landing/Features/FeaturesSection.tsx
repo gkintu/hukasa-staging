@@ -49,20 +49,22 @@ function Step({ index, title, description, image, Icon }: StepProps) {
   return (
     <div className="flex max-w-sm flex-1 flex-col items-center text-center px-4">
       <header className="mb-8 flex flex-col items-center">
-        <span className="text-5xl text-muted-foreground">
-          {index}
-        </span>
-        <div className="mt-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
-          <Icon className="h-5 w-5" strokeWidth={1.5} />
+        <div className="flex items-center gap-4">
+          <span className="text-5xl text-muted-foreground">
+            {index}
+          </span>
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/20 text-foreground/20">
+            <Icon className="h-9 w-9" strokeWidth={1.1} />
+          </div>
         </div>
-        <CardTitle className="mt-6 text-2xl text-primary">
+        <CardTitle className="mt-6 text-2xl text-foreground">
           {title}
         </CardTitle>
         <CardDescription className="mt-3 text-base leading-relaxed">
           {description}
         </CardDescription>
       </header>
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-border/80 bg-muted">
+      <div className="relative mt-auto aspect-[4/3] w-full overflow-hidden rounded-xl border border-border/80 bg-muted">
         <Image
           src={image}
           alt={title}
@@ -81,8 +83,9 @@ export function FeaturesSection() {
     <section id="how-it-works" className="bg-muted/20 pt-16 pb-24 lg:pt-20 lg:pb-24">
       <div className="container mx-auto px-6">
         <header className="mx-auto flex max-w-3xl flex-col items-center text-center">
-          <p className="text-3xl font-bold uppercase tracking-wide text-primary/80 lg:text-4xl">
-            How It Works
+          <p className="text-3xl font-bold uppercase tracking-wide lg:text-4xl">
+            <span className="text-foreground">How It</span>{" "}
+            <span className="text-primary">Works</span>
           </p>
           <h2 className="mt-4 text-md text-muted-foreground max-w-lg mx-auto leading-relaxed">
             Transform empty properties into stunning staged spaces in three
@@ -90,7 +93,7 @@ export function FeaturesSection() {
           </h2>
         </header>
 
-        <div className="mt-16 flex flex-col items-center gap-12 md:flex-row md:items-start md:justify-center md:gap-0">
+        <div className="mt-16 flex flex-col items-center gap-12 md:flex-row md:items-stretch md:justify-center md:gap-0">
           {steps.map((step, index) => (
             <Fragment key={step.index}>
               <Step {...step} />
