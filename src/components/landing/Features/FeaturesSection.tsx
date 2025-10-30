@@ -14,6 +14,7 @@ type StepDefinition = {
   description: string
   image: string
   Icon: ComponentType<SVGProps<SVGSVGElement>>
+  imageClassName?: string
 }
 
 const steps: StepDefinition[] = [
@@ -22,7 +23,7 @@ const steps: StepDefinition[] = [
     title: "Upload Property Photos",
     description:
       "Upload empty or unfurnished rooms directly from your listing to start the staging workflow.",
-    image: "/carousel/empty-room-before.jpg",
+    image: "/features/blue-sky-upload.webp",
     Icon: Upload,
   },
   {
@@ -30,24 +31,25 @@ const steps: StepDefinition[] = [
     title: "Choose Design Direction",
     description:
       "Select curated staging styles that align with your target buyer and let our AI handle the heavy lifting.",
-    image: "/carousel/ai-designed-bedroom-after.jpg",
+    image: "/features/blue-sky-upload.webp",
     Icon: Wand2,
+    imageClassName: "blur-sm md:blur",
   },
   {
     index: "03",
     title: "Review & Download",
     description:
       "Approve your favorite variants and download photorealistic renders ready for MLS listings and marketing.",
-    image: "/carousel/ai-modern-kitchen-after.jpg",
+    image: "/features/blue-sky-result.webp",
     Icon: Download,
   },
 ]
 
 type StepProps = StepDefinition
 
-function Step({ index, title, description, image, Icon }: StepProps) {
+function Step({ index, title, description, image, Icon, imageClassName }: StepProps) {
   return (
-    <div className="flex max-w-sm flex-1 flex-col items-center text-center px-4">
+    <div className="flex max-w-lg flex-1 flex-col items-center text-center px-4">
       <header className="mb-8 flex flex-col items-center">
         <div className="flex items-center gap-4">
           <span className="text-5xl text-muted-foreground">
@@ -69,7 +71,7 @@ function Step({ index, title, description, image, Icon }: StepProps) {
           src={image}
           alt={title}
           fill
-          className="object-cover"
+          className={`object-cover ${imageClassName ?? ""}`}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 360px"
           loading="lazy"
         />
@@ -98,10 +100,10 @@ export function FeaturesSection() {
             <Fragment key={step.index}>
               <Step {...step} />
               {index < steps.length - 1 ? (
-                <Separator
-                  orientation="vertical"
-                  className="hidden h-24 w-px bg-border md:mx-10 md:block md:self-center"
-                />
+              <Separator
+                orientation="vertical"
+                className="hidden h-56 w-px bg-border/60 data-[orientation=vertical]:h-56 md:mx-4 md:block md:self-center"
+              />
               ) : null}
             </Fragment>
           ))}
