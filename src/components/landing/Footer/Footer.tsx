@@ -8,15 +8,15 @@ export function Footer() {
         {/* CTA Section */}
         <div className="py-16 text-center">
           <h2 className="text-3xl font-bold sm:text-4xl text-white">
-            Get your professional headshots today
+            Bring your images to life within seconds, start today.
           </h2>
           <p className="mt-4 text-lg text-gray-300 dark:text-gray-400 max-w-2xl mx-auto">
-            Join thousands of professionals who trust our AI to create stunning headshots
+            Join other professionals today and save hours of editing work with Hukasa's AI tools.
           </p>
           <div className="mt-8">
             <Button size="lg" className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-3 text-lg" asChild>
               <Link href="/generate">
-                Start Creating Now
+                Start Today
               </Link>
             </Button>
           </div>
@@ -72,11 +72,10 @@ export function Footer() {
         <div className="border-t border-gray-800 dark:border-gray-700 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center space-x-2">
-              <div className="h-8 w-8 rounded bg-primary"></div>
               <span className="font-bold text-xl text-white">Hukasa AI</span>
             </div>
             <p className="mt-4 md:mt-0 text-gray-400 dark:text-gray-500 text-sm">
-              © 2024 Hukasa AI. All rights reserved.
+              © 2025 Hukasa AI. All rights reserved.
             </p>
           </div>
         </div>
