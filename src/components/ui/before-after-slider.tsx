@@ -3,7 +3,6 @@
 import { forwardRef, type ReactNode } from 'react'
 import {
   ReactCompareSlider,
-  ReactCompareSliderHandle,
   ReactCompareSliderImage,
   type ReactCompareSliderDetailedProps,
   type ReactCompareSliderImageProps,

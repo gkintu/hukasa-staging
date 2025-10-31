@@ -10,10 +10,10 @@ import { useTheme } from "next-themes"
 import { useInitialTheme } from "@/components/theme-provider"
 
 const navigationItems = [
-  { title: "How it Works", href: "#how-it-works" },
-  { title: "Pricing", href: "#pricing" },
-  { title: "Examples", href: "#examples" },
-  { title: "FAQ", href: "#faq" },
+  { title: "How it Works", href: "/#how-it-works" },
+  { title: "Pricing", href: "/pricing" },
+  { title: "Examples", href: "/#gallery" },
+  { title: "FAQ", href: "/#faq" },
 ]
 
 export function Navigation() {

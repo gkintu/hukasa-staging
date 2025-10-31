@@ -2,7 +2,6 @@ import { Navigation } from "./Navigation"
 import { HeroSection } from "./Hero"
 import { FeaturesSection } from "./Features"
 import { GallerySection } from "./Gallery"
-import { PricingSection } from "./Pricing"
 import { TestimonialsSection } from "./Testimonials"
 import { FAQSection } from "./FAQ"
 import { Footer } from "./Footer"
@@ -16,7 +15,6 @@ export function LandingPage() {
         <FeaturesSection />
         <GallerySection />
         <TestimonialsSection />
-        <PricingSection />
         <FAQSection />
       </main>
       <Footer />
