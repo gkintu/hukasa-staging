@@ -71,7 +71,7 @@ function renderItem(
 ): ReactNode {
   if ('content' in item && item.content) {
     return (
-      <div className={cn('relative h-full w-full', item.contentClassName)}>
+      <div className={cn('relative h-full w-full cursor-pointer', item.contentClassName)}>
         {item.content}
         {renderOverlay(item.label, labelClassName)}
       </div>
@@ -79,7 +79,7 @@ function renderItem(
   }
 
   return (
-    <div className={cn('relative h-full w-full', item.contentClassName)}>
+    <div className={cn('relative h-full w-full cursor-pointer', item.contentClassName)}>
       <ReactCompareSliderImage
         alt={item.alt}
         src={item.src}

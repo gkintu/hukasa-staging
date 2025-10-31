@@ -24,7 +24,7 @@ export function TestimonialsSection() {
         <div className="mt-20">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {/* Testimonial 1 */}
-            <div className="bg-card p-8 rounded-lg border border-border max-w-sm mx-auto">
+            <div className="bg-card p-8 rounded-lg border border-border max-w-sm mx-auto select-none">
               <div className="flex items-center mb-4">
                 {/* <div className="h-12 w-12 rounded-full bg-muted"></div> */}
                 <div className="ml-4">
@@ -38,7 +38,7 @@ export function TestimonialsSection() {
             </div>
 
             {/* Testimonial 2 */}
-            <div className="bg-card p-8 rounded-lg border border-border max-w-sm mx-auto">
+            <div className="bg-card p-8 rounded-lg border border-border max-w-sm mx-auto select-none">
               <div className="flex items-center mb-4">
                 {/* <div className="h-12 w-12 rounded-full bg-muted"></div> */}
                 <div className="ml-4">
@@ -52,7 +52,7 @@ export function TestimonialsSection() {
             </div>
 
             {/* Testimonial 3 */}
-            <div className="bg-card p-8 rounded-lg border border-border max-w-sm mx-auto">
+            <div className="bg-card p-8 rounded-lg border border-border max-w-sm mx-auto select-none">
               <div className="flex items-center mb-4">
                 {/* <div className="h-12 w-12 rounded-full bg-muted"></div> */}
                 <div className="ml-4">
