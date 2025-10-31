@@ -46,6 +46,8 @@ const fadeSpring = {
 const DOT_ACTIVE_WIDTH = 14 // Tailwind w-3.5
 const DOT_INACTIVE_WIDTH = 10 // Tailwind w-2.5
 const DOT_GAP = 6 // Tailwind gap-1.5
+const AUTO_PLAY_INTERVAL_MS = 3000
+const PROGRESS_DURATION_S = AUTO_PLAY_INTERVAL_MS / 1000
 
 export function BeforeAfterCarousel() {
   const [activeIndex, setActiveIndex] = React.useState(0)
@@ -53,11 +55,11 @@ export function BeforeAfterCarousel() {
   const indicatorRef = React.useRef<HTMLDivElement | null>(null)
   const [indicatorWidth, setIndicatorWidth] = React.useState(0)
 
-  // Auto-play functionality - advance every 5 seconds
+  // Auto-play functionality - advance every 3 seconds
   React.useEffect(() => {
     const intervalId = setInterval(() => {
       setActiveIndex((current) => (current + 1) % slides.length)
-    }, 4000)
+    }, AUTO_PLAY_INTERVAL_MS)
 
     return () => clearInterval(intervalId)
   }, [])
@@ -167,15 +169,13 @@ export function BeforeAfterCarousel() {
                           width: `${indicatorWidth || fallbackIndicatorWidth}px`,
                         }}
                       >
-                        <AnimatePresence>
-                          <motion.div
-                            key={activeIndex}
-                            initial={{ width: "0%" }}
-                            animate={{ width: "100%" }}
-                            transition={{ duration: 4, ease: "linear" }}
-                            className="h-full rounded-md bg-foreground/80"
-                          />
-                        </AnimatePresence>
+                        <motion.div
+                          key={activeIndex}
+                          initial={{ width: "0%" }}
+                          animate={{ width: "100%" }}
+                          transition={{ duration: PROGRESS_DURATION_S, ease: "linear" }}
+                          className="h-full rounded-md bg-foreground/80"
+                        />
                       </div>
                     </div>
                   </div>
