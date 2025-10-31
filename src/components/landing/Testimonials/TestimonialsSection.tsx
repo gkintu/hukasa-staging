@@ -14,7 +14,7 @@ const FiveStarRating = () => (
 export function TestimonialsSection() {
   return (
     <section className="py-24">
-      <div className="container mx-auto px-4">
+      <div className="mx-auto max-w-screen-xl px-4">
         <div className="text-center">
           <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
             Customer Reviews
@@ -22,9 +22,9 @@ export function TestimonialsSection() {
         </div>
 
         <div className="mt-20">
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {/* Testimonial 1 */}
-            <div className="bg-card p-8 rounded-lg border border-border">
+            <div className="bg-card p-8 rounded-lg border border-border max-w-sm mx-auto">
               <div className="flex items-center mb-4">
                 {/* <div className="h-12 w-12 rounded-full bg-muted"></div> */}
                 <div className="ml-4">
@@ -38,7 +38,7 @@ export function TestimonialsSection() {
             </div>
 
             {/* Testimonial 2 */}
-            <div className="bg-card p-8 rounded-lg border border-border">
+            <div className="bg-card p-8 rounded-lg border border-border max-w-sm mx-auto">
               <div className="flex items-center mb-4">
                 {/* <div className="h-12 w-12 rounded-full bg-muted"></div> */}
                 <div className="ml-4">
@@ -52,7 +52,7 @@ export function TestimonialsSection() {
             </div>
 
             {/* Testimonial 3 */}
-            <div className="bg-card p-8 rounded-lg border border-border">
+            <div className="bg-card p-8 rounded-lg border border-border max-w-sm mx-auto">
               <div className="flex items-center mb-4">
                 {/* <div className="h-12 w-12 rounded-full bg-muted"></div> */}
                 <div className="ml-4">
